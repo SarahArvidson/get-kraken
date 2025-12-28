@@ -1,0 +1,3 @@
+# Ensure ffs-sdk is treated as regular files, not a submodule
+ffs-sdk/ -diff
+
