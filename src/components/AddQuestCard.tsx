@@ -1,0 +1,191 @@
+/**
+ * Kibblings - Add Quest Card Component
+ * 
+ * Card for creating new quests with image upload
+ */
+
+import { useState } from "react";
+import { Button, InputField, Modal } from "@ffx/sdk";
+import { supabase } from "../lib/supabase";
+
+interface AddQuestCardProps {
+  onCreate: (quest: {
+    name: string;
+    photo_url: string | null;
+    reward: number;
+  }) => Promise<void>;
+}
+
+export function AddQuestCard({ onCreate }: AddQuestCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [reward, setReward] = useState(10);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // Upload to Supabase Storage
+      const fileExt = file.name.split(".").pop();
+      const fileName = `quests/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.uploadFile(
+        "kibblings",
+        fileName,
+        file,
+        {
+          contentType: file.type,
+          upsert: false,
+        }
+      );
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.getPublicUrl("kibblings", fileName);
+      setPhotoUrl(urlData.publicUrl);
+    } catch (err: any) {
+      console.error("Error uploading image:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!name.trim()) {
+      alert("Please enter a quest name");
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await onCreate({
+        name: name.trim(),
+        photo_url: photoUrl,
+        reward,
+      });
+      // Reset form
+      setName("");
+      setReward(10);
+      setPhotoUrl(null);
+      setIsOpen(false);
+    } catch (err: any) {
+      console.error("Error creating quest:", err);
+      alert("Failed to create quest. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 transition-colors cursor-pointer touch-manipulation"
+        onClick={() => setIsOpen(true)}
+      >
+        <div className="p-8 text-center">
+          <div className="text-5xl mb-4">➕</div>
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+            Add New Quest
+          </h3>
+        </div>
+      </div>
+
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Create New Quest"
+        size="md"
+      >
+        <div className="space-y-4">
+          <InputField
+            label="Quest Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Morning Run"
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Reward (kibblings)
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setReward(Math.max(0, reward - 1))}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                −
+              </button>
+              <span className="text-2xl font-semibold min-w-[60px] text-center">
+                {reward}
+              </span>
+              <button
+                onClick={() => setReward(reward + 1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Photo (optional)
+            </label>
+            {photoUrl ? (
+              <div className="relative">
+                <img
+                  src={photoUrl}
+                  alt="Quest preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => setPhotoUrl(null)}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+              />
+            )}
+            {isUploading && (
+              <p className="text-sm text-gray-500 mt-2">Uploading...</p>
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setIsOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreate}
+              loading={isCreating}
+              className="flex-1"
+            >
+              Create Quest
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
