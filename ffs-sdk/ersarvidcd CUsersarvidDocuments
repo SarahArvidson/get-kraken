@@ -1,0 +1,30 @@
+[33mce6ba42[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update README
+[33m121cdca[m ✨ Add Shrayo POS archetype MVP with mock integrations and full POS flow
+[33m22166f3[m SDK architecture now fully functional
+[33m9d8e3b1[m Update README
+[33m6fcaac0[m Update README
+[33m6fa5d94[m ✅ Backend services cleanup & SDK prep: unified SlickText v2 implementation, fixed logger imports, resolved duplicate service conflicts, corrected barrel exports, and verified TypeScript compilation for stable backend foundation.
+[33m86a1bb0[m[33m ([m[1;31morigin/sdk-true-stable[m[33m)[m quickbooks typo still appearing
+[33m724be03[m Save progress before restarting Cursor (Consulting Site + SlickText integration + SDK prep)
+[33mdd50b56[m corrected typo in quickbooks.ts file name
+[33m06e48be[m Barrel Export System created
+[33m8dde839[m SlickText API v2 Frontend-Backend Integration complete
+[33m69ee674[m SlickText API v2 integration + mock testing system
+[33m1f9d9c1[m Added SlickText API v2 integration and other integration stubs
+[33mc6be023[m POS Blueprint Starter added
+[33m8bc392e[m Add Billing & Subscription Blueprint and Messaging Starter
+[33m3593aee[m 🚀 Add Billing & Subscription Blueprint Starter
+[33m26fdb92[m Added Billing Blueprint Starter with CheckoutPanel
+[33m325d7cb[m 🚀 Add Auth Blueprint Starter – login, signup, password reset, InputField, Button, Modal components with docs
+[33me5c39f6[m Add Toast notification system
+[33ma94045b[m ✅ Add FormGroup atomic component with docs and usage examples
+[33m819b0c8[m ✨ Add Button, Modal, and Spinner atomic components with documentation
+[33mfb39730[m ✅ Add InputField atomic component and fix TypeScript/Vite configuration
+[33ma42bca3[m docs: scaffold component docs structure and add LoginForm doc
+[33m94c2801[m docs: scaffold component docs structure and add LoginForm doc
+[33mdd2f3a2[m docs: scaffold component docs structure and add LoginForm doc
+[33mec7cb00[m Merge branch 'main' of https://github.com/flyingfoxcodebox/cursor-sprint-templates
+[33mc63b79b[m chore: integrate Vite scaffold with existing template library structure
+[33m7020123[m Delete src directory
+[33mb0a56bd[m trying not to break with vite install
+[33m17c5388[m added .gitkeep file to folders to make them appear in repository
