@@ -115,7 +115,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
       >
         <div className="p-8 text-center">
           <div className="text-5xl mb-4">➕</div>
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200">
             Add Shop Item
           </h3>
         </div>
@@ -136,7 +136,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Price (kibblings)
             </label>
             <div className="flex items-center gap-4">
@@ -159,7 +159,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Photo (optional)
             </label>
             {photoUrl ? (

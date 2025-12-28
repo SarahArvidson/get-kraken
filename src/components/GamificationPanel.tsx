@@ -87,7 +87,7 @@ export function GamificationPanel({
             <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {nextMilestone} 🟡
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-gray-500 dark:text-gray-200">
               {nextMilestone - walletTotal} to go
             </span>
           </div>
@@ -134,7 +134,7 @@ export function GamificationPanel({
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 +{weeklyRecap.earned}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-200">
                 Earned
               </div>
             </div>
@@ -142,7 +142,7 @@ export function GamificationPanel({
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 -{weeklyRecap.spent}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-200">
                 Spent
               </div>
             </div>
@@ -157,13 +157,13 @@ export function GamificationPanel({
                 {weeklyRecap.net >= 0 ? "+" : ""}
                 {weeklyRecap.net}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-gray-500 dark:text-gray-200">
                 Net
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-200 text-center">
             No activity this week yet
           </p>
         )}

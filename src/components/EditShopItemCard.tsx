@@ -15,6 +15,7 @@ interface EditShopItemCardProps {
     name: string;
     photo_url: string | null;
     price: number;
+    purchase_count: number;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -26,6 +27,7 @@ export function EditShopItemCard({
 }: EditShopItemCardProps) {
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
+  const [purchaseCount, setPurchaseCount] = useState(item.purchase_count);
   const [photoUrl, setPhotoUrl] = useState<string | null>(item.photo_url);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +36,7 @@ export function EditShopItemCard({
   useEffect(() => {
     setName(item.name);
     setPrice(item.price);
+    setPurchaseCount(item.purchase_count);
     setPhotoUrl(item.photo_url);
   }, [item]);
 
@@ -106,6 +109,7 @@ export function EditShopItemCard({
         name: name.trim(),
         photo_url: photoUrl,
         price,
+        purchase_count: purchaseCount,
       });
     } catch (err: any) {
       console.error("Error saving shop item:", err);
@@ -125,31 +129,72 @@ export function EditShopItemCard({
           placeholder="e.g., Coffee Treat"
         />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Price (kibblings)
-          </label>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setPrice(Math.max(0, price - 1))}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-            >
-              −
-            </button>
-            <span className="text-2xl font-semibold min-w-[60px] text-center">
-              {price}
-            </span>
-            <button
-              onClick={() => setPrice(price + 1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-            >
-              +
-            </button>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Price (kibblings)
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPrice(Math.max(0, price - 1))}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setPrice(Math.max(0, val));
+                }}
+                className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
+                min="0"
+              />
+              <button
+                onClick={() => setPrice(price + 1)}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Purchase Count */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Purchases
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPurchaseCount(Math.max(0, purchaseCount - 1))}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={purchaseCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setPurchaseCount(Math.max(0, val));
+                }}
+                className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
+                min="0"
+              />
+              <button
+                onClick={() => setPurchaseCount(purchaseCount + 1)}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Photo (optional)
           </label>
           {photoUrl ? (
@@ -176,7 +221,9 @@ export function EditShopItemCard({
             />
           )}
           {isUploading && (
-            <p className="text-sm text-gray-500 mt-2">Uploading...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">
+              Uploading...
+            </p>
           )}
         </div>
 

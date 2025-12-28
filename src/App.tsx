@@ -140,6 +140,7 @@ function App() {
     name: string;
     photo_url: string | null;
     reward: number;
+    completion_count: number;
   }) => {
     if (!editingQuest) return;
     try {
@@ -158,6 +159,7 @@ function App() {
     name: string;
     photo_url: string | null;
     price: number;
+    purchase_count: number;
   }) => {
     if (!editingShopItem) return;
     try {
@@ -258,7 +260,7 @@ function App() {
           <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
             🎿 Kibblings
           </h1>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
             Operation Skiskohli : Save Money, Get Ripped, Go Shred
           </p>
         </div>
@@ -278,7 +280,7 @@ function App() {
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all touch-manipulation ${
               currentView === "quests"
                 ? "bg-amber-500 text-white shadow-md"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Quests
@@ -288,7 +290,7 @@ function App() {
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all touch-manipulation ${
               currentView === "shop"
                 ? "bg-amber-500 text-white shadow-md"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Shop
@@ -298,7 +300,7 @@ function App() {
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all touch-manipulation ${
               currentView === "progress"
                 ? "bg-amber-500 text-white shadow-md"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                : "text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             Progress

@@ -15,6 +15,7 @@ interface EditQuestCardProps {
     name: string;
     photo_url: string | null;
     reward: number;
+    completion_count: number;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -22,6 +23,9 @@ interface EditQuestCardProps {
 export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
   const [name, setName] = useState(quest.name);
   const [reward, setReward] = useState(quest.reward);
+  const [completionCount, setCompletionCount] = useState(
+    quest.completion_count
+  );
   const [photoUrl, setPhotoUrl] = useState<string | null>(quest.photo_url);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,6 +34,7 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
   useEffect(() => {
     setName(quest.name);
     setReward(quest.reward);
+    setCompletionCount(quest.completion_count);
     setPhotoUrl(quest.photo_url);
   }, [quest]);
 
@@ -102,6 +107,7 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
         name: name.trim(),
         photo_url: photoUrl,
         reward,
+        completion_count: completionCount,
       });
     } catch (err: any) {
       console.error("Error saving quest:", err);
@@ -121,31 +127,74 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
           placeholder="e.g., Morning Run"
         />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Reward (kibblings)
-          </label>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setReward(Math.max(0, reward - 1))}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-            >
-              −
-            </button>
-            <span className="text-2xl font-semibold min-w-[60px] text-center">
-              {reward}
-            </span>
-            <button
-              onClick={() => setReward(reward + 1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-            >
-              +
-            </button>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Reward */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Reward (kibblings)
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setReward(Math.max(0, reward - 1))}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={reward}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setReward(Math.max(0, val));
+                }}
+                className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
+                min="0"
+              />
+              <button
+                onClick={() => setReward(reward + 1)}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Completion Count */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Completions
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  setCompletionCount(Math.max(0, completionCount - 1))
+                }
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={completionCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setCompletionCount(Math.max(0, val));
+                }}
+                className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
+                min="0"
+              />
+              <button
+                onClick={() => setCompletionCount(completionCount + 1)}
+                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Photo (optional)
           </label>
           {photoUrl ? (
@@ -172,7 +221,9 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
             />
           )}
           {isUploading && (
-            <p className="text-sm text-gray-500 mt-2">Uploading...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">
+              Uploading...
+            </p>
           )}
         </div>
 

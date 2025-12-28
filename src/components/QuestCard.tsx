@@ -71,7 +71,7 @@ export function QuestCard({
                 {quest.reward} kibblings
               </span>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-200">
               {quest.completion_count} completed
             </div>
           </div>
@@ -81,7 +81,7 @@ export function QuestCard({
         <div className="flex items-center justify-center gap-4 mb-4">
           <button
             onClick={() => handleRewardChange(-1)}
-            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
             aria-label="Decrease reward"
           >
             −
@@ -91,7 +91,7 @@ export function QuestCard({
           </span>
           <button
             onClick={() => handleRewardChange(1)}
-            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
             aria-label="Increase reward"
           >
             +

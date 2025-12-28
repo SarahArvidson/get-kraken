@@ -75,7 +75,7 @@ export function ShopItemCard({
                 {item.price} kibblings
               </span>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-200">
               {item.purchase_count} purchased
             </div>
           </div>
@@ -85,7 +85,7 @@ export function ShopItemCard({
         <div className="flex items-center justify-center gap-4 mb-4">
           <button
             onClick={() => handlePriceChange(-1)}
-            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
             aria-label="Decrease price"
           >
             −
@@ -95,7 +95,7 @@ export function ShopItemCard({
           </span>
           <button
             onClick={() => handlePriceChange(1)}
-            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+            className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
             aria-label="Increase price"
           >
             +
