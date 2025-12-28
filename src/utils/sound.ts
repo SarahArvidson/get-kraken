@@ -1,8 +1,10 @@
 /**
  * Kibblings - Sound Effects Utility
- * 
+ *
  * Plays coin sound effect when quests are completed
  */
+
+import newSoundUrl from "./new-sound.mp3";
 
 let audioElement: HTMLAudioElement | null = null;
 
@@ -11,10 +13,10 @@ let audioElement: HTMLAudioElement | null = null;
  */
 function getAudioElement(): HTMLAudioElement {
   if (!audioElement) {
-    // Try to load from public folder first, fallback to utils if user put it there
-    audioElement = new Audio('/coin-sound.mp3');
+    // Load the sound file using the imported URL
+    audioElement = new Audio(newSoundUrl);
     audioElement.volume = 0.5; // Set volume to 50%
-    audioElement.preload = 'auto';
+    audioElement.preload = "auto";
   }
   return audioElement;
 }
