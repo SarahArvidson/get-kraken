@@ -1,6 +1,6 @@
 /**
  * Kibblings - Shop Item Card Component
- * 
+ *
  * Displays a shop item with tap-to-purchase, swipeable log, and editable price
  */
 
@@ -67,7 +67,7 @@ export function ShopItemCard({
           </h3>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🪙</span>
+              <span className="text-2xl">🟡</span>
               <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                 {item.price} kibblings
               </span>
@@ -134,4 +134,3 @@ export function ShopItemCard({
     </div>
   );
 }
-

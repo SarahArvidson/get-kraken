@@ -184,8 +184,8 @@ function App() {
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-1">
             Operation Skiskohli : Save Money, Get Ripped, Go Shred
-          </p>
-        </div>
+        </p>
+      </div>
       </header>
 
       {/* Main Content */}
@@ -241,12 +241,6 @@ function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AddQuestCard
-                  onCreate={async (questData) => {
-                    await createQuest(questData);
-                    setToast({ message: "Quest created! 🎯", type: "success" });
-                  }}
-                />
                 {quests.map((quest) => (
                   <QuestCard
                     key={quest.id}
@@ -259,6 +253,12 @@ function App() {
                     onEdit={handleEditQuest}
                   />
                 ))}
+                <AddQuestCard
+                  onCreate={async (questData) => {
+                    await createQuest(questData);
+                    setToast({ message: "Quest created! 🎯", type: "success" });
+                  }}
+                />
               </div>
             )}
           </div>
@@ -276,15 +276,6 @@ function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AddShopItemCard
-                  onCreate={async (itemData) => {
-                    await createShopItem(itemData);
-                    setToast({
-                      message: "Shop item created! 🛍️",
-                      type: "success",
-                    });
-                  }}
-                />
                 {shopItems.map((item) => (
                   <ShopItemCard
                     key={item.id}
@@ -298,6 +289,15 @@ function App() {
                     onEdit={handleEditShopItem}
                   />
                 ))}
+                <AddShopItemCard
+                  onCreate={async (itemData) => {
+                    await createShopItem(itemData);
+                    setToast({
+                      message: "Shop item created! 🛍️",
+                      type: "success",
+                    });
+                  }}
+                />
               </div>
             )}
           </div>

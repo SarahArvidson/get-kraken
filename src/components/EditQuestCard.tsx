@@ -40,31 +40,48 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
     setIsUploading(true);
     try {
       // Upload to Supabase Storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `quests/${Date.now()}.${fileExt}`;
+      const fileExt = file.name.split(".").pop() || "jpg";
+      const fileName = `quests/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { error } = await supabase.uploadFile(
+      const { data: uploadData, error: uploadError } = await supabase.uploadFile(
         "kibblings",
         fileName,
         file,
         {
-          contentType: file.type,
+          contentType: file.type || "image/jpeg",
           upsert: false,
         }
       );
 
-      if (error) throw error;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error(uploadError.message || "Failed to upload image");
+      }
 
-      // Get public URL
-      const { data } = supabase.getPublicUrl("kibblings", fileName);
-      if (data?.publicUrl) {
-        setPhotoUrl(data.publicUrl);
+      // Verify upload succeeded
+      if (!uploadData || !uploadData.path) {
+        throw new Error("Upload succeeded but no path returned");
+      }
+
+      // Get public URL - use the path from upload response
+      const uploadPath = uploadData.path;
+      const { data: urlData } = supabase.getPublicUrl("kibblings", uploadPath);
+      
+      if (urlData?.publicUrl) {
+        setPhotoUrl(urlData.publicUrl);
       } else {
-        throw new Error("Failed to get public URL for uploaded image");
+        // Fallback: construct URL manually if getPublicUrl doesn't work
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+          const publicUrl = `${supabaseUrl}/storage/v1/object/public/kibblings/${uploadPath}`;
+          setPhotoUrl(publicUrl);
+        } else {
+          throw new Error("Failed to get public URL for uploaded image");
+        }
       }
     } catch (err: any) {
       console.error("Error uploading image:", err);
-      alert("Failed to upload image. Please try again.");
+      alert(`Failed to upload image: ${err.message || "Please try again."}`);
     } finally {
       setIsUploading(false);
     }
