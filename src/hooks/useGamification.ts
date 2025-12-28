@@ -5,7 +5,6 @@
  */
 
 import { useMemo } from "react";
-import { supabase } from "../lib/supabase";
 import type { QuestLog, ShopLog, WeeklyRecap, QuestStreak } from "../types";
 
 const SKI_TRIP_TARGET = 2000; // Target kibblings for March ski trip
@@ -26,16 +25,16 @@ export function useGamification(
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
 
-    // Filter logs from this week
-    const thisWeekQuestLogs = questLogs.filter((log) => {
-      const logDate = new Date(log.completed_at);
-      return logDate >= weekStart && logDate < weekEnd;
-    });
+    // Filter logs from this week (commented out until we have quest/item data to calculate)
+    // const thisWeekQuestLogs = questLogs.filter((log) => {
+    //   const logDate = new Date(log.completed_at);
+    //   return logDate >= weekStart && logDate < weekEnd;
+    // });
 
-    const thisWeekShopLogs = shopLogs.filter((log) => {
-      const logDate = new Date(log.purchased_at);
-      return logDate >= weekStart && logDate < weekEnd;
-    });
+    // const thisWeekShopLogs = shopLogs.filter((log) => {
+    //   const logDate = new Date(log.purchased_at);
+    //   return logDate >= weekStart && logDate < weekEnd;
+    // });
 
     // Calculate earned (would need quest rewards, simplified for now)
     const earned = 0; // Would need to sum quest rewards from logs

@@ -290,8 +290,9 @@ function App() {
       {toast && (
         <Toast
           message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+          variant={toast.type}
+          show={true}
+          onDismiss={() => setToast(null)}
           duration={3000}
         />
       )}

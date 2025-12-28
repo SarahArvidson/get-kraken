@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { Button } from "@ffx/sdk";
-import type { ShopItem, ShopLog } from "../types";
+import type { ShopItem } from "../types";
 
 interface ShopItemCardProps {
   item: ShopItem;

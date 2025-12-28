@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { Button } from "@ffx/sdk";
-import type { Quest, QuestLog } from "../types";
+import type { Quest } from "../types";
 
 interface QuestCardProps {
   quest: Quest;
@@ -24,7 +24,6 @@ export function QuestCard({
   onEdit,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
-  const [showLogs, setShowLogs] = useState(false);
 
   const handleComplete = async () => {
     setIsCompleting(true);

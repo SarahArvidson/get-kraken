@@ -34,7 +34,7 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
       const fileExt = file.name.split(".").pop();
       const fileName = `quests/${Date.now()}.${fileExt}`;
 
-      const { data, error } = await supabase.uploadFile(
+      const { error } = await supabase.uploadFile(
         "kibblings",
         fileName,
         file,

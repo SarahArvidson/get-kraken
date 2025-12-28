@@ -7,26 +7,21 @@
 import { useState, useEffect, useRef } from "react";
 import { Modal } from "@ffx/sdk";
 
-interface LogEntry {
-  id: string;
-  date: string;
-}
-
-interface LogViewProps {
+interface LogViewProps<T extends { id: string }> {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  logs: LogEntry[];
-  getDateKey: (log: LogEntry) => string;
+  logs: T[];
+  getDateKey: (log: T) => string;
 }
 
-export function LogView({
+export function LogView<T extends { id: string }>({
   isOpen,
   onClose,
   title,
   logs,
   getDateKey,
-}: LogViewProps) {
+}: LogViewProps<T>) {
   const [swipeIndex, setSwipeIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);

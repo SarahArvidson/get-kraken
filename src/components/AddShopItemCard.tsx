@@ -34,7 +34,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
       const fileExt = file.name.split(".").pop();
       const fileName = `shop/${Date.now()}.${fileExt}`;
 
-      const { data, error } = await supabase.uploadFile(
+      const { error } = await supabase.uploadFile(
         "kibblings",
         fileName,
         file,

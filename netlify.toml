@@ -1,0 +1,12 @@
+# Netlify Build Configuration for Kibblings
+# Ensures SDK is built before the main app build
+
+[build]
+  # Install dependencies, then build (prebuild script will build SDK first)
+  command = "npm ci && npm run build"
+  # Publish directory
+  publish = "dist"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "20"
