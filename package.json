@@ -8,6 +8,7 @@
     "prebuild": "npm run build:sdk",
     "build": "tsc -b && vite build",
     "build:sdk": "node build-sdk.js",
+    "seed:quests": "node scripts/seed-quests.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

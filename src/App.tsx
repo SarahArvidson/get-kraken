@@ -19,6 +19,7 @@ import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
 import { GamificationPanel } from "./components/GamificationPanel";
 import { playCoinSound, preloadAudio } from "./utils/sound";
+import { seedQuests } from "./utils/seedQuests";
 import type { Quest, ShopItem, QuestLog, ShopLog } from "./types";
 
 type View = "quests" | "shop" | "progress";
