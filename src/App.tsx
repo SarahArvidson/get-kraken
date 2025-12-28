@@ -4,7 +4,7 @@
  * Mobile-first habit-tracker and rewards webapp for two people sharing a wallet
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toast } from "@ffx/sdk";
 import { useWallet } from "./hooks/useWallet";
 import { useQuests } from "./hooks/useQuests";
@@ -14,8 +14,11 @@ import { QuestCard } from "./components/QuestCard";
 import { ShopItemCard } from "./components/ShopItemCard";
 import { AddQuestCard } from "./components/AddQuestCard";
 import { AddShopItemCard } from "./components/AddShopItemCard";
+import { EditQuestCard } from "./components/EditQuestCard";
+import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
 import { GamificationPanel } from "./components/GamificationPanel";
+import { playCoinSound, preloadAudio } from "./utils/sound";
 import type { Quest, ShopItem, QuestLog, ShopLog } from "./types";
 
 type View = "quests" | "shop" | "progress";
@@ -57,6 +60,7 @@ function App() {
     try {
       await completeQuest(questId, reward);
       await updateWallet(reward);
+      playCoinSound(); // Play coin sound on successful completion
       setToast({ message: `Earned ${reward} kibblings! 🎉`, type: "success" });
     } catch (err: any) {
       setToast({
@@ -108,17 +112,67 @@ function App() {
     }
   };
 
+  const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+  const [editingShopItem, setEditingShopItem] = useState<ShopItem | null>(null);
+
   const handleEditQuest = async (quest: Quest) => {
-    // For now, just allow editing reward via the card controls
-    // Full edit modal can be added later
-    console.log("Edit quest:", quest);
+    setEditingQuest(quest);
   };
 
   const handleEditShopItem = async (item: ShopItem) => {
-    // For now, just allow editing price via the card controls
-    // Full edit modal can be added later
-    console.log("Edit shop item:", item);
+    setEditingShopItem(item);
   };
+
+  const handleSaveQuestEdit = async (updates: {
+    name: string;
+    photo_url: string | null;
+    reward: number;
+  }) => {
+    if (!editingQuest) return;
+    try {
+      await updateQuest(editingQuest.id, updates);
+      setEditingQuest(null);
+      setToast({ message: "Quest updated! ✅", type: "success" });
+    } catch (err: any) {
+      setToast({
+        message: err.message || "Failed to update quest",
+        type: "error",
+      });
+    }
+  };
+
+  const handleSaveShopItemEdit = async (updates: {
+    name: string;
+    photo_url: string | null;
+    price: number;
+  }) => {
+    if (!editingShopItem) return;
+    try {
+      await updateShopItem(editingShopItem.id, updates);
+      setEditingShopItem(null);
+      setToast({ message: "Shop item updated! ✅", type: "success" });
+    } catch (err: any) {
+      setToast({
+        message: err.message || "Failed to update shop item",
+        type: "error",
+      });
+    }
+  };
+
+  // Preload audio on first user interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      preloadAudio();
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("touchstart", handleInteraction);
+    };
+    document.addEventListener("click", handleInteraction);
+    document.addEventListener("touchstart", handleInteraction);
+    return () => {
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("touchstart", handleInteraction);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -283,6 +337,23 @@ function App() {
           title={`${selectedShopLogs.item.name} - Purchase Log`}
           logs={selectedShopLogs.logs}
           getDateKey={(log) => log.purchased_at}
+        />
+      )}
+
+      {/* Edit Modals */}
+      {editingQuest && (
+        <EditQuestCard
+          quest={editingQuest}
+          onSave={handleSaveQuestEdit}
+          onClose={() => setEditingQuest(null)}
+        />
+      )}
+
+      {editingShopItem && (
+        <EditShopItemCard
+          item={editingShopItem}
+          onSave={handleSaveShopItemEdit}
+          onClose={() => setEditingShopItem(null)}
         />
       )}
 

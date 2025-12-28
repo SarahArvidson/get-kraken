@@ -13,7 +13,7 @@ const MILESTONES = [100, 250, 500, 1000, 1500, 2000];
 export function useGamification(
   walletTotal: number,
   questLogs: QuestLog[],
-  _shopLogs: ShopLog[] // TODO: Use when implementing weekly recap
+  _shopLogs: ShopLog[] // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   // Calculate weekly recap
   const weeklyRecap = useMemo((): WeeklyRecap | null => {

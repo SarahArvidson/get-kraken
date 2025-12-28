@@ -47,8 +47,12 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
       if (error) throw error;
 
       // Get public URL
-      const { data: urlData } = supabase.getPublicUrl("kibblings", fileName);
-      setPhotoUrl(urlData.publicUrl);
+      const { data } = supabase.getPublicUrl("kibblings", fileName);
+      if (data?.publicUrl) {
+        setPhotoUrl(data.publicUrl);
+      } else {
+        throw new Error("Failed to get public URL for uploaded image");
+      }
     } catch (err: any) {
       console.error("Error uploading image:", err);
       alert("Failed to upload image. Please try again.");
