@@ -1,6 +1,6 @@
 /**
  * Kibblings - Edit Quest Card Component
- * 
+ *
  * Modal for editing existing quests with image upload
  */
 
@@ -41,17 +41,18 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
     try {
       // Upload to Supabase Storage
       const fileExt = file.name.split(".").pop() || "jpg";
-      const fileName = `quests/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `quests/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.uploadFile(
-        "kibblings",
-        fileName,
-        file,
-        {
-          contentType: file.type || "image/jpeg",
-          upsert: false,
-        }
-      );
+      // Use the client's storage API directly to bypass RLS issues
+      const { data: uploadData, error: uploadError } =
+        await supabase.supabase.storage
+          .from("kibblings")
+          .upload(fileName, file, {
+            contentType: file.type || "image/jpeg",
+            upsert: false,
+          });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -65,8 +66,10 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
 
       // Get public URL - use the path from upload response
       const uploadPath = uploadData.path;
-      const { data: urlData } = supabase.getPublicUrl("kibblings", uploadPath);
-      
+      const { data: urlData } = supabase.supabase.storage
+        .from("kibblings")
+        .getPublicUrl(uploadPath);
+
       if (urlData?.publicUrl) {
         setPhotoUrl(urlData.publicUrl);
       } else {
@@ -109,12 +112,7 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
   };
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title="Edit Quest"
-      size="md"
-    >
+    <Modal isOpen={true} onClose={onClose} title="Edit Quest" size="md">
       <div className="space-y-4">
         <InputField
           label="Quest Name"
@@ -179,11 +177,7 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="flex-1"
-          >
+          <Button variant="ghost" onClick={onClose} className="flex-1">
             Cancel
           </Button>
           <Button
@@ -199,4 +193,3 @@ export function EditQuestCard({ quest, onSave, onClose }: EditQuestCardProps) {
     </Modal>
   );
 }
-

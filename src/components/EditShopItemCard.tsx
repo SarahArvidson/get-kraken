@@ -1,6 +1,6 @@
 /**
  * Kibblings - Edit Shop Item Card Component
- * 
+ *
  * Modal for editing existing shop items with image upload
  */
 
@@ -19,7 +19,11 @@ interface EditShopItemCardProps {
   onClose: () => void;
 }
 
-export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProps) {
+export function EditShopItemCard({
+  item,
+  onSave,
+  onClose,
+}: EditShopItemCardProps) {
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [photoUrl, setPhotoUrl] = useState<string | null>(item.photo_url);
@@ -41,17 +45,18 @@ export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProp
     try {
       // Upload to Supabase Storage
       const fileExt = file.name.split(".").pop() || "jpg";
-      const fileName = `shop/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `shop/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.uploadFile(
-        "kibblings",
-        fileName,
-        file,
-        {
-          contentType: file.type || "image/jpeg",
-          upsert: false,
-        }
-      );
+      // Use the client's storage API directly to bypass RLS issues
+      const { data: uploadData, error: uploadError } =
+        await supabase.supabase.storage
+          .from("kibblings")
+          .upload(fileName, file, {
+            contentType: file.type || "image/jpeg",
+            upsert: false,
+          });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -65,8 +70,10 @@ export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProp
 
       // Get public URL - use the path from upload response
       const uploadPath = uploadData.path;
-      const { data: urlData } = supabase.getPublicUrl("kibblings", uploadPath);
-      
+      const { data: urlData } = supabase.supabase.storage
+        .from("kibblings")
+        .getPublicUrl(uploadPath);
+
       if (urlData?.publicUrl) {
         setPhotoUrl(urlData.publicUrl);
       } else {
@@ -109,12 +116,7 @@ export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProp
   };
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title="Edit Shop Item"
-      size="md"
-    >
+    <Modal isOpen={true} onClose={onClose} title="Edit Shop Item" size="md">
       <div className="space-y-4">
         <InputField
           label="Item Name"
@@ -179,11 +181,7 @@ export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProp
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="flex-1"
-          >
+          <Button variant="ghost" onClick={onClose} className="flex-1">
             Cancel
           </Button>
           <Button
@@ -199,4 +197,3 @@ export function EditShopItemCard({ item, onSave, onClose }: EditShopItemCardProp
     </Modal>
   );
 }
-

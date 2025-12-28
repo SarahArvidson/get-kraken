@@ -10,11 +10,34 @@ import type { QuestLog, ShopLog, WeeklyRecap, QuestStreak } from "../types";
 const SKI_TRIP_TARGET = 2000; // Target kibblings for March ski trip
 const MILESTONES = [100, 250, 500, 1000, 1500, 2000];
 
-export function useGamification(
-  walletTotal: number,
-  questLogs: QuestLog[],
-  _shopLogs: ShopLog[] // eslint-disable-line @typescript-eslint/no-unused-vars
-) {
+interface UseGamificationProps {
+  walletTotal: number;
+  questLogs: QuestLog[];
+  shopLogs: ShopLog[];
+  quests: Array<{ id: string; reward: number }>;
+  shopItems: Array<{ id: string; price: number }>;
+}
+
+export function useGamification({
+  walletTotal,
+  questLogs,
+  shopLogs,
+  quests,
+  shopItems,
+}: UseGamificationProps) {
+  // Create maps for quick lookup
+  const questRewardMap = useMemo(() => {
+    const map = new Map<string, number>();
+    quests.forEach((q) => map.set(q.id, q.reward));
+    return map;
+  }, [quests]);
+
+  const shopPriceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    shopItems.forEach((item) => map.set(item.id, item.price));
+    return map;
+  }, [shopItems]);
+
   // Calculate weekly recap
   const weeklyRecap = useMemo((): WeeklyRecap | null => {
     const now = new Date();
@@ -25,9 +48,29 @@ export function useGamification(
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
 
-    // TODO: Calculate earned/spent when we have quest/item data
-    const earned = 0;
-    const spent = 0;
+    // Filter logs from this week
+    const thisWeekQuestLogs = questLogs.filter((log) => {
+      const logDate = new Date(log.completed_at);
+      return logDate >= weekStart && logDate < weekEnd;
+    });
+
+    const thisWeekShopLogs = shopLogs.filter((log) => {
+      const logDate = new Date(log.purchased_at);
+      return logDate >= weekStart && logDate < weekEnd;
+    });
+
+    // Calculate earned from quest completions
+    const earned = thisWeekQuestLogs.reduce((sum, log) => {
+      const reward = questRewardMap.get(log.quest_id) || 0;
+      return sum + reward;
+    }, 0);
+
+    // Calculate spent from shop purchases
+    const spent = thisWeekShopLogs.reduce((sum, log) => {
+      const price = shopPriceMap.get(log.shop_item_id) || 0;
+      return sum + price;
+    }, 0);
+
     const net = earned - spent;
 
     return {
@@ -37,7 +80,7 @@ export function useGamification(
       week_start: weekStart.toISOString(),
       week_end: weekEnd.toISOString(),
     };
-  }, []);
+  }, [questLogs, shopLogs, questRewardMap, shopPriceMap]);
 
   // Calculate quest streaks
   const questStreaks = useMemo((): QuestStreak[] => {

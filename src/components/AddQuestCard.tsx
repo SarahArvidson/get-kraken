@@ -1,6 +1,6 @@
 /**
  * Kibblings - Add Quest Card Component
- * 
+ *
  * Card for creating new quests with image upload
  */
 
@@ -32,17 +32,18 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
     try {
       // Upload to Supabase Storage
       const fileExt = file.name.split(".").pop() || "jpg";
-      const fileName = `quests/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `quests/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.uploadFile(
-        "kibblings",
-        fileName,
-        file,
-        {
-          contentType: file.type || "image/jpeg",
-          upsert: false,
-        }
-      );
+      // Use the client's storage API directly to bypass RLS issues
+      const { data: uploadData, error: uploadError } =
+        await supabase.supabase.storage
+          .from("kibblings")
+          .upload(fileName, file, {
+            contentType: file.type || "image/jpeg",
+            upsert: false,
+          });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -56,8 +57,10 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
 
       // Get public URL - use the path from upload response
       const uploadPath = uploadData.path;
-      const { data: urlData } = supabase.getPublicUrl("kibblings", uploadPath);
-      
+      const { data: urlData } = supabase.supabase.storage
+        .from("kibblings")
+        .getPublicUrl(uploadPath);
+
       if (urlData?.publicUrl) {
         setPhotoUrl(urlData.publicUrl);
       } else {
@@ -209,4 +212,3 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
     </>
   );
 }
-

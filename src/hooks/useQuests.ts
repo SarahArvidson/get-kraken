@@ -1,12 +1,12 @@
 /**
  * Kibblings - Quests Hook
- * 
+ *
  * Manages quests data and operations
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import type { Quest, QuestWithLogs } from "../types";
+import type { Quest, QuestWithLogs, QuestLog } from "../types";
 
 export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -35,7 +35,12 @@ export function useQuests() {
 
   // Create a new quest
   const createQuest = useCallback(
-    async (quest: Omit<Quest, "id" | "created_at" | "updated_at" | "completion_count">) => {
+    async (
+      quest: Omit<
+        Quest,
+        "id" | "created_at" | "updated_at" | "completion_count"
+      >
+    ) => {
       try {
         const { data, error: createError } = await supabase
           .from("quests")
@@ -63,29 +68,32 @@ export function useQuests() {
   );
 
   // Update a quest
-  const updateQuest = useCallback(async (id: string, updates: Partial<Quest>) => {
-    try {
-      const { data, error: updateError } = await supabase
-        .from("quests")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single();
+  const updateQuest = useCallback(
+    async (id: string, updates: Partial<Quest>) => {
+      try {
+        const { data, error: updateError } = await supabase
+          .from("quests")
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+          .select()
+          .single();
 
-      if (updateError) throw updateError;
-      if (data) {
-        setQuests((prev) => prev.map((q) => (q.id === id ? data : q)));
+        if (updateError) throw updateError;
+        if (data) {
+          setQuests((prev) => prev.map((q) => (q.id === id ? data : q)));
+        }
+        return data;
+      } catch (err: any) {
+        console.error("Error updating quest:", err);
+        setError(err.message || "Failed to update quest");
+        throw err;
       }
-      return data;
-    } catch (err: any) {
-      console.error("Error updating quest:", err);
-      setError(err.message || "Failed to update quest");
-      throw err;
-    }
-  }, []);
+    },
+    []
+  );
 
   // Complete a quest (adds to log and increments count)
   const completeQuest = useCallback(
@@ -170,6 +178,39 @@ export function useQuests() {
     };
   }, [loadQuests]);
 
+  // Delete a quest (but keep logs)
+  const deleteQuest = useCallback(async (id: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from("quests")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) throw deleteError;
+      setQuests((prev) => prev.filter((q) => q.id !== id));
+    } catch (err: any) {
+      console.error("Error deleting quest:", err);
+      setError(err.message || "Failed to delete quest");
+      throw err;
+    }
+  }, []);
+
+  // Load all quest logs
+  const loadAllQuestLogs = useCallback(async (): Promise<QuestLog[]> => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("quest_logs")
+        .select("*")
+        .order("completed_at", { ascending: false });
+
+      if (fetchError) throw fetchError;
+      return data || [];
+    } catch (err: any) {
+      console.error("Error loading quest logs:", err);
+      return [];
+    }
+  }, []);
+
   return {
     quests,
     loading,
@@ -177,8 +218,9 @@ export function useQuests() {
     createQuest,
     updateQuest,
     completeQuest,
+    deleteQuest,
     getQuestWithLogs,
+    loadAllQuestLogs,
     refresh: loadQuests,
   };
 }
-

@@ -1,6 +1,6 @@
 # 🎿 Kibblings
 
-A mobile-first habit-tracker and rewards webapp for two people sharing a wallet. Complete repeatable real-world quests to earn kibblings (bronze coin emojis 🪙) and spend them in a customizable shop. Built to help save for a March ski trip while getting ski-fit together.
+A mobile-first habit-tracker and rewards webapp for two people sharing a wallet. Complete repeatable real-world quests to earn kibblings (bronze coin emojis 🟡) and spend them in a customizable shop. Built to help save for a March ski trip while getting ski-fit together.
 
 ## Features
 
@@ -8,7 +8,7 @@ A mobile-first habit-tracker and rewards webapp for two people sharing a wallet.
 - **Quest System**: Complete repeatable quests to earn kibblings
 - **Customizable Shop**: Purchase items with editable prices
 - **Swipeable Logs**: View chronological history of completions and purchases
-- **Gamification**: 
+- **Gamification**:
   - Daily streaks per quest
   - Weekly recap showing earned, spent, and net progress
   - Milestone celebrations at 100, 250, 500+ kibblings
@@ -35,17 +35,20 @@ A mobile-first habit-tracker and rewards webapp for two people sharing a wallet.
 
 1. Clone the repository
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up Supabase:
+
    - Create a new project at [supabase.com](https://supabase.com)
    - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor
    - Create a storage bucket named `kibblings` (public access)
    - Get your project URL and anon key from Settings > API
 
 4. Configure environment variables:
+
    - Copy `.env.example` to `.env`
    - Fill in your Supabase credentials:
      ```

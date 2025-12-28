@@ -1,12 +1,12 @@
 /**
  * Kibblings - Shop Items Hook
- * 
+ *
  * Manages shop items data and operations
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import type { ShopItem, ShopItemWithLogs } from "../types";
+import type { ShopItem, ShopItemWithLogs, ShopLog } from "../types";
 
 export function useShopItems() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -35,7 +35,12 @@ export function useShopItems() {
 
   // Create a new shop item
   const createShopItem = useCallback(
-    async (item: Omit<ShopItem, "id" | "created_at" | "updated_at" | "purchase_count">) => {
+    async (
+      item: Omit<
+        ShopItem,
+        "id" | "created_at" | "updated_at" | "purchase_count"
+      >
+    ) => {
       try {
         const { data, error: createError } = await supabase
           .from("shop_items")
@@ -78,7 +83,9 @@ export function useShopItems() {
 
         if (updateError) throw updateError;
         if (data) {
-          setShopItems((prev) => prev.map((item) => (item.id === id ? data : item)));
+          setShopItems((prev) =>
+            prev.map((item) => (item.id === id ? data : item))
+          );
         }
         return data;
       } catch (err: any) {
@@ -164,7 +171,9 @@ export function useShopItems() {
           prev.map((item) => (item.id === payload.new.id ? payload.new : item))
         );
       } else if (payload.eventType === "DELETE") {
-        setShopItems((prev) => prev.filter((item) => item.id !== payload.old.id));
+        setShopItems((prev) =>
+          prev.filter((item) => item.id !== payload.old.id)
+        );
       }
     });
 
@@ -173,6 +182,39 @@ export function useShopItems() {
     };
   }, [loadShopItems]);
 
+  // Delete a shop item (but keep logs)
+  const deleteShopItem = useCallback(async (id: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from("shop_items")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) throw deleteError;
+      setShopItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
+      console.error("Error deleting shop item:", err);
+      setError(err.message || "Failed to delete shop item");
+      throw err;
+    }
+  }, []);
+
+  // Load all shop logs
+  const loadAllShopLogs = useCallback(async (): Promise<ShopLog[]> => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("shop_logs")
+        .select("*")
+        .order("purchased_at", { ascending: false });
+
+      if (fetchError) throw fetchError;
+      return data || [];
+    } catch (err: any) {
+      console.error("Error loading shop logs:", err);
+      return [];
+    }
+  }, []);
+
   return {
     shopItems,
     loading,
@@ -180,8 +222,9 @@ export function useShopItems() {
     createShopItem,
     updateShopItem,
     purchaseItem,
+    deleteShopItem,
     getShopItemWithLogs,
+    loadAllShopLogs,
     refresh: loadShopItems,
   };
 }
-

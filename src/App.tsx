@@ -38,14 +38,21 @@ function App() {
     type: "success" | "error";
   } | null>(null);
 
-  const { wallet, loading: walletLoading, updateWallet } = useWallet();
+  const {
+    wallet,
+    loading: walletLoading,
+    updateWallet,
+    resetWallet,
+  } = useWallet();
   const {
     quests,
     loading: questsLoading,
     createQuest,
     updateQuest,
     completeQuest,
+    deleteQuest,
     getQuestWithLogs,
+    loadAllQuestLogs,
   } = useQuests();
   const {
     shopItems,
@@ -53,8 +60,13 @@ function App() {
     createShopItem,
     updateShopItem,
     purchaseItem,
+    deleteShopItem,
     getShopItemWithLogs,
+    loadAllShopLogs,
   } = useShopItems();
+
+  const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
+  const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
 
   const handleCompleteQuest = async (questId: string, reward: number) => {
     try {
@@ -62,9 +74,10 @@ function App() {
       await updateWallet(reward);
       playCoinSound(); // Play coin sound on successful completion
       setToast({ message: `Earned ${reward} kibblings! 🎉`, type: "success" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || "Failed to complete quest",
+        message:
+          err instanceof Error ? err.message : "Failed to complete quest",
         type: "error",
       });
     }
@@ -78,9 +91,9 @@ function App() {
         message: `Purchased for ${price} kibblings! 🛒`,
         type: "success",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || "Failed to purchase item",
+        message: err instanceof Error ? err.message : "Failed to purchase item",
         type: "error",
       });
     }
@@ -133,9 +146,9 @@ function App() {
       await updateQuest(editingQuest.id, updates);
       setEditingQuest(null);
       setToast({ message: "Quest updated! ✅", type: "success" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || "Failed to update quest",
+        message: err instanceof Error ? err.message : "Failed to update quest",
         type: "error",
       });
     }
@@ -151,13 +164,30 @@ function App() {
       await updateShopItem(editingShopItem.id, updates);
       setEditingShopItem(null);
       setToast({ message: "Shop item updated! ✅", type: "success" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setToast({
-        message: err.message || "Failed to update shop item",
+        message:
+          err instanceof Error ? err.message : "Failed to update shop item",
         type: "error",
       });
     }
   };
+
+  // Load all logs for progress tracking
+  useEffect(() => {
+    const loadLogs = async () => {
+      const [questLogs, shopLogs] = await Promise.all([
+        loadAllQuestLogs(),
+        loadAllShopLogs(),
+      ]);
+      setAllQuestLogs(questLogs);
+      setAllShopLogs(shopLogs);
+    };
+    loadLogs();
+    // Reload logs when quests/items change
+    const interval = setInterval(loadLogs, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [loadAllQuestLogs, loadAllShopLogs, quests.length, shopItems.length]);
 
   // Preload audio on first user interaction
   useEffect(() => {
@@ -174,6 +204,52 @@ function App() {
     };
   }, []);
 
+  const handleDeleteQuest = async (questId: string) => {
+    try {
+      await deleteQuest(questId);
+      setToast({ message: "Quest deleted! ✅", type: "success" });
+      // Reload logs after deletion
+      const logs = await loadAllQuestLogs();
+      setAllQuestLogs(logs);
+    } catch (err: unknown) {
+      setToast({
+        message: err instanceof Error ? err.message : "Failed to delete quest",
+        type: "error",
+      });
+    }
+  };
+
+  const handleDeleteShopItem = async (itemId: string) => {
+    try {
+      await deleteShopItem(itemId);
+      setToast({ message: "Shop item deleted! ✅", type: "success" });
+      // Reload logs after deletion
+      const logs = await loadAllShopLogs();
+      setAllShopLogs(logs);
+    } catch (err: unknown) {
+      setToast({
+        message:
+          err instanceof Error ? err.message : "Failed to delete shop item",
+        type: "error",
+      });
+    }
+  };
+
+  const handleResetProgress = async () => {
+    if (!confirm("Reset wallet to zero? This cannot be undone.")) {
+      return;
+    }
+    try {
+      await resetWallet();
+      setToast({ message: "Wallet reset to zero! ✅", type: "success" });
+    } catch (err: unknown) {
+      setToast({
+        message: err instanceof Error ? err.message : "Failed to reset wallet",
+        type: "error",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -184,8 +260,8 @@ function App() {
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-1">
             Operation Skiskohli : Save Money, Get Ripped, Go Shred
-        </p>
-      </div>
+          </p>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -251,6 +327,7 @@ function App() {
                     }}
                     onViewLogs={handleViewQuestLogs}
                     onEdit={handleEditQuest}
+                    onDelete={handleDeleteQuest}
                   />
                 ))}
                 <AddQuestCard
@@ -287,6 +364,7 @@ function App() {
                     }}
                     onViewLogs={handleViewShopLogs}
                     onEdit={handleEditShopItem}
+                    onDelete={handleDeleteShopItem}
                   />
                 ))}
                 <AddShopItemCard
@@ -311,9 +389,15 @@ function App() {
             </h2>
             <GamificationPanel
               walletTotal={wallet?.total ?? 0}
-              questLogs={[]} // TODO: Load all quest logs for full stats
-              shopLogs={[]} // TODO: Load all shop logs for full stats
+              questLogs={allQuestLogs}
+              shopLogs={allShopLogs}
               questNames={new Map(quests.map((q) => [q.id, q.name]))}
+              quests={quests.map((q) => ({ id: q.id, reward: q.reward }))}
+              shopItems={shopItems.map((item) => ({
+                id: item.id,
+                price: item.price,
+              }))}
+              onResetProgress={handleResetProgress}
             />
           </div>
         )}

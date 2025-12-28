@@ -1,6 +1,6 @@
 /**
  * Kibblings - Wallet Hook
- * 
+ *
  * Manages the shared kibbling wallet state and syncs with Supabase
  */
 
@@ -27,7 +27,10 @@ export function useWallet() {
 
       if (fetchError) {
         // If wallet doesn't exist (PGRST116 = no rows), create it
-        if (fetchError.code === "PGRST116" || fetchError.message?.includes("No rows")) {
+        if (
+          fetchError.code === "PGRST116" ||
+          fetchError.message?.includes("No rows")
+        ) {
           const { data: newWallet, error: createError } = await supabase
             .from("wallets")
             .insert({
@@ -124,12 +127,23 @@ export function useWallet() {
     };
   }, [loadWallet]);
 
+  // Reset wallet to zero
+  const resetWallet = useCallback(async () => {
+    if (!wallet) return;
+    try {
+      await updateWallet(-wallet.total);
+    } catch (err: any) {
+      console.error("Error resetting wallet:", err);
+      throw err;
+    }
+  }, [wallet, updateWallet]);
+
   return {
     wallet,
     loading,
     error,
     updateWallet,
+    resetWallet,
     refresh: loadWallet,
   };
 }
-

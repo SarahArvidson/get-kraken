@@ -15,6 +15,7 @@ interface ShopItemCardProps {
   onUpdatePrice: (itemId: string, newPrice: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
+  onDelete: (itemId: string) => Promise<void>;
 }
 
 export function ShopItemCard({
@@ -24,8 +25,10 @@ export function ShopItemCard({
   onUpdatePrice,
   onViewLogs,
   onEdit,
+  onDelete,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
@@ -129,7 +132,45 @@ export function ShopItemCard({
           >
             Edit
           </Button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3 py-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 touch-manipulation"
+            aria-label="Delete item"
+            title="Delete item"
+          >
+            🗑️
+          </button>
         </div>
+
+        {/* Delete Confirmation */}
+        {showDeleteConfirm && (
+          <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+              Delete this item? Purchase logs will be kept.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  await onDelete(item.id);
+                  setShowDeleteConfirm(false);
+                }}
+                className="flex-1 bg-red-500 hover:bg-red-600"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

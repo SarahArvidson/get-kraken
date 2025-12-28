@@ -1,6 +1,6 @@
 /**
  * Kibblings - Wallet Display Component
- * 
+ *
  * Shows the shared wallet total prominently
  */
 
@@ -27,7 +27,7 @@ export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
           </div>
         ) : (
           <div className="flex items-center justify-center gap-3">
-            <span className="text-5xl">🪙</span>
+            <span className="text-5xl">🟡</span>
             <span
               className={`text-6xl font-bold ${
                 isNegative
@@ -48,4 +48,3 @@ export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
     </div>
   );
 }
-
