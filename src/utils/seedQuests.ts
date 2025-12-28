@@ -37,11 +37,11 @@ export async function seedQuests(): Promise<void> {
   console.log("🌱 Seeding quests...");
 
   // Check existing quests to avoid duplicates
-  const { data: existingQuests } = await supabase
-    .from("quests")
-    .select("name");
+  const { data: existingQuests } = await supabase.from("quests").select("name");
 
-  const existingNames = new Set(existingQuests?.map((q) => q.name) || []);
+  const existingNames = new Set(
+    existingQuests?.map((q: { name: string }) => q.name) || []
+  );
   const newQuests = INITIAL_QUESTS.filter((name) => !existingNames.has(name));
 
   if (newQuests.length === 0) {
@@ -70,14 +70,15 @@ export async function seedQuests(): Promise<void> {
   }
 
   console.log(`✅ Successfully created ${data?.length || 0} new quests!`);
-  data?.forEach((quest, index) => {
+  data?.forEach((quest: { name: string; reward: number }, index: number) => {
     console.log(`${index + 1}. ${quest.name} (${quest.reward} kibblings)`);
   });
 
   if (INITIAL_QUESTS.length - newQuests.length > 0) {
     console.log(
-      `⚠️  ${INITIAL_QUESTS.length - newQuests.length} quests were already in the database.`
+      `⚠️  ${
+        INITIAL_QUESTS.length - newQuests.length
+      } quests were already in the database.`
     );
   }
 }
-
