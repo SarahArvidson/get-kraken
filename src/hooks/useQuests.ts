@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import type { Quest, QuestLog, QuestWithLogs } from "../types";
+import type { Quest, QuestWithLogs } from "../types";
 
 export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -18,7 +18,7 @@ export function useQuests() {
     try {
       setLoading(true);
       const { data, error: fetchError } = await supabase
-        .from<Quest>("quests")
+        .from("quests")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -38,7 +38,7 @@ export function useQuests() {
     async (quest: Omit<Quest, "id" | "created_at" | "updated_at" | "completion_count">) => {
       try {
         const { data, error: createError } = await supabase
-          .from<Quest>("quests")
+          .from("quests")
           .insert({
             ...quest,
             completion_count: 0,
@@ -66,7 +66,7 @@ export function useQuests() {
   const updateQuest = useCallback(async (id: string, updates: Partial<Quest>) => {
     try {
       const { data, error: updateError } = await supabase
-        .from<Quest>("quests")
+        .from("quests")
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
@@ -92,7 +92,7 @@ export function useQuests() {
     async (questId: string, reward: number) => {
       try {
         // Create log entry
-        const { error: logError } = await supabase.from<QuestLog>("quest_logs").insert({
+        const { error: logError } = await supabase.from("quest_logs").insert({
           quest_id: questId,
           completed_at: new Date().toISOString(),
         });
@@ -122,7 +122,7 @@ export function useQuests() {
     async (questId: string): Promise<QuestWithLogs | null> => {
       try {
         const { data: quest, error: questError } = await supabase
-          .from<Quest>("quests")
+          .from("quests")
           .select("*")
           .eq("id", questId)
           .single();
@@ -130,7 +130,7 @@ export function useQuests() {
         if (questError) throw questError;
 
         const { data: logs, error: logsError } = await supabase
-          .from<QuestLog>("quest_logs")
+          .from("quest_logs")
           .select("*")
           .eq("quest_id", questId)
           .order("completed_at", { ascending: false });

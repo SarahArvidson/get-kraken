@@ -20,16 +20,16 @@ export function useWallet() {
     try {
       setLoading(true);
       const { data, error: fetchError } = await supabase
-        .from<Wallet>("wallets")
+        .from("wallets")
         .select("*")
         .eq("id", WALLET_ID)
-        .single();
+        .maybeSingle();
 
       if (fetchError) {
-        // If wallet doesn't exist, create it
-        if (fetchError.message.includes("No rows")) {
+        // If wallet doesn't exist (PGRST116 = no rows), create it
+        if (fetchError.code === "PGRST116" || fetchError.message?.includes("No rows")) {
           const { data: newWallet, error: createError } = await supabase
-            .from<Wallet>("wallets")
+            .from("wallets")
             .insert({
               id: WALLET_ID,
               total: 0,
@@ -41,12 +41,32 @@ export function useWallet() {
           if (createError) {
             throw createError;
           }
-          setWallet(newWallet);
+          if (newWallet) {
+            setWallet(newWallet);
+          }
         } else {
           throw fetchError;
         }
-      } else {
+      } else if (data) {
         setWallet(data);
+      } else {
+        // No data and no error - create wallet
+        const { data: newWallet, error: createError } = await supabase
+          .from("wallets")
+          .insert({
+            id: WALLET_ID,
+            total: 0,
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          throw createError;
+        }
+        if (newWallet) {
+          setWallet(newWallet);
+        }
       }
       setError(null);
     } catch (err: any) {
@@ -65,7 +85,7 @@ export function useWallet() {
       try {
         const newTotal = wallet.total + amount;
         const { data, error: updateError } = await supabase
-          .from<Wallet>("wallets")
+          .from("wallets")
           .update({
             total: newTotal,
             updated_at: new Date().toISOString(),

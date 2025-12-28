@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import type { ShopItem, ShopLog, ShopItemWithLogs } from "../types";
+import type { ShopItem, ShopItemWithLogs } from "../types";
 
 export function useShopItems() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -18,7 +18,7 @@ export function useShopItems() {
     try {
       setLoading(true);
       const { data, error: fetchError } = await supabase
-        .from<ShopItem>("shop_items")
+        .from("shop_items")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -38,7 +38,7 @@ export function useShopItems() {
     async (item: Omit<ShopItem, "id" | "created_at" | "updated_at" | "purchase_count">) => {
       try {
         const { data, error: createError } = await supabase
-          .from<ShopItem>("shop_items")
+          .from("shop_items")
           .insert({
             ...item,
             purchase_count: 0,
@@ -67,7 +67,7 @@ export function useShopItems() {
     async (id: string, updates: Partial<ShopItem>) => {
       try {
         const { data, error: updateError } = await supabase
-          .from<ShopItem>("shop_items")
+          .from("shop_items")
           .update({
             ...updates,
             updated_at: new Date().toISOString(),
@@ -95,7 +95,7 @@ export function useShopItems() {
     async (itemId: string, price: number) => {
       try {
         // Create log entry
-        const { error: logError } = await supabase.from<ShopLog>("shop_logs").insert({
+        const { error: logError } = await supabase.from("shop_logs").insert({
           shop_item_id: itemId,
           purchased_at: new Date().toISOString(),
         });
@@ -125,7 +125,7 @@ export function useShopItems() {
     async (itemId: string): Promise<ShopItemWithLogs | null> => {
       try {
         const { data: item, error: itemError } = await supabase
-          .from<ShopItem>("shop_items")
+          .from("shop_items")
           .select("*")
           .eq("id", itemId)
           .single();
@@ -133,7 +133,7 @@ export function useShopItems() {
         if (itemError) throw itemError;
 
         const { data: logs, error: logsError } = await supabase
-          .from<ShopLog>("shop_logs")
+          .from("shop_logs")
           .select("*")
           .eq("shop_item_id", itemId)
           .order("purchased_at", { ascending: false });

@@ -1,6 +1,6 @@
 /**
  * Kibblings - Gamification Hook
- * 
+ *
  * Manages streaks, weekly recap, milestones, and ski trip progress
  */
 
@@ -13,7 +13,7 @@ const MILESTONES = [100, 250, 500, 1000, 1500, 2000];
 export function useGamification(
   walletTotal: number,
   questLogs: QuestLog[],
-  shopLogs: ShopLog[]
+  _shopLogs: ShopLog[] // TODO: Use when implementing weekly recap
 ) {
   // Calculate weekly recap
   const weeklyRecap = useMemo((): WeeklyRecap | null => {
@@ -25,20 +25,9 @@ export function useGamification(
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
 
-    // Filter logs from this week (commented out until we have quest/item data to calculate)
-    // const thisWeekQuestLogs = questLogs.filter((log) => {
-    //   const logDate = new Date(log.completed_at);
-    //   return logDate >= weekStart && logDate < weekEnd;
-    // });
-
-    // const thisWeekShopLogs = shopLogs.filter((log) => {
-    //   const logDate = new Date(log.purchased_at);
-    //   return logDate >= weekStart && logDate < weekEnd;
-    // });
-
-    // Calculate earned (would need quest rewards, simplified for now)
-    const earned = 0; // Would need to sum quest rewards from logs
-    const spent = 0; // Would need to sum shop item prices from logs
+    // TODO: Calculate earned/spent when we have quest/item data
+    const earned = 0;
+    const spent = 0;
     const net = earned - spent;
 
     return {
@@ -48,7 +37,7 @@ export function useGamification(
       week_start: weekStart.toISOString(),
       week_end: weekEnd.toISOString(),
     };
-  }, [questLogs, shopLogs]);
+  }, []);
 
   // Calculate quest streaks
   const questStreaks = useMemo((): QuestStreak[] => {
@@ -66,7 +55,8 @@ export function useGamification(
       // Sort logs by date (newest first)
       const sortedLogs = [...logs].sort(
         (a, b) =>
-          new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+          new Date(b.completed_at).getTime() -
+          new Date(a.completed_at).getTime()
       );
 
       if (sortedLogs.length === 0) {
@@ -83,7 +73,7 @@ export function useGamification(
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      let checkDate = new Date(today);
+      const checkDate = new Date(today);
       for (const log of sortedLogs) {
         const logDate = new Date(log.completed_at);
         logDate.setHours(0, 0, 0, 0);
@@ -145,4 +135,3 @@ export function useGamification(
     milestones: MILESTONES,
   };
 }
-
