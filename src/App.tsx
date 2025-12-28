@@ -4,8 +4,8 @@
  * Mobile-first habit-tracker and rewards webapp for two people sharing a wallet
  */
 
-import { useState, useEffect } from "react";
-import { Toast } from "@ffx/sdk";
+import { useState, useEffect, useMemo } from "react";
+import { Toast, InputField } from "@ffx/sdk";
 import { useWallet } from "./hooks/useWallet";
 import { useQuests } from "./hooks/useQuests";
 import { useShopItems } from "./hooks/useShopItems";
@@ -67,6 +67,22 @@ function App() {
 
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
+  const [questSearchQuery, setQuestSearchQuery] = useState("");
+  const [shopSearchQuery, setShopSearchQuery] = useState("");
+
+  // Filter quests based on search query
+  const filteredQuests = useMemo(() => {
+    if (!questSearchQuery.trim()) return quests;
+    const query = questSearchQuery.toLowerCase().trim();
+    return quests.filter((quest) => quest.name.toLowerCase().includes(query));
+  }, [quests, questSearchQuery]);
+
+  // Filter shop items based on search query
+  const filteredShopItems = useMemo(() => {
+    if (!shopSearchQuery.trim()) return shopItems;
+    const query = shopSearchQuery.toLowerCase().trim();
+    return shopItems.filter((item) => item.name.toLowerCase().includes(query));
+  }, [shopItems, shopSearchQuery]);
 
   const handleCompleteQuest = async (questId: string, reward: number) => {
     try {
@@ -257,7 +273,7 @@ function App() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-50">
             🎿 Kibblings
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
@@ -310,16 +326,31 @@ function App() {
         {/* Quests View */}
         {currentView === "quests" && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Daily Quests
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+                Daily Quests
+              </h2>
+              <div className="w-full sm:w-64">
+                <InputField
+                  type="search"
+                  placeholder="Search quests..."
+                  value={questSearchQuery}
+                  onChange={(e) => setQuestSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
             {questsLoading ? (
               <div className="text-center py-12 text-gray-500">
                 Loading quests...
               </div>
+            ) : filteredQuests.length === 0 && questSearchQuery ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-300">
+                No quests found matching "{questSearchQuery}"
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quests.map((quest) => (
+                {filteredQuests.map((quest) => (
                   <QuestCard
                     key={quest.id}
                     quest={quest}
@@ -346,16 +377,31 @@ function App() {
         {/* Shop View */}
         {currentView === "shop" && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Shop
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+                Shop
+              </h2>
+              <div className="w-full sm:w-64">
+                <InputField
+                  type="search"
+                  placeholder="Search shop items..."
+                  value={shopSearchQuery}
+                  onChange={(e) => setShopSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
             {shopItemsLoading ? (
               <div className="text-center py-12 text-gray-500">
                 Loading shop items...
               </div>
+            ) : filteredShopItems.length === 0 && shopSearchQuery ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-300">
+                No items found matching "{shopSearchQuery}"
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {shopItems.map((item) => (
+                {filteredShopItems.map((item) => (
                   <ShopItemCard
                     key={item.id}
                     item={item}
@@ -386,7 +432,7 @@ function App() {
         {/* Progress View */}
         {currentView === "progress" && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50 mb-4">
               Progress & Stats
             </h2>
             <GamificationPanel
