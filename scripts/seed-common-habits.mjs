@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * Get Kraken - Seed Common Habits
+ * Get Kraken - Seed Common Habits (One-Time Setup)
  * 
- * Seeds the database with common habit tracker quests and shop items
- * All items start with 0 sea dollars and 0 dollars
+ * Seeds the database with common habit tracker quests and shop items.
+ * This is a ONE-TIME setup - run it once to populate initial starter items.
+ * 
+ * After seeding:
+ * - All users will see these common quests and shop items
+ * - Users can add their own custom quests and shop items via the UI
+ * - The seed script will skip items that already exist (safe to run multiple times)
+ * 
+ * All seeded items start with 0 sea dollars and $0.00 dollars.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -22,11 +29,20 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env');
+  console.error('❌ Missing Supabase credentials.');
+  console.error('');
+  console.error('Required in .env file:');
+  console.error('  VITE_SUPABASE_URL=your_supabase_url');
+  console.error('  VITE_SUPABASE_ANON_KEY=your_anon_key');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 // Common habit tracker quests
 const commonQuests = [
@@ -78,16 +94,30 @@ const commonShopItems = [
 
 async function seedCommonHabits() {
   console.log('🌱 Seeding common habits...\n');
+  console.log('Note: This script uses the anon key. Make sure you\'ve run');
+  console.log('      supabase-allow-seeding.sql to allow anonymous inserts.\n');
 
   try {
     // Check existing quests and shop items
-    const { data: existingQuests } = await supabase
+    const { data: existingQuests, error: questCheckError } = await supabase
       .from('quests')
       .select('name');
 
-    const { data: existingShopItems } = await supabase
+    if (questCheckError) {
+      console.error('❌ Error checking existing quests:', questCheckError);
+      console.error('   This might be an RLS policy issue. Try using SUPABASE_SERVICE_ROLE_KEY.');
+      throw questCheckError;
+    }
+
+    const { data: existingShopItems, error: shopCheckError } = await supabase
       .from('shop_items')
       .select('name');
+
+    if (shopCheckError) {
+      console.error('❌ Error checking existing shop items:', shopCheckError);
+      console.error('   This might be an RLS policy issue. Try using SUPABASE_SERVICE_ROLE_KEY.');
+      throw shopCheckError;
+    }
 
     const existingQuestNames = new Set(existingQuests?.map(q => q.name) || []);
     const existingShopItemNames = new Set(existingShopItems?.map(item => item.name) || []);
@@ -97,6 +127,7 @@ async function seedCommonHabits() {
 
     if (newQuests.length === 0 && newShopItems.length === 0) {
       console.log('✅ All common habits already exist in the database!');
+      console.log('   No new items to seed. Users can add custom items via the UI.');
       return;
     }
 
@@ -121,6 +152,12 @@ async function seedCommonHabits() {
 
       if (questError) {
         console.error('❌ Error seeding quests:', questError);
+        console.error('   Error details:', JSON.stringify(questError, null, 2));
+        if (questError.code === '42501' || questError.message?.includes('permission') || questError.message?.includes('policy')) {
+          console.error('\n   ⚠️  This looks like an RLS policy issue.');
+          console.error('   Solution: Use SUPABASE_SERVICE_ROLE_KEY in your .env file');
+          console.error('   Get it from: Supabase Dashboard → Settings → API → service_role key');
+        }
         throw questError;
       }
 
@@ -149,6 +186,12 @@ async function seedCommonHabits() {
 
       if (itemError) {
         console.error('❌ Error seeding shop items:', itemError);
+        console.error('   Error details:', JSON.stringify(itemError, null, 2));
+        if (itemError.code === '42501' || itemError.message?.includes('permission') || itemError.message?.includes('policy')) {
+          console.error('\n   ⚠️  This looks like an RLS policy issue.');
+          console.error('   Solution: Use SUPABASE_SERVICE_ROLE_KEY in your .env file');
+          console.error('   Get it from: Supabase Dashboard → Settings → API → service_role key');
+        }
         throw itemError;
       }
 
@@ -166,7 +209,14 @@ async function seedCommonHabits() {
       console.log(`⚠️  ${commonShopItems.length - newShopItems.length} shop items were already in the database and skipped.`);
     }
 
-    console.log('\n✨ Done!');
+    console.log('\n✨ Seeding complete!');
+    console.log('');
+    console.log('📝 Next steps:');
+    console.log('   - Users can now see these starter quests and shop items');
+    console.log('   - Users can add their own custom items via the "Add Quest" and "Add Shop Item" cards');
+    console.log('   - All seeded items start with 0 sea dollars and $0.00');
+    console.log('');
+    console.log('💡 Tip: You can run this script again safely - it will skip items that already exist.');
   } catch (error) {
     console.error('❌ Error seeding common habits:', error);
     process.exit(1);
