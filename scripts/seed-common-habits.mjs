@@ -105,7 +105,9 @@ async function seedCommonHabits() {
 
     if (questCheckError) {
       console.error('❌ Error checking existing quests:', questCheckError);
-      console.error('   This might be an RLS policy issue. Try using SUPABASE_SERVICE_ROLE_KEY.');
+      if (questCheckError.code === '42501') {
+        console.error('   This is an RLS policy issue. Run supabase-allow-seeding.sql first.');
+      }
       throw questCheckError;
     }
 
@@ -115,7 +117,9 @@ async function seedCommonHabits() {
 
     if (shopCheckError) {
       console.error('❌ Error checking existing shop items:', shopCheckError);
-      console.error('   This might be an RLS policy issue. Try using SUPABASE_SERVICE_ROLE_KEY.');
+      if (shopCheckError.code === '42501') {
+        console.error('   This is an RLS policy issue. Run supabase-allow-seeding.sql first.');
+      }
       throw shopCheckError;
     }
 
@@ -154,9 +158,12 @@ async function seedCommonHabits() {
         console.error('❌ Error seeding quests:', questError);
         console.error('   Error details:', JSON.stringify(questError, null, 2));
         if (questError.code === '42501' || questError.message?.includes('permission') || questError.message?.includes('policy')) {
-          console.error('\n   ⚠️  This looks like an RLS policy issue.');
-          console.error('   Solution: Use SUPABASE_SERVICE_ROLE_KEY in your .env file');
-          console.error('   Get it from: Supabase Dashboard → Settings → API → service_role key');
+          console.error('\n   ⚠️  This is an RLS policy issue.');
+          console.error('   Solution: Run supabase-allow-seeding.sql in your Supabase SQL editor');
+          console.error('   1. Go to Supabase Dashboard → SQL Editor');
+          console.error('   2. Copy and paste the contents of supabase-allow-seeding.sql');
+          console.error('   3. Click "Run"');
+          console.error('   4. Then run this seed script again');
         }
         throw questError;
       }
@@ -188,9 +195,12 @@ async function seedCommonHabits() {
         console.error('❌ Error seeding shop items:', itemError);
         console.error('   Error details:', JSON.stringify(itemError, null, 2));
         if (itemError.code === '42501' || itemError.message?.includes('permission') || itemError.message?.includes('policy')) {
-          console.error('\n   ⚠️  This looks like an RLS policy issue.');
-          console.error('   Solution: Use SUPABASE_SERVICE_ROLE_KEY in your .env file');
-          console.error('   Get it from: Supabase Dashboard → Settings → API → service_role key');
+          console.error('\n   ⚠️  This is an RLS policy issue.');
+          console.error('   Solution: Run supabase-allow-seeding.sql in your Supabase SQL editor');
+          console.error('   1. Go to Supabase Dashboard → SQL Editor');
+          console.error('   2. Copy and paste the contents of supabase-allow-seeding.sql');
+          console.error('   3. Click "Run"');
+          console.error('   4. Then run this seed script again');
         }
         throw itemError;
       }
