@@ -321,8 +321,13 @@ function App() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-center text-gray-900 header-text-color">
-            🎿 Kibblings
+          <h1 className="text-3xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-2">
+            <img
+              src="/squirrel.png"
+              alt="Squirrel"
+              className="w-8 h-8 object-contain"
+            />
+            Kibblings
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
             Operation Skiskohli : Save Money, Get Ripped, Go Shred
