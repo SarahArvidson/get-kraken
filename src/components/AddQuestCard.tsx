@@ -12,7 +12,7 @@ import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
 interface AddQuestCardProps {
   onCreate: (quest: {
     name: string;
-    tag: Tag;
+    tags: Tag[];
     reward: number;
   }) => Promise<void>;
 }
@@ -21,11 +21,15 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [reward, setReward] = useState(10);
-  const [tag, setTag] = useState<Tag>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   const toggleTag = (tagOption: Tag) => {
-    setTag(tag === tagOption ? null : tagOption);
+    setTags((prev) =>
+      prev.includes(tagOption)
+        ? prev.filter((t) => t !== tagOption)
+        : [...prev, tagOption]
+    );
   };
 
   const handleCreate = async () => {
@@ -38,13 +42,13 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
     try {
       await onCreate({
         name: name.trim(),
-        tag,
+        tags,
         reward,
       });
       // Reset form
       setName("");
       setReward(10);
-      setTag(null);
+      setTags([]);
       setIsOpen(false);
     } catch (err: any) {
       console.error("Error creating quest:", err);
@@ -112,7 +116,7 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
             </label>
             <div className="flex flex-wrap gap-2">
               {TAGS.map((tagOption) => {
-                const isActive = tag === tagOption;
+                const isActive = tags.includes(tagOption);
                 const classes = TAG_BUTTON_CLASSES[tagOption];
                 return (
                   <button

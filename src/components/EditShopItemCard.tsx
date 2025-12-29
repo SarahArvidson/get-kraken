@@ -13,7 +13,7 @@ interface EditShopItemCardProps {
   item: ShopItem;
   onSave: (updates: {
     name: string;
-    tag: Tag;
+    tags: Tag[];
     price: number;
     purchase_count: number;
   }) => Promise<void>;
@@ -30,7 +30,7 @@ export function EditShopItemCard({
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [purchaseCount, setPurchaseCount] = useState(item.purchase_count);
-  const [tag, setTag] = useState<Tag>(item.tag);
+  const [tags, setTags] = useState<Tag[]>(item.tags || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -40,11 +40,15 @@ export function EditShopItemCard({
     setName(item.name);
     setPrice(item.price);
     setPurchaseCount(item.purchase_count);
-    setTag(item.tag);
+    setTags(item.tags || []);
   }, [item]);
 
   const toggleTag = (tagOption: Tag) => {
-    setTag(tag === tagOption ? null : tagOption);
+    setTags((prev) =>
+      prev.includes(tagOption)
+        ? prev.filter((t) => t !== tagOption)
+        : [...prev, tagOption]
+    );
   };
 
   const handleDelete = async () => {
@@ -70,7 +74,7 @@ export function EditShopItemCard({
     try {
       await onSave({
         name: name.trim(),
-        tag,
+        tags,
         price,
         purchase_count: purchaseCount,
       });
@@ -163,7 +167,7 @@ export function EditShopItemCard({
           </label>
           <div className="flex flex-wrap gap-2">
             {TAGS.map((tagOption) => {
-              const isActive = tag === tagOption;
+              const isActive = tags.includes(tagOption);
               const classes = TAG_BUTTON_CLASSES[tagOption];
               return (
                 <button

@@ -4,18 +4,12 @@
  * Type definitions for quests, shop items, wallet, and logs
  */
 
-export type Tag =
-  | "work"
-  | "finance"
-  | "home"
-  | "health"
-  | "relationship"
-  | null;
+export type Tag = "work" | "finance" | "home" | "health" | "relationship";
 
 export interface Quest {
   id: string;
   name: string;
-  tag: Tag;
+  tags: Tag[];
   reward: number; // kibblings earned per completion
   completion_count: number;
   created_at: string;
@@ -25,7 +19,7 @@ export interface Quest {
 export interface ShopItem {
   id: string;
   name: string;
-  tag: Tag;
+  tags: Tag[];
   price: number; // kibblings cost
   purchase_count: number;
   created_at: string;

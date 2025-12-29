@@ -79,7 +79,9 @@ function App() {
 
     // Filter by tag
     if (selectedQuestTag) {
-      filtered = filtered.filter((quest) => quest.tag === selectedQuestTag);
+      filtered = filtered.filter((quest) =>
+        quest.tags.includes(selectedQuestTag)
+      );
     }
 
     // Filter by search query (name or tag name)
@@ -87,9 +89,9 @@ function App() {
       const query = questSearchQuery.toLowerCase().trim();
       filtered = filtered.filter((quest) => {
         const nameMatch = quest.name.toLowerCase().includes(query);
-        const tagMatch = quest.tag
-          ? TAG_LABELS[quest.tag].toLowerCase().includes(query)
-          : false;
+        const tagMatch = quest.tags.some((tag) =>
+          TAG_LABELS[tag].toLowerCase().includes(query)
+        );
         return nameMatch || tagMatch;
       });
     }
@@ -103,7 +105,7 @@ function App() {
 
     // Filter by tag
     if (selectedShopTag) {
-      filtered = filtered.filter((item) => item.tag === selectedShopTag);
+      filtered = filtered.filter((item) => item.tags.includes(selectedShopTag));
     }
 
     // Filter by search query (name or tag name)
@@ -111,9 +113,9 @@ function App() {
       const query = shopSearchQuery.toLowerCase().trim();
       filtered = filtered.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(query);
-        const tagMatch = item.tag
-          ? TAG_LABELS[item.tag].toLowerCase().includes(query)
-          : false;
+        const tagMatch = item.tags.some((tag) =>
+          TAG_LABELS[tag].toLowerCase().includes(query)
+        );
         return nameMatch || tagMatch;
       });
     }
@@ -191,7 +193,7 @@ function App() {
 
   const handleSaveQuestEdit = async (updates: {
     name: string;
-    tag: Tag;
+    tags: Tag[];
     reward: number;
     completion_count: number;
   }) => {
@@ -210,7 +212,7 @@ function App() {
 
   const handleSaveShopItemEdit = async (updates: {
     name: string;
-    tag: Tag;
+    tags: Tag[];
     price: number;
     purchase_count: number;
   }) => {

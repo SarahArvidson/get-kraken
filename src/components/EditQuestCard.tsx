@@ -13,7 +13,7 @@ interface EditQuestCardProps {
   quest: Quest;
   onSave: (updates: {
     name: string;
-    tag: Tag;
+    tags: Tag[];
     reward: number;
     completion_count: number;
   }) => Promise<void>;
@@ -32,7 +32,7 @@ export function EditQuestCard({
   const [completionCount, setCompletionCount] = useState(
     quest.completion_count
   );
-  const [tag, setTag] = useState<Tag>(quest.tag);
+  const [tags, setTags] = useState<Tag[]>(quest.tags || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -42,11 +42,15 @@ export function EditQuestCard({
     setName(quest.name);
     setReward(quest.reward);
     setCompletionCount(quest.completion_count);
-    setTag(quest.tag);
+    setTags(quest.tags || []);
   }, [quest]);
 
   const toggleTag = (tagOption: Tag) => {
-    setTag(tag === tagOption ? null : tagOption);
+    setTags((prev) =>
+      prev.includes(tagOption)
+        ? prev.filter((t) => t !== tagOption)
+        : [...prev, tagOption]
+    );
   };
 
   const handleDelete = async () => {
@@ -72,7 +76,7 @@ export function EditQuestCard({
     try {
       await onSave({
         name: name.trim(),
-        tag,
+        tags,
         reward,
         completion_count: completionCount,
       });
@@ -167,7 +171,7 @@ export function EditQuestCard({
           </label>
           <div className="flex flex-wrap gap-2">
             {TAGS.map((tagOption) => {
-              const isActive = tag === tagOption;
+              const isActive = tags.includes(tagOption);
               const classes = TAG_BUTTON_CLASSES[tagOption];
               return (
                 <button

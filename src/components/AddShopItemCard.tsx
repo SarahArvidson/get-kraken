@@ -10,18 +10,22 @@ import type { Tag } from "../types";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
 
 interface AddShopItemCardProps {
-  onCreate: (item: { name: string; tag: Tag; price: number }) => Promise<void>;
+  onCreate: (item: { name: string; tags: Tag[]; price: number }) => Promise<void>;
 }
 
 export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(20);
-  const [tag, setTag] = useState<Tag>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   const toggleTag = (tagOption: Tag) => {
-    setTag(tag === tagOption ? null : tagOption);
+    setTags((prev) =>
+      prev.includes(tagOption)
+        ? prev.filter((t) => t !== tagOption)
+        : [...prev, tagOption]
+    );
   };
 
   const handleCreate = async () => {
@@ -34,13 +38,13 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
     try {
       await onCreate({
         name: name.trim(),
-        tag,
+        tags,
         price,
       });
       // Reset form
       setName("");
       setPrice(20);
-      setTag(null);
+      setTags([]);
       setIsOpen(false);
     } catch (err: any) {
       console.error("Error creating shop item:", err);
@@ -108,7 +112,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
             </label>
             <div className="flex flex-wrap gap-2">
               {TAGS.map((tagOption) => {
-                const isActive = tag === tagOption;
+                const isActive = tags.includes(tagOption);
                 const classes = TAG_BUTTON_CLASSES[tagOption];
                 return (
                   <button
