@@ -7,13 +7,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
-interface UserPreferences {
-  id: string;
-  user_id: string;
-  show_dollar_amounts: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// UserPreferences type is defined inline where needed
 
 export function usePreferences() {
   const [showDollarAmounts, setShowDollarAmounts] = useState(false);

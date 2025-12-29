@@ -32,6 +32,7 @@ type View = "quests" | "shop" | "progress";
 
 function App() {
   const [currentView, setCurrentView] = useState<View>("quests");
+  const preferences = usePreferences();
   const [selectedQuestLogs, setSelectedQuestLogs] = useState<{
     quest: Quest;
     logs: QuestLog[];
@@ -460,7 +461,10 @@ function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AddQuestCard
                   onCreate={async (questData) => {
-                    await createQuest(questData);
+                    await createQuest({
+                      ...questData,
+                      dollar_amount: 0, // Default to 0, can be set in edit form
+                    });
                     setToast({ message: "Quest created! 🎯", type: "success" });
                   }}
                 />
@@ -539,7 +543,10 @@ function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AddShopItemCard
                   onCreate={async (itemData) => {
-                    await createShopItem(itemData);
+                    await createShopItem({
+                      ...itemData,
+                      dollar_amount: 0, // Default to 0, can be set in edit form
+                    });
                     setToast({
                       message: "Shop item created! 🛍️",
                       type: "success",
