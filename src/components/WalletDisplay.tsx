@@ -1,7 +1,7 @@
 /**
- * Kibblings - Wallet Display Component
+ * Get Kraken - Wallet Display Component
  *
- * Shows the shared wallet total prominently
+ * Shows the treasure chest total prominently
  */
 
 import type { Wallet } from "../types";
@@ -19,7 +19,7 @@ export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
     <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-3xl p-6 shadow-xl">
       <div className="text-center">
         <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2 uppercase tracking-wide">
-          Shared Wallet
+          Treasure Chest
         </h2>
         {loading ? (
           <div className="text-4xl font-bold text-amber-900 dark:text-amber-100">
@@ -27,7 +27,7 @@ export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
           </div>
         ) : (
           <div className="flex items-center justify-center gap-3">
-            <span className="text-5xl">🟡</span>
+            <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-12 h-12" />
             <span
               className={`text-6xl font-bold ${
                 isNegative

@@ -1,7 +1,7 @@
 /**
- * Kibblings - Main App Component
+ * Get Kraken - Main App Component
  *
- * Mobile-first habit-tracker and rewards webapp for two people sharing a wallet
+ * A habit tracker for sea monsters
  */
 
 import { useState, useEffect, useMemo } from "react";
@@ -137,7 +137,7 @@ function App() {
       await completeQuest(questId, reward);
       await updateWallet(reward);
       playCoinSound(); // Play coin sound on successful completion
-      setToast({ message: `Earned ${reward} kibblings! 🎉`, type: "success" });
+      setToast({ message: `Earned ${reward} sea dollars! 🎉`, type: "success" });
     } catch (err: unknown) {
       setToast({
         message:
@@ -152,7 +152,7 @@ function App() {
       await purchaseItem(itemId, price);
       await updateWallet(-price);
       setToast({
-        message: `Purchased for ${price} kibblings! 🛒`,
+        message: `Purchased for ${price} sea dollars! 🛒`,
         type: "success",
       });
     } catch (err: unknown) {
@@ -317,26 +317,32 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative" style={{ zIndex: 1 }}>
+      {/* Underwater Bubbles Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="bubble" />
+        ))}
+      </div>
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <h1 className="text-3xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-2">
             <img
-              src="/squirrel.png"
-              alt="Squirrel"
+              src="/kraken-icon.png"
+              alt="Kraken"
               className="w-8 h-8 object-contain"
             />
-            Kibblings
+            Get Kraken
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
-            Operation Skiskohli : Save Money, Get Ripped, Go Shred
+            A habit tracker for sea monsters
           </p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Wallet Display */}
         <div className="mb-8">
           <WalletDisplay wallet={wallet} loading={walletLoading} />

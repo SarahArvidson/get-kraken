@@ -1,5 +1,5 @@
 /**
- * Kibblings - Add Shop Item Card Component
+ * Get Kraken - Add Shop Item Card Component
  *
  * Card for creating new shop items with image upload
  */
@@ -92,7 +92,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Price (kibblings)
+              Price (sea dollars)
             </label>
             <div className="flex items-center gap-4">
               <button

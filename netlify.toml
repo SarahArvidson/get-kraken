@@ -1,4 +1,4 @@
-# Netlify Build Configuration for Kibblings
+# Netlify Build Configuration for Get Kraken
 # Ensures SDK is built before the main app build
 
 [build]

@@ -1,5 +1,5 @@
 /**
- * Kibblings - Shop Item Card Component
+ * Get Kraken - Shop Item Card Component
  *
  * Displays a shop item with tap-to-purchase, swipeable log, and editable price
  */
@@ -58,9 +58,9 @@ export function ShopItemCard({
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">🟡</span>
+                <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {item.price} kibblings
+                  {item.price} sea dollars
                 </span>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-200">

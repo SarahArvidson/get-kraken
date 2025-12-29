@@ -1,5 +1,5 @@
 /**
- * Kibblings - Edit Quest Card Component
+ * Get Kraken - Edit Quest Card Component
  *
  * Modal for editing existing quests with image upload
  */
@@ -102,7 +102,7 @@ export function EditQuestCard({
           {/* Reward */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Reward (kibblings)
+              Reward (sea dollars)
             </label>
             <div className="flex items-center gap-2">
               <button

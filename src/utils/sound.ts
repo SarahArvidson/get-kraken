@@ -1,20 +1,20 @@
 /**
- * Kibblings - Sound Effects Utility
+ * Get Kraken - Sound Effects Utility
  *
- * Plays coin sound effect when quests are completed
+ * Plays water drop sound effect when quests are completed
  */
 
-import newSoundUrl from "./new-sound.mp3";
+import waterDropSoundUrl from "/water-drop-85731.mp3";
 
 let audioElement: HTMLAudioElement | null = null;
 
 /**
- * Loads the coin sound audio element
+ * Loads the water drop sound audio element
  */
 function getAudioElement(): HTMLAudioElement {
   if (!audioElement) {
     // Load the sound file using the imported URL
-    audioElement = new Audio(newSoundUrl);
+    audioElement = new Audio(waterDropSoundUrl);
     audioElement.volume = 0.5; // Set volume to 50%
     audioElement.preload = "auto";
   }
@@ -22,7 +22,7 @@ function getAudioElement(): HTMLAudioElement {
 }
 
 /**
- * Plays a coin sound effect
+ * Plays a water drop sound effect
  */
 export function playCoinSound(): void {
   try {
@@ -31,7 +31,7 @@ export function playCoinSound(): void {
     audio.currentTime = 0;
     audio.play().catch((error) => {
       // Silently fail if audio can't play (e.g., user hasn't interacted yet)
-      console.debug("Could not play coin sound:", error);
+      console.debug("Could not play water drop sound:", error);
     });
   } catch (error) {
     console.debug("Could not play coin sound:", error);

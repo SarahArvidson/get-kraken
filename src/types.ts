@@ -1,5 +1,5 @@
 /**
- * Kibblings - Core Types
+ * Get Kraken - Core Types
  *
  * Type definitions for quests, shop items, wallet, and logs
  */

@@ -1,5 +1,5 @@
 /**
- * Kibblings - Log View Component
+ * Get Kraken - Log View Component
  *
  * Swipeable log view showing chronological history
  */

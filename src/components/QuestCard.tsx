@@ -1,5 +1,5 @@
 /**
- * Kibblings - Quest Card Component
+ * Get Kraken - Quest Card Component
  *
  * Displays a quest with tap-to-complete, swipeable log, and editable reward
  */
@@ -54,9 +54,9 @@ export function QuestCard({
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">🟡</span>
+                <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {quest.reward} kibblings
+                  {quest.reward} sea dollars
                 </span>
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-200">

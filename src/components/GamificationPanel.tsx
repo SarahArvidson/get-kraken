@@ -1,7 +1,7 @@
 /**
- * Kibblings - Gamification Panel Component
+ * Get Kraken - Gamification Panel Component
  *
- * Displays streaks, weekly recap, milestones, and ski trip progress
+ * Displays streaks, weekly recap, milestones, and progress
  */
 
 import { useGamification } from "../hooks/useGamification";
@@ -48,7 +48,7 @@ export function GamificationPanel({
         <div className="mb-2">
           <div className="flex justify-between text-sm text-blue-100 mb-1">
             <span>
-              {walletTotal} / {skiTripProgress.target} kibblings
+              {walletTotal} / {skiTripProgress.target} sea dollars
             </span>
             <span>{Math.round(skiTripProgress.progress)}%</span>
           </div>
@@ -71,7 +71,7 @@ export function GamificationPanel({
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg text-center">
           <div className="text-5xl mb-2">🏆</div>
           <h3 className="text-xl font-bold text-white mb-1">
-            {currentMilestone} Kibblings Milestone!
+            {currentMilestone} Sea Dollars Milestone!
           </h3>
           <p className="text-sm text-amber-100">Keep it up! 🎉</p>
         </div>
@@ -85,7 +85,7 @@ export function GamificationPanel({
           </h3>
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {nextMilestone} 🟡
+              {nextMilestone} <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6 inline" />
             </span>
             <span className="text-sm text-gray-500 header-text-color">
               {nextMilestone - walletTotal} to go

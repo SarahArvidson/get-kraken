@@ -1,7 +1,7 @@
 {
-  "name": "Kibblings - Habit Tracker",
-  "short_name": "Kibblings",
-  "description": "A mobile-first habit-tracker and rewards app for two people sharing a wallet",
+  "name": "Get Kraken - A habit tracker for sea monsters",
+  "short_name": "Get Kraken",
+  "description": "A habit tracker for sea monsters",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/squirrel.png",
+      "src": "/kraken-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

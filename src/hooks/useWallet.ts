@@ -1,5 +1,5 @@
 /**
- * Kibblings - Wallet Hook
+ * Get Kraken - Wallet Hook
  *
  * Manages the shared kibbling wallet state and syncs with Supabase
  */

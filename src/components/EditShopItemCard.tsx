@@ -1,5 +1,5 @@
 /**
- * Kibblings - Edit Shop Item Card Component
+ * Get Kraken - Edit Shop Item Card Component
  *
  * Modal for editing existing shop items with image upload
  */
@@ -104,7 +104,7 @@ export function EditShopItemCard({
           {/* Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Price (kibblings)
+              Price (sea dollars)
             </label>
             <div className="flex items-center gap-2">
               <button

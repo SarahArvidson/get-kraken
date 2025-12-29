@@ -1,5 +1,5 @@
 /**
- * Kibblings - Gamification Hook
+ * Get Kraken - Gamification Hook
  *
  * Manages streaks, weekly recap, milestones, and ski trip progress
  */

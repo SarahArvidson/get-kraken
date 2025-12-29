@@ -1,5 +1,5 @@
 /**
- * Kibblings - Shop Items Hook
+ * Get Kraken - Shop Items Hook
  *
  * Manages shop items data and operations
  */

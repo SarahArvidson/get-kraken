@@ -1,5 +1,5 @@
 /**
- * Kibblings - Quests Hook
+ * Get Kraken - Quests Hook
  *
  * Manages quests data and operations
  */

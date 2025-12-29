@@ -1,5 +1,5 @@
 /**
- * Kibblings - Supabase Configuration
+ * Get Kraken - Supabase Configuration
  * 
  * Initialize Supabase integration from @ffx/sdk
  */
@@ -24,7 +24,7 @@ export const supabase = new SupabaseIntegration({
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false, // No auth needed per requirements
+      detectSessionInUrl: true, // Enable auth for user login
     },
   },
 });
