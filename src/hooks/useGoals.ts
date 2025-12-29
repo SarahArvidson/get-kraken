@@ -119,7 +119,7 @@ export function useGoals() {
       
       if (!freshGoals) return;
       
-      const incompleteGoals = freshGoals.filter((g) => walletTotal >= g.target_amount);
+      const incompleteGoals = freshGoals.filter((g: Goal) => walletTotal >= g.target_amount);
       
       for (const goal of incompleteGoals) {
         await updateGoal(goal.id, {
