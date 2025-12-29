@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "build:sdk": "node build-sdk.js",
     "seed:quests": "node scripts/seed-quests.mjs",
+    "seed:shop": "node scripts/seed-shop-items.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

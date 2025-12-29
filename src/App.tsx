@@ -350,6 +350,12 @@ function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AddQuestCard
+                  onCreate={async (questData) => {
+                    await createQuest(questData);
+                    setToast({ message: "Quest created! 🎯", type: "success" });
+                  }}
+                />
                 {filteredQuests.map((quest) => (
                   <QuestCard
                     key={quest.id}
@@ -363,12 +369,6 @@ function App() {
                     onDelete={handleDeleteQuest}
                   />
                 ))}
-                <AddQuestCard
-                  onCreate={async (questData) => {
-                    await createQuest(questData);
-                    setToast({ message: "Quest created! 🎯", type: "success" });
-                  }}
-                />
               </div>
             )}
           </div>
@@ -401,6 +401,15 @@ function App() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AddShopItemCard
+                  onCreate={async (itemData) => {
+                    await createShopItem(itemData);
+                    setToast({
+                      message: "Shop item created! 🛍️",
+                      type: "success",
+                    });
+                  }}
+                />
                 {filteredShopItems.map((item) => (
                   <ShopItemCard
                     key={item.id}
@@ -415,15 +424,6 @@ function App() {
                     onDelete={handleDeleteShopItem}
                   />
                 ))}
-                <AddShopItemCard
-                  onCreate={async (itemData) => {
-                    await createShopItem(itemData);
-                    setToast({
-                      message: "Shop item created! 🛍️",
-                      type: "success",
-                    });
-                  }}
-                />
               </div>
             )}
           </div>
