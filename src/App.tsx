@@ -84,8 +84,8 @@ function App() {
 
     // Filter by tag
     if (selectedQuestTag) {
-      filtered = filtered.filter((quest) =>
-        quest.tags.includes(selectedQuestTag)
+      filtered = filtered.filter(
+        (quest) => quest.tags && quest.tags.includes(selectedQuestTag)
       );
     }
 
@@ -94,9 +94,10 @@ function App() {
       const query = questSearchQuery.toLowerCase().trim();
       filtered = filtered.filter((quest) => {
         const nameMatch = quest.name.toLowerCase().includes(query);
-        const tagMatch = quest.tags.some((tag) =>
-          TAG_LABELS[tag].toLowerCase().includes(query)
-        );
+        const tagMatch = quest.tags.some((tag) => {
+          const tagLabel = TAG_LABELS[tag];
+          return tagLabel ? tagLabel.toLowerCase().includes(query) : false;
+        });
         return nameMatch || tagMatch;
       });
     }
@@ -110,7 +111,9 @@ function App() {
 
     // Filter by tag
     if (selectedShopTag) {
-      filtered = filtered.filter((item) => item.tags.includes(selectedShopTag));
+      filtered = filtered.filter(
+        (item) => item.tags && item.tags.includes(selectedShopTag)
+      );
     }
 
     // Filter by search query (name or tag name)
@@ -118,9 +121,10 @@ function App() {
       const query = shopSearchQuery.toLowerCase().trim();
       filtered = filtered.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(query);
-        const tagMatch = item.tags.some((tag) =>
-          SHOP_TAG_LABELS[tag].toLowerCase().includes(query)
-        );
+        const tagMatch = item.tags.some((tag) => {
+          const tagLabel = SHOP_TAG_LABELS[tag];
+          return tagLabel ? tagLabel.toLowerCase().includes(query) : false;
+        });
         return nameMatch || tagMatch;
       });
     }
