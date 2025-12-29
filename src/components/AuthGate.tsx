@@ -128,7 +128,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-blue-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="text-2xl mb-4">🌊</div>
           <div className="text-gray-600 dark:text-gray-400">Loading...</div>
@@ -139,8 +139,8 @@ export function AuthGate({ children }: AuthGateProps) {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-blue-50 dark:bg-gray-900 p-4">
+        <div className="bg-blue-50/90 dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full backdrop-blur-sm">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Get Kraken

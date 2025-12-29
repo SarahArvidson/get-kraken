@@ -13,6 +13,7 @@ interface QuestCardProps {
   quest: Quest;
   onComplete: (questId: string, reward: number) => Promise<void>;
   onUpdateReward: (questId: string, newReward: number) => Promise<void>;
+  onUpdateDollarAmount?: (questId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
   showDollarAmounts?: boolean;
@@ -22,6 +23,7 @@ export function QuestCard({
   quest,
   onComplete,
   onUpdateReward,
+  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
@@ -44,9 +46,17 @@ export function QuestCard({
     }
   };
 
+  const handleDollarAmountChange = async (delta: number) => {
+    if (!onUpdateDollarAmount) return;
+    const newDollarAmount = Math.max(0, (quest.dollar_amount || 0) + delta);
+    if (newDollarAmount !== (quest.dollar_amount || 0)) {
+      await onUpdateDollarAmount(quest.id, newDollarAmount);
+    }
+  };
+
   return (
     <CyclingBorder tags={quest.tags}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation">
+      <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation backdrop-blur-sm">
         {/* Card Content */}
         <div className="p-4">
           {/* Quest Info */}
@@ -60,12 +70,12 @@ export function QuestCard({
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                   {quest.reward}
                 </span>
-                {showDollarAmounts && quest.dollar_amount > 0 && (
+                {showDollarAmounts && (
                   <>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
                     <span className="text-lg">💵</span>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                      {quest.dollar_amount.toFixed(2)}
+                      {(quest.dollar_amount || 0).toFixed(2)}
                     </span>
                   </>
                 )}
@@ -77,24 +87,49 @@ export function QuestCard({
           </div>
 
           {/* Reward Controls */}
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <button
-              onClick={() => handleRewardChange(-1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-              aria-label="Decrease reward"
-            >
-              −
-            </button>
-            <span className="text-lg font-semibold min-w-[60px] text-center">
-              {quest.reward}
-            </span>
-            <button
-              onClick={() => handleRewardChange(1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-              aria-label="Increase reward"
-            >
-              +
-            </button>
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-center gap-4">
+              <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-5 h-5" />
+              <button
+                onClick={() => handleRewardChange(-1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                aria-label="Decrease reward"
+              >
+                −
+              </button>
+              <span className="text-lg font-semibold min-w-[60px] text-center">
+                {quest.reward}
+              </span>
+              <button
+                onClick={() => handleRewardChange(1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                aria-label="Increase reward"
+              >
+                +
+              </button>
+            </div>
+            {showDollarAmounts && onUpdateDollarAmount && (
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-lg">💵</span>
+                <button
+                  onClick={() => handleDollarAmountChange(-0.50)}
+                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                  aria-label="Decrease dollar amount"
+                >
+                  −
+                </button>
+                <span className="text-lg font-semibold min-w-[80px] text-center">
+                  ${(quest.dollar_amount || 0).toFixed(2)}
+                </span>
+                <button
+                  onClick={() => handleDollarAmountChange(0.50)}
+                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                  aria-label="Increase dollar amount"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

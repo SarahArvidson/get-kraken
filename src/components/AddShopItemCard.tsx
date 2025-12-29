@@ -65,7 +65,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
   return (
     <>
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 transition-colors cursor-pointer touch-manipulation"
+        className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-dashed border-blue-300 dark:border-gray-600 hover:border-amber-400 dark:hover:border-amber-500 transition-colors cursor-pointer touch-manipulation backdrop-blur-sm"
         onClick={() => setIsOpen(true)}
       >
         <div className="p-8 text-center">

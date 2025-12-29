@@ -14,6 +14,7 @@ interface ShopItemCardProps {
   walletTotal: number;
   onPurchase: (itemId: string, price: number) => Promise<void>;
   onUpdatePrice: (itemId: string, newPrice: number) => Promise<void>;
+  onUpdateDollarAmount?: (itemId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
   showDollarAmounts?: boolean;
@@ -24,6 +25,7 @@ export function ShopItemCard({
   walletTotal,
   onPurchase,
   onUpdatePrice,
+  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
@@ -46,11 +48,19 @@ export function ShopItemCard({
     }
   };
 
+  const handleDollarAmountChange = async (delta: number) => {
+    if (!onUpdateDollarAmount) return;
+    const newDollarAmount = Math.max(0, (item.dollar_amount || 0) + delta);
+    if (newDollarAmount !== (item.dollar_amount || 0)) {
+      await onUpdateDollarAmount(item.id, newDollarAmount);
+    }
+  };
+
   const canAfford = walletTotal >= item.price;
 
   return (
     <CyclingShopBorder tags={item.tags}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation">
+      <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation backdrop-blur-sm">
         {/* Card Content */}
         <div className="p-4">
           {/* Item Info */}
@@ -64,12 +74,12 @@ export function ShopItemCard({
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                   {item.price}
                 </span>
-                {showDollarAmounts && item.dollar_amount > 0 && (
+                {showDollarAmounts && (
                   <>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
                     <span className="text-lg">💵</span>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                      {item.dollar_amount.toFixed(2)}
+                      {(item.dollar_amount || 0).toFixed(2)}
                     </span>
                   </>
                 )}
@@ -81,24 +91,49 @@ export function ShopItemCard({
           </div>
 
           {/* Price Controls */}
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <button
-              onClick={() => handlePriceChange(-1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-              aria-label="Decrease price"
-            >
-              −
-            </button>
-            <span className="text-lg font-semibold min-w-[60px] text-center">
-              {item.price}
-            </span>
-            <button
-              onClick={() => handlePriceChange(1)}
-              className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-              aria-label="Increase price"
-            >
-              +
-            </button>
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-center gap-4">
+              <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-5 h-5" />
+              <button
+                onClick={() => handlePriceChange(-1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                aria-label="Decrease price"
+              >
+                −
+              </button>
+              <span className="text-lg font-semibold min-w-[60px] text-center">
+                {item.price}
+              </span>
+              <button
+                onClick={() => handlePriceChange(1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                aria-label="Increase price"
+              >
+                +
+              </button>
+            </div>
+            {showDollarAmounts && onUpdateDollarAmount && (
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-lg">💵</span>
+                <button
+                  onClick={() => handleDollarAmountChange(-0.50)}
+                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                  aria-label="Decrease dollar amount"
+                >
+                  −
+                </button>
+                <span className="text-lg font-semibold min-w-[80px] text-center">
+                  ${(item.dollar_amount || 0).toFixed(2)}
+                </span>
+                <button
+                  onClick={() => handleDollarAmountChange(0.50)}
+                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                  aria-label="Increase dollar amount"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

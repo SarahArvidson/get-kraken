@@ -112,7 +112,7 @@ export function GamificationPanel({
         {goalsLoading ? (
           <div className="text-center py-8 text-gray-500">Loading goals...</div>
         ) : goals.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center shadow-lg">
+          <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-8 text-center shadow-lg backdrop-blur-sm">
             <p className="text-gray-500 dark:text-gray-400">
               No goals yet. Create your first goal to start tracking!
             </p>
@@ -269,7 +269,7 @@ export function GamificationPanel({
 
       {/* Next Milestone */}
       {nextMilestone && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+        <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
           <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-2">
             Next Milestone
           </h3>
@@ -286,7 +286,7 @@ export function GamificationPanel({
 
       {/* Quest Streaks */}
       {questStreaks.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+        <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
           <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-4">
             🔥 Daily Streaks
           </h3>
@@ -355,7 +355,7 @@ export function GamificationPanel({
 
       {/* Reset Progress Button */}
       {onResetProgress && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+        <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
           <button
             onClick={onResetProgress}
             className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors touch-manipulation"

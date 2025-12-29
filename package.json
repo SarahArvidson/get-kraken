@@ -9,8 +9,9 @@
     "build": "tsc -b && vite build",
     "build:sdk": "node build-sdk.js",
     "postinstall": "node check-sdk.js",
-    "seed:quests": "node scripts/seed-quests.mjs",
-    "seed:shop": "node scripts/seed-shop-items.mjs",
+        "seed:quests": "node scripts/seed-quests.mjs",
+        "seed:shop": "node scripts/seed-shop-items.mjs",
+        "seed:common": "node scripts/seed-common-habits.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

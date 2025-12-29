@@ -319,7 +319,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative" style={{ zIndex: 1 }}>
+    <div className="min-h-screen bg-blue-50 dark:bg-gray-900 relative" style={{ zIndex: 1 }}>
       {/* Underwater Bubbles Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {Array.from({ length: 10 }).map((_, i) => (
@@ -327,20 +327,27 @@ function App() {
         ))}
       </div>
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative">
+      <header className="bg-blue-100/50 dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Desktop Layout */}
           <div className="hidden sm:block">
             <div className="flex items-center justify-between mb-2">
               <div className="flex-1"></div>
-              <h1 className="text-6xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-4 flex-1">
+              <div className="flex items-center justify-center gap-4 flex-1">
                 <img
                   src="/kraken-icon.png"
                   alt="Kraken"
-                  className="h-20 object-contain"
+                  className="h-32 object-contain flex-shrink-0"
                 />
-                Get Kraken
-              </h1>
+                <div className="flex flex-col items-start">
+                  <h1 className="text-6xl font-bold text-gray-900 header-text-color leading-tight">
+                    Get Kraken
+                  </h1>
+                  <p className="text-base text-gray-500 dark:text-gray-200 mt-1">
+                    A habit tracker for sea monsters
+                  </p>
+                </div>
+              </div>
               <div className="flex-1 flex justify-end">
                 <button
                   onClick={() => preferences.toggleDollarAmounts()}
@@ -355,9 +362,6 @@ function App() {
                 </button>
               </div>
             </div>
-            <p className="text-center text-base text-gray-500 dark:text-gray-200 mt-2">
-              A habit tracker for sea monsters
-            </p>
           </div>
 
           {/* Mobile Layout */}
@@ -366,7 +370,7 @@ function App() {
               <img
                 src="/kraken-icon.png"
                 alt="Kraken"
-                className="h-16 object-contain flex-shrink-0"
+                className="h-24 object-contain flex-shrink-0"
               />
               <div className="flex-1">
                 <h1 className="text-[2.8125rem] font-bold text-left text-gray-900 header-text-color leading-tight">
@@ -406,7 +410,7 @@ function App() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-sm">
+        <div className="flex gap-2 mb-6 bg-blue-100/30 dark:bg-gray-800 rounded-2xl p-2 shadow-sm backdrop-blur-sm">
           <button
             onClick={() => setCurrentView("quests")}
             className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all touch-manipulation ${
@@ -511,6 +515,9 @@ function App() {
                     onUpdateReward={async (questId, newReward) => {
                       await updateQuest(questId, { reward: newReward });
                     }}
+                    onUpdateDollarAmount={preferences.showDollarAmounts ? async (questId, newDollarAmount) => {
+                      await updateQuest(questId, { dollar_amount: newDollarAmount });
+                    } : undefined}
                     onViewLogs={handleViewQuestLogs}
                     onEdit={handleEditQuest}
                     showDollarAmounts={preferences.showDollarAmounts}
@@ -597,6 +604,9 @@ function App() {
                     onUpdatePrice={async (itemId, newPrice) => {
                       await updateShopItem(itemId, { price: newPrice });
                     }}
+                    onUpdateDollarAmount={preferences.showDollarAmounts ? async (itemId, newDollarAmount) => {
+                      await updateShopItem(itemId, { dollar_amount: newDollarAmount });
+                    } : undefined}
                     onViewLogs={handleViewShopLogs}
                     onEdit={handleEditShopItem}
                     showDollarAmounts={preferences.showDollarAmounts}
