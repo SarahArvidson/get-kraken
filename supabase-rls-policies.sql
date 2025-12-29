@@ -1,12 +1,17 @@
 -- Get Kraken - RLS Policies for Authenticated Users
 -- Run this SQL in your Supabase SQL editor to fix RLS policies
 
--- Drop existing policies if they exist
+-- Drop existing policies if they exist (both old and new names)
 DROP POLICY IF EXISTS "Allow all on wallets" ON wallets;
 DROP POLICY IF EXISTS "Allow all on quests" ON quests;
 DROP POLICY IF EXISTS "Allow all on quest_logs" ON quest_logs;
 DROP POLICY IF EXISTS "Allow all on shop_items" ON shop_items;
 DROP POLICY IF EXISTS "Allow all on shop_logs" ON shop_logs;
+DROP POLICY IF EXISTS "Allow all for authenticated users on wallets" ON wallets;
+DROP POLICY IF EXISTS "Allow all for authenticated users on quests" ON quests;
+DROP POLICY IF EXISTS "Allow all for authenticated users on quest_logs" ON quest_logs;
+DROP POLICY IF EXISTS "Allow all for authenticated users on shop_items" ON shop_items;
+DROP POLICY IF EXISTS "Allow all for authenticated users on shop_logs" ON shop_logs;
 
 -- Create policies for authenticated users
 -- These allow all operations for any authenticated user

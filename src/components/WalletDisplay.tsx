@@ -9,10 +9,12 @@ import type { Wallet } from "../types";
 interface WalletDisplayProps {
   wallet: Wallet | null;
   loading: boolean;
+  showDollarAmounts?: boolean;
 }
 
-export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
+export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: WalletDisplayProps) {
   const total = wallet?.total ?? 0;
+  const dollarTotal = wallet?.dollar_total ?? 0;
   const isNegative = total < 0;
 
   return (
@@ -37,6 +39,21 @@ export function WalletDisplay({ wallet, loading }: WalletDisplayProps) {
             >
               {total}
             </span>
+            {showDollarAmounts && (
+              <>
+                <span className="text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
+                <span className="text-4xl">💵</span>
+                <span
+                  className={`text-6xl font-bold ${
+                    dollarTotal < 0
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-amber-900 dark:text-amber-100"
+                  }`}
+                >
+                  {dollarTotal.toFixed(2)}
+                </span>
+              </>
+            )}
           </div>
         )}
         {!loading && isNegative && (

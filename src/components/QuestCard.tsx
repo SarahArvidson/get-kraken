@@ -15,6 +15,7 @@ interface QuestCardProps {
   onUpdateReward: (questId: string, newReward: number) => Promise<void>;
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
+  showDollarAmounts?: boolean;
 }
 
 export function QuestCard({
@@ -23,6 +24,7 @@ export function QuestCard({
   onUpdateReward,
   onViewLogs,
   onEdit,
+  showDollarAmounts = false,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
 
@@ -56,8 +58,17 @@ export function QuestCard({
               <div className="flex items-center gap-2">
                 <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {quest.reward} sea dollars
+                  {quest.reward}
                 </span>
+                {showDollarAmounts && quest.dollar_amount > 0 && (
+                  <>
+                    <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
+                    <span className="text-lg">💵</span>
+                    <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                      {quest.dollar_amount.toFixed(2)}
+                    </span>
+                  </>
+                )}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-200">
                 {quest.completion_count} completed

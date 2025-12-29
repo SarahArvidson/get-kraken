@@ -16,6 +16,7 @@ interface ShopItemCardProps {
   onUpdatePrice: (itemId: string, newPrice: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
+  showDollarAmounts?: boolean;
 }
 
 export function ShopItemCard({
@@ -25,6 +26,7 @@ export function ShopItemCard({
   onUpdatePrice,
   onViewLogs,
   onEdit,
+  showDollarAmounts = false,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
 
@@ -60,8 +62,17 @@ export function ShopItemCard({
               <div className="flex items-center gap-2">
                 <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {item.price} sea dollars
+                  {item.price}
                 </span>
+                {showDollarAmounts && item.dollar_amount > 0 && (
+                  <>
+                    <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
+                    <span className="text-lg">💵</span>
+                    <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                      {item.dollar_amount.toFixed(2)}
+                    </span>
+                  </>
+                )}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-200">
                 {item.purchase_count} purchased

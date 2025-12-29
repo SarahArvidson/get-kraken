@@ -16,7 +16,8 @@ export interface Quest {
   id: string;
   name: string;
   tags: Tag[];
-  reward: number; // kibblings earned per completion
+  reward: number; // sea dollars earned per completion
+  dollar_amount: number; // real dollars saved per completion
   completion_count: number;
   created_at: string;
   updated_at: string;
@@ -26,7 +27,8 @@ export interface ShopItem {
   id: string;
   name: string;
   tags: ShopTag[];
-  price: number; // kibblings cost
+  price: number; // sea dollars cost
+  dollar_amount: number; // real dollars spent per purchase
   purchase_count: number;
   created_at: string;
   updated_at: string;
@@ -34,7 +36,8 @@ export interface ShopItem {
 
 export interface Wallet {
   id: string;
-  total: number; // can be negative
+  total: number; // sea dollars total (can be negative)
+  dollar_total: number; // real dollars total (can be negative)
   updated_at: string;
 }
 

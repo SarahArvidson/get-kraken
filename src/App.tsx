@@ -9,6 +9,7 @@ import { Toast, InputField } from "@ffx/sdk";
 import { useWallet } from "./hooks/useWallet";
 import { useQuests } from "./hooks/useQuests";
 import { useShopItems } from "./hooks/useShopItems";
+import { usePreferences } from "./hooks/usePreferences";
 import { WalletDisplay } from "./components/WalletDisplay";
 import { QuestCard } from "./components/QuestCard";
 import { ShopItemCard } from "./components/ShopItemCard";
@@ -327,14 +328,30 @@ function App() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-6xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-4">
-            <img
-              src="/kraken-icon.png"
-              alt="Kraken"
-              className="w-16 h-16 object-contain"
-            />
-            Get Kraken
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1"></div>
+            <h1 className="text-6xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-4 flex-1">
+              <img
+                src="/kraken-icon.png"
+                alt="Kraken"
+                className="w-16 h-16 object-contain"
+              />
+              Get Kraken
+            </h1>
+            <div className="flex-1 flex justify-end">
+              <button
+                onClick={() => preferences.toggleDollarAmounts()}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors touch-manipulation ${
+                  preferences.showDollarAmounts
+                    ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300"
+                    : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                }`}
+                title={preferences.showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
+              >
+                💵 {preferences.showDollarAmounts ? "On" : "Off"}
+              </button>
+            </div>
+          </div>
           <p className="text-center text-base text-gray-500 dark:text-gray-200 mt-2">
             A habit tracker for sea monsters
           </p>
@@ -345,7 +362,11 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Wallet Display */}
         <div className="mb-8">
-          <WalletDisplay wallet={wallet} loading={walletLoading} />
+          <WalletDisplay 
+            wallet={wallet} 
+            loading={walletLoading}
+            showDollarAmounts={preferences.showDollarAmounts}
+          />
         </div>
 
         {/* Navigation Tabs */}
@@ -453,6 +474,7 @@ function App() {
                     }}
                     onViewLogs={handleViewQuestLogs}
                     onEdit={handleEditQuest}
+                    showDollarAmounts={preferences.showDollarAmounts}
                   />
                 ))}
               </div>
@@ -535,6 +557,7 @@ function App() {
                     }}
                     onViewLogs={handleViewShopLogs}
                     onEdit={handleEditShopItem}
+                    showDollarAmounts={preferences.showDollarAmounts}
                   />
                 ))}
               </div>
