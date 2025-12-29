@@ -15,7 +15,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ffx/sdk": "file:../ffs-sdk",
+    "@ffx/sdk": "file:./ffs-sdk",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

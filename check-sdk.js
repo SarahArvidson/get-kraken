@@ -8,7 +8,16 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
 
-const sdkPath = "../ffs-sdk";
+// Try to find SDK in current directory first (for Netlify/GitHub), then parent (for local dev)
+let sdkPath = "./ffs-sdk";
+if (!existsSync(sdkPath)) {
+  sdkPath = "../ffs-sdk";
+  if (!existsSync(sdkPath)) {
+    console.warn("⚠️  SDK not found in ./ffs-sdk or ../ffs-sdk, skipping SDK build check");
+    process.exit(0);
+  }
+}
+
 const distPath = join(sdkPath, "dist");
 const sdkCssPath = join(distPath, "sdk.css");
 const indexJsPath = join(distPath, "index", "index.es.js");

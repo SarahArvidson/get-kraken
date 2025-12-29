@@ -6,9 +6,20 @@
 
 import { execSync } from "child_process";
 import { chdir } from "process";
+import { existsSync } from "fs";
+import { join } from "path";
+
+// Try to find SDK in current directory first (for Netlify/GitHub), then parent (for local dev)
+let sdkPath = "./ffs-sdk";
+if (!existsSync(sdkPath)) {
+  sdkPath = "../ffs-sdk";
+  if (!existsSync(sdkPath)) {
+    throw new Error("SDK not found in ./ffs-sdk or ../ffs-sdk");
+  }
+}
 
 try {
-  chdir("../ffs-sdk");
+  chdir(sdkPath);
   
   console.log("Installing SDK dependencies...");
   execSync("npm install --prefer-offline --no-audit", { stdio: "inherit" });
