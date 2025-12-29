@@ -8,7 +8,7 @@ export type Tag = "work" | "finance" | "home" | "health" | "relationship";
 export type ShopTag =
   | "hobbies"
   | "social life"
-  | "relationships"
+  | "relationship"
   | "travel"
   | "family";
 
