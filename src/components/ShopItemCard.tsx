@@ -57,7 +57,7 @@ export function ShopItemCard({
       <div className="p-4">
         {/* Item Info */}
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-[oklch(0.79_0.11_264.93)] mb-2">
+          <h3 className="text-xl font-bold text-gray-900 header-text-color mb-2">
             {item.name}
           </h3>
           <div className="flex items-center justify-between">

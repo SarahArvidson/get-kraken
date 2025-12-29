@@ -52,28 +52,28 @@ export const TAG_BUTTON_CLASSES: Record<
   { base: string; active: string }
 > = {
   work: {
-    base: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700",
+    base: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-600",
     active:
-      "bg-blue-500 dark:bg-blue-600 text-white border-blue-600 dark:border-blue-500",
+      "bg-blue-500 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-400",
   },
   finance: {
-    base: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700",
+    base: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-300 dark:border-green-600",
     active:
-      "bg-green-500 dark:bg-green-600 text-white border-green-600 dark:border-green-500",
+      "bg-green-500 dark:bg-green-500 text-white border-green-600 dark:border-green-400",
   },
   home: {
-    base: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700",
+    base: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-600",
     active:
-      "bg-purple-500 dark:bg-purple-600 text-white border-purple-600 dark:border-purple-500",
+      "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400",
   },
   health: {
-    base: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700",
+    base: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-300 dark:border-red-600",
     active:
-      "bg-red-500 dark:bg-red-600 text-white border-red-600 dark:border-red-500",
+      "bg-red-500 dark:bg-red-500 text-white border-red-600 dark:border-red-400",
   },
   relationship: {
-    base: "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-700",
+    base: "bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-600",
     active:
-      "bg-pink-500 dark:bg-pink-600 text-white border-pink-600 dark:border-pink-500",
+      "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400",
   },
 };
