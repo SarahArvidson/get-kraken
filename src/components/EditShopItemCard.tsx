@@ -6,14 +6,18 @@
 
 import { useState, useEffect } from "react";
 import { Button, InputField, Modal } from "@ffx/sdk";
-import type { ShopItem, Tag } from "../types";
-import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
+import type { ShopItem, ShopTag } from "../types";
+import {
+  SHOP_TAGS,
+  SHOP_TAG_LABELS,
+  SHOP_TAG_BUTTON_CLASSES,
+} from "../utils/shopTags";
 
 interface EditShopItemCardProps {
   item: ShopItem;
   onSave: (updates: {
     name: string;
-    tags: Tag[];
+    tags: ShopTag[];
     price: number;
     purchase_count: number;
   }) => Promise<void>;
@@ -30,7 +34,7 @@ export function EditShopItemCard({
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [purchaseCount, setPurchaseCount] = useState(item.purchase_count);
-  const [tags, setTags] = useState<Tag[]>(item.tags || []);
+  const [tags, setTags] = useState<ShopTag[]>(item.tags || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -43,7 +47,7 @@ export function EditShopItemCard({
     setTags(item.tags || []);
   }, [item]);
 
-  const toggleTag = (tagOption: Tag) => {
+  const toggleTag = (tagOption: ShopTag) => {
     setTags((prev) =>
       prev.includes(tagOption)
         ? prev.filter((t) => t !== tagOption)
@@ -166,9 +170,9 @@ export function EditShopItemCard({
             Category
           </label>
           <div className="flex flex-wrap gap-2">
-            {TAGS.map((tagOption) => {
+            {SHOP_TAGS.map((tagOption) => {
               const isActive = tags.includes(tagOption);
-              const classes = TAG_BUTTON_CLASSES[tagOption];
+              const classes = SHOP_TAG_BUTTON_CLASSES[tagOption];
               return (
                 <button
                   key={tagOption}
@@ -178,7 +182,7 @@ export function EditShopItemCard({
                     isActive ? classes.active : classes.base
                   }`}
                 >
-                  {TAG_LABELS[tagOption]}
+                  {SHOP_TAG_LABELS[tagOption]}
                 </button>
               );
             })}

@@ -19,8 +19,13 @@ import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
 import { GamificationPanel } from "./components/GamificationPanel";
 import { playCoinSound, preloadAudio } from "./utils/sound";
-import type { Quest, ShopItem, QuestLog, ShopLog, Tag } from "./types";
+import type { Quest, ShopItem, QuestLog, ShopLog, Tag, ShopTag } from "./types";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "./utils/tags";
+import {
+  SHOP_TAGS,
+  SHOP_TAG_LABELS,
+  SHOP_TAG_BUTTON_CLASSES,
+} from "./utils/shopTags";
 
 type View = "quests" | "shop" | "progress";
 
@@ -71,7 +76,7 @@ function App() {
   const [questSearchQuery, setQuestSearchQuery] = useState("");
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [selectedQuestTag, setSelectedQuestTag] = useState<Tag | null>(null);
-  const [selectedShopTag, setSelectedShopTag] = useState<Tag | null>(null);
+  const [selectedShopTag, setSelectedShopTag] = useState<ShopTag | null>(null);
 
   // Filter quests based on search query and tag
   const filteredQuests = useMemo(() => {
@@ -114,7 +119,7 @@ function App() {
       filtered = filtered.filter((item) => {
         const nameMatch = item.name.toLowerCase().includes(query);
         const tagMatch = item.tags.some((tag) =>
-          TAG_LABELS[tag].toLowerCase().includes(query)
+          SHOP_TAG_LABELS[tag].toLowerCase().includes(query)
         );
         return nameMatch || tagMatch;
       });
@@ -212,7 +217,7 @@ function App() {
 
   const handleSaveShopItemEdit = async (updates: {
     name: string;
-    tags: Tag[];
+    tags: ShopTag[];
     price: number;
     purchase_count: number;
   }) => {
@@ -469,8 +474,8 @@ function App() {
               >
                 All
               </button>
-              {TAGS.map((tag) => {
-                const classes = TAG_BUTTON_CLASSES[tag];
+              {SHOP_TAGS.map((tag) => {
+                const classes = SHOP_TAG_BUTTON_CLASSES[tag];
                 const isActive = selectedShopTag === tag;
                 return (
                   <button
@@ -480,7 +485,7 @@ function App() {
                       isActive ? classes.active : classes.base
                     }`}
                   >
-                    {TAG_LABELS[tag]}
+                    {SHOP_TAG_LABELS[tag]}
                   </button>
                 );
               })}

@@ -5,6 +5,12 @@
  */
 
 export type Tag = "work" | "finance" | "home" | "health" | "relationship";
+export type ShopTag =
+  | "hobbies"
+  | "social life"
+  | "relationships"
+  | "travel"
+  | "family";
 
 export interface Quest {
   id: string;
@@ -19,7 +25,7 @@ export interface Quest {
 export interface ShopItem {
   id: string;
   name: string;
-  tags: Tag[];
+  tags: ShopTag[];
   price: number; // kibblings cost
   purchase_count: number;
   created_at: string;

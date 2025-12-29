@@ -43,27 +43,27 @@ export const TAG_BORDER_CLASSES: Record<Tag, string> = {
 export const TAG_BUTTON_CLASSES: Record<Tag, { base: string; active: string }> =
   {
     work: {
-      base: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-600",
+      base: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-100 border-blue-300 dark:border-blue-600",
       active:
         "bg-blue-500 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-400",
     },
     finance: {
-      base: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-300 dark:border-green-600",
+      base: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-100 border-green-300 dark:border-green-600",
       active:
         "bg-green-500 dark:bg-green-500 text-white border-green-600 dark:border-green-400",
     },
     home: {
-      base: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-600",
+      base: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-100 border-purple-300 dark:border-purple-600",
       active:
         "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400",
     },
     health: {
-      base: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-300 dark:border-red-600",
+      base: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-100 border-red-300 dark:border-red-600",
       active:
         "bg-red-500 dark:bg-red-500 text-white border-red-600 dark:border-red-400",
     },
     relationship: {
-      base: "bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-200 border-pink-300 dark:border-pink-600",
+      base: "bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-100 border-pink-300 dark:border-pink-600",
       active:
         "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400",
     },

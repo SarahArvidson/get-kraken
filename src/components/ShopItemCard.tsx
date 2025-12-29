@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
-import { CyclingBorder } from "./CyclingBorder";
+import { CyclingShopBorder } from "./CyclingBorder";
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -47,7 +47,7 @@ export function ShopItemCard({
   const canAfford = walletTotal >= item.price;
 
   return (
-    <CyclingBorder tags={item.tags}>
+    <CyclingShopBorder tags={item.tags}>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation">
         {/* Card Content */}
         <div className="p-4">
@@ -123,6 +123,6 @@ export function ShopItemCard({
           </div>
         </div>
       </div>
-    </CyclingBorder>
+    </CyclingShopBorder>
   );
 }

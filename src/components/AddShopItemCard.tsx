@@ -6,21 +6,29 @@
 
 import { useState } from "react";
 import { Button, InputField, Modal } from "@ffx/sdk";
-import type { Tag } from "../types";
-import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
+import type { ShopTag } from "../types";
+import {
+  SHOP_TAGS,
+  SHOP_TAG_LABELS,
+  SHOP_TAG_BUTTON_CLASSES,
+} from "../utils/shopTags";
 
 interface AddShopItemCardProps {
-  onCreate: (item: { name: string; tags: Tag[]; price: number }) => Promise<void>;
+  onCreate: (item: {
+    name: string;
+    tags: ShopTag[];
+    price: number;
+  }) => Promise<void>;
 }
 
 export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(20);
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<ShopTag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
-  const toggleTag = (tagOption: Tag) => {
+  const toggleTag = (tagOption: ShopTag) => {
     setTags((prev) =>
       prev.includes(tagOption)
         ? prev.filter((t) => t !== tagOption)
@@ -111,9 +119,9 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
               Category (optional)
             </label>
             <div className="flex flex-wrap gap-2">
-              {TAGS.map((tagOption) => {
+              {SHOP_TAGS.map((tagOption) => {
                 const isActive = tags.includes(tagOption);
-                const classes = TAG_BUTTON_CLASSES[tagOption];
+                const classes = SHOP_TAG_BUTTON_CLASSES[tagOption];
                 return (
                   <button
                     key={tagOption}
@@ -123,7 +131,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
                       isActive ? classes.active : classes.base
                     }`}
                   >
-                    {TAG_LABELS[tagOption]}
+                    {SHOP_TAG_LABELS[tagOption]}
                   </button>
                 );
               })}
