@@ -366,33 +366,33 @@ function App() {
 
           {/* Mobile Layout */}
           <div className="sm:hidden">
-            <div className="flex items-start gap-3 mb-2">
+            <div className="flex items-start gap-2 mb-2">
               <img
                 src="/kraken-icon.png"
                 alt="Kraken"
-                className="h-24 object-contain flex-shrink-0"
+                className="h-20 object-contain flex-shrink-0"
               />
-              <div className="flex-1">
-                <h1 className="text-[2.8125rem] font-bold text-left text-gray-900 header-text-color leading-tight">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold text-left text-gray-900 header-text-color leading-tight mb-1">
                   Get Kraken
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-200 mt-1">
-                  A habit tracker for sea monsters
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-200 flex-shrink">
+                    A habit tracker for sea monsters
+                  </p>
+                  <button
+                    onClick={() => preferences.toggleDollarAmounts()}
+                    className={`px-2 py-1 text-xs font-medium rounded-lg border-2 transition-colors touch-manipulation flex-shrink-0 ${
+                      preferences.showDollarAmounts
+                        ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300"
+                        : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                    }`}
+                    title={preferences.showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
+                  >
+                    💵 {preferences.showDollarAmounts ? "On" : "Off"}
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-end mt-3">
-              <button
-                onClick={() => preferences.toggleDollarAmounts()}
-                className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors touch-manipulation ${
-                  preferences.showDollarAmounts
-                    ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300"
-                    : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
-                }`}
-                title={preferences.showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
-              >
-                💵 {preferences.showDollarAmounts ? "On" : "Off"}
-              </button>
             </div>
           </div>
         </div>
