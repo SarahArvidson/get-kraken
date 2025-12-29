@@ -53,7 +53,7 @@ export const TAG_BUTTON_CLASSES: Record<Tag, { base: string; active: string }> =
         "bg-green-500 dark:bg-green-500 text-white border-green-600 dark:border-green-400",
     },
     home: {
-      base: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-white border-purple-300 dark:border-purple-600",
+      base: "bg-purple-100 dark:bg-purple-900/70 text-purple-800 dark:text-white border-purple-300 dark:border-purple-600",
       active:
         "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400",
     },
