@@ -61,7 +61,7 @@ export function QuestCard({
 
         {/* Quest Info */}
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50 mb-2">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             {quest.name}
           </h3>
           <div className="flex items-center justify-between">
