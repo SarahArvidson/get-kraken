@@ -1,13 +1,21 @@
 /**
  * Kibblings - Core Types
- * 
+ *
  * Type definitions for quests, shop items, wallet, and logs
  */
+
+export type Tag =
+  | "work"
+  | "finance"
+  | "home"
+  | "health"
+  | "relationship"
+  | null;
 
 export interface Quest {
   id: string;
   name: string;
-  photo_url: string | null;
+  tag: Tag;
   reward: number; // kibblings earned per completion
   completion_count: number;
   created_at: string;
@@ -17,7 +25,7 @@ export interface Quest {
 export interface ShopItem {
   id: string;
   name: string;
-  photo_url: string | null;
+  tag: Tag;
   price: number; // kibblings cost
   purchase_count: number;
   created_at: string;
@@ -63,4 +71,3 @@ export interface QuestStreak {
   current_streak: number;
   last_completed: string | null;
 }
-

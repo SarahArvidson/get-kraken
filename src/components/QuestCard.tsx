@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Button } from "@ffx/sdk";
 import type { Quest } from "../types";
+import { TAG_BORDER_CLASSES } from "../utils/tags";
 
 interface QuestCardProps {
   quest: Quest;
@@ -14,7 +15,6 @@ interface QuestCardProps {
   onUpdateReward: (questId: string, newReward: number) => Promise<void>;
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
-  onDelete: (questId: string) => Promise<void>;
 }
 
 export function QuestCard({
@@ -23,10 +23,8 @@ export function QuestCard({
   onUpdateReward,
   onViewLogs,
   onEdit,
-  onDelete,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleComplete = async () => {
     setIsCompleting(true);
@@ -44,24 +42,19 @@ export function QuestCard({
     }
   };
 
+  const borderClass = quest.tag ? TAG_BORDER_CLASSES[quest.tag] : "";
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation">
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation border-2 ${
+        borderClass || "border-transparent"
+      }`}
+    >
       {/* Card Content */}
       <div className="p-4">
-        {/* Photo */}
-        {quest.photo_url && (
-          <div className="w-full h-48 mb-4 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
-            <img
-              src={quest.photo_url}
-              alt={quest.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
         {/* Quest Info */}
         <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-[oklch(0.79_0.11_264.93)] mb-2">
             {quest.name}
           </h3>
           <div className="flex items-center justify-between">
@@ -125,45 +118,7 @@ export function QuestCard({
           >
             Edit
           </Button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-3 py-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 touch-manipulation"
-            aria-label="Delete quest"
-            title="Delete quest"
-          >
-            🗑️
-          </button>
         </div>
-
-        {/* Delete Confirmation */}
-        {showDeleteConfirm && (
-          <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-            <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-              Delete this quest? Progress logs will be kept.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={async () => {
-                  await onDelete(quest.id);
-                  setShowDeleteConfirm(false);
-                }}
-                className="flex-1 bg-red-500 hover:bg-red-600"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

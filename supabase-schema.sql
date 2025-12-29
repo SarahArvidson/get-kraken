@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS wallets (
 CREATE TABLE IF NOT EXISTS quests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
-  photo_url TEXT,
+  tag TEXT CHECK (tag IN ('work', 'finance', 'home', 'health', 'relationship') OR tag IS NULL),
   reward INTEGER NOT NULL DEFAULT 10,
   completion_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS quest_logs (
 CREATE TABLE IF NOT EXISTS shop_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
-  photo_url TEXT,
+  tag TEXT CHECK (tag IN ('work', 'finance', 'home', 'health', 'relationship') OR tag IS NULL),
   price INTEGER NOT NULL DEFAULT 20,
   purchase_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -57,6 +57,8 @@ CREATE INDEX IF NOT EXISTS idx_quest_logs_quest_id ON quest_logs(quest_id);
 CREATE INDEX IF NOT EXISTS idx_quest_logs_completed_at ON quest_logs(completed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_shop_logs_item_id ON shop_logs(shop_item_id);
 CREATE INDEX IF NOT EXISTS idx_shop_logs_purchased_at ON shop_logs(purchased_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quests_tag ON quests(tag);
+CREATE INDEX IF NOT EXISTS idx_shop_items_tag ON shop_items(tag);
 
 -- Enable Row Level Security (RLS) - Allow all operations for now
 -- Adjust based on your security requirements

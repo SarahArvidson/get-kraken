@@ -6,79 +6,22 @@
 
 import { useState } from "react";
 import { Button, InputField, Modal } from "@ffx/sdk";
-import { supabase } from "../lib/supabase";
+import type { Tag } from "../types";
+import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
 
 interface AddShopItemCardProps {
-  onCreate: (item: {
-    name: string;
-    photo_url: string | null;
-    price: number;
-  }) => Promise<void>;
+  onCreate: (item: { name: string; tag: Tag; price: number }) => Promise<void>;
 }
 
 export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(20);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [tag, setTag] = useState<Tag>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      // Upload to Supabase Storage
-      const fileExt = file.name.split(".").pop() || "jpg";
-      const fileName = `shop/${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(7)}.${fileExt}`;
-
-      // Use the client's storage API directly to bypass RLS issues
-      const { data: uploadData, error: uploadError } =
-        await supabase.supabase.storage
-          .from("kibblings")
-          .upload(fileName, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw new Error(uploadError.message || "Failed to upload image");
-      }
-
-      // Verify upload succeeded
-      if (!uploadData || !uploadData.path) {
-        throw new Error("Upload succeeded but no path returned");
-      }
-
-      // Get public URL - use the path from upload response
-      const uploadPath = uploadData.path;
-      const { data: urlData } = supabase.supabase.storage
-        .from("kibblings")
-        .getPublicUrl(uploadPath);
-
-      if (urlData?.publicUrl) {
-        setPhotoUrl(urlData.publicUrl);
-      } else {
-        // Fallback: construct URL manually if getPublicUrl doesn't work
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (supabaseUrl) {
-          const publicUrl = `${supabaseUrl}/storage/v1/object/public/kibblings/${uploadPath}`;
-          setPhotoUrl(publicUrl);
-        } else {
-          throw new Error("Failed to get public URL for uploaded image");
-        }
-      }
-    } catch (err: any) {
-      console.error("Error uploading image:", err);
-      alert(`Failed to upload image: ${err.message || "Please try again."}`);
-    } finally {
-      setIsUploading(false);
-    }
+  const toggleTag = (tagOption: Tag) => {
+    setTag(tag === tagOption ? null : tagOption);
   };
 
   const handleCreate = async () => {
@@ -91,13 +34,13 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
     try {
       await onCreate({
         name: name.trim(),
-        photo_url: photoUrl,
+        tag,
         price,
       });
       // Reset form
       setName("");
       setPrice(20);
-      setPhotoUrl(null);
+      setTag(null);
       setIsOpen(false);
     } catch (err: any) {
       console.error("Error creating shop item:", err);
@@ -158,36 +101,29 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
             </div>
           </div>
 
+          {/* Tag Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Photo (optional)
+              Category (optional)
             </label>
-            {photoUrl ? (
-              <div className="relative">
-                <img
-                  src={photoUrl}
-                  alt="Item preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  onClick={() => setPhotoUrl(null)}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8"
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-              />
-            )}
-            {isUploading && (
-              <p className="text-sm text-gray-500 mt-2">Uploading...</p>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {TAGS.map((tagOption) => {
+                const isActive = tag === tagOption;
+                const classes = TAG_BUTTON_CLASSES[tagOption];
+                return (
+                  <button
+                    key={tagOption}
+                    type="button"
+                    onClick={() => toggleTag(tagOption)}
+                    className={`px-4 py-2 rounded-lg border-2 font-medium transition-all touch-manipulation ${
+                      isActive ? classes.active : classes.base
+                    }`}
+                  >
+                    {TAG_LABELS[tagOption]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">

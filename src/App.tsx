@@ -19,7 +19,8 @@ import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
 import { GamificationPanel } from "./components/GamificationPanel";
 import { playCoinSound, preloadAudio } from "./utils/sound";
-import type { Quest, ShopItem, QuestLog, ShopLog } from "./types";
+import type { Quest, ShopItem, QuestLog, ShopLog, Tag } from "./types";
+import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "./utils/tags";
 
 type View = "quests" | "shop" | "progress";
 
@@ -69,20 +70,56 @@ function App() {
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
   const [questSearchQuery, setQuestSearchQuery] = useState("");
   const [shopSearchQuery, setShopSearchQuery] = useState("");
+  const [selectedQuestTag, setSelectedQuestTag] = useState<Tag | null>(null);
+  const [selectedShopTag, setSelectedShopTag] = useState<Tag | null>(null);
 
-  // Filter quests based on search query
+  // Filter quests based on search query and tag
   const filteredQuests = useMemo(() => {
-    if (!questSearchQuery.trim()) return quests;
-    const query = questSearchQuery.toLowerCase().trim();
-    return quests.filter((quest) => quest.name.toLowerCase().includes(query));
-  }, [quests, questSearchQuery]);
+    let filtered = quests;
 
-  // Filter shop items based on search query
+    // Filter by tag
+    if (selectedQuestTag) {
+      filtered = filtered.filter((quest) => quest.tag === selectedQuestTag);
+    }
+
+    // Filter by search query (name or tag name)
+    if (questSearchQuery.trim()) {
+      const query = questSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter((quest) => {
+        const nameMatch = quest.name.toLowerCase().includes(query);
+        const tagMatch = quest.tag
+          ? TAG_LABELS[quest.tag].toLowerCase().includes(query)
+          : false;
+        return nameMatch || tagMatch;
+      });
+    }
+
+    return filtered;
+  }, [quests, questSearchQuery, selectedQuestTag]);
+
+  // Filter shop items based on search query and tag
   const filteredShopItems = useMemo(() => {
-    if (!shopSearchQuery.trim()) return shopItems;
-    const query = shopSearchQuery.toLowerCase().trim();
-    return shopItems.filter((item) => item.name.toLowerCase().includes(query));
-  }, [shopItems, shopSearchQuery]);
+    let filtered = shopItems;
+
+    // Filter by tag
+    if (selectedShopTag) {
+      filtered = filtered.filter((item) => item.tag === selectedShopTag);
+    }
+
+    // Filter by search query (name or tag name)
+    if (shopSearchQuery.trim()) {
+      const query = shopSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter((item) => {
+        const nameMatch = item.name.toLowerCase().includes(query);
+        const tagMatch = item.tag
+          ? TAG_LABELS[item.tag].toLowerCase().includes(query)
+          : false;
+        return nameMatch || tagMatch;
+      });
+    }
+
+    return filtered;
+  }, [shopItems, shopSearchQuery, selectedShopTag]);
 
   const handleCompleteQuest = async (questId: string, reward: number) => {
     try {
@@ -154,7 +191,7 @@ function App() {
 
   const handleSaveQuestEdit = async (updates: {
     name: string;
-    photo_url: string | null;
+    tag: Tag;
     reward: number;
     completion_count: number;
   }) => {
@@ -173,7 +210,7 @@ function App() {
 
   const handleSaveShopItemEdit = async (updates: {
     name: string;
-    photo_url: string | null;
+    tag: Tag;
     price: number;
     purchase_count: number;
   }) => {
@@ -273,7 +310,7 @@ function App() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-[oklch(0.79_0.11_264.93)]">
             🎿 Kibblings
           </h1>
           <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
@@ -340,6 +377,34 @@ function App() {
                 />
               </div>
             </div>
+            {/* Quick Filter Buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => setSelectedQuestTag(null)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  selectedQuestTag === null
+                    ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                All
+              </button>
+              {TAGS.map((tag) => {
+                const classes = TAG_BUTTON_CLASSES[tag];
+                const isActive = selectedQuestTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedQuestTag(isActive ? null : tag)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      isActive ? classes.active : classes.base
+                    }`}
+                  >
+                    {TAG_LABELS[tag]}
+                  </button>
+                );
+              })}
+            </div>
             {questsLoading ? (
               <div className="text-center py-12 text-gray-500">
                 Loading quests...
@@ -366,7 +431,6 @@ function App() {
                     }}
                     onViewLogs={handleViewQuestLogs}
                     onEdit={handleEditQuest}
-                    onDelete={handleDeleteQuest}
                   />
                 ))}
               </div>
@@ -390,6 +454,34 @@ function App() {
                   className="w-full"
                 />
               </div>
+            </div>
+            {/* Quick Filter Buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => setSelectedShopTag(null)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  selectedShopTag === null
+                    ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                All
+              </button>
+              {TAGS.map((tag) => {
+                const classes = TAG_BUTTON_CLASSES[tag];
+                const isActive = selectedShopTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedShopTag(isActive ? null : tag)}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      isActive ? classes.active : classes.base
+                    }`}
+                  >
+                    {TAG_LABELS[tag]}
+                  </button>
+                );
+              })}
             </div>
             {shopItemsLoading ? (
               <div className="text-center py-12 text-gray-500">
@@ -421,7 +513,6 @@ function App() {
                     }}
                     onViewLogs={handleViewShopLogs}
                     onEdit={handleEditShopItem}
-                    onDelete={handleDeleteShopItem}
                   />
                 ))}
               </div>
@@ -477,6 +568,10 @@ function App() {
         <EditQuestCard
           quest={editingQuest}
           onSave={handleSaveQuestEdit}
+          onDelete={async () => {
+            await handleDeleteQuest(editingQuest.id);
+            setEditingQuest(null);
+          }}
           onClose={() => setEditingQuest(null)}
         />
       )}
@@ -485,6 +580,10 @@ function App() {
         <EditShopItemCard
           item={editingShopItem}
           onSave={handleSaveShopItemEdit}
+          onDelete={async () => {
+            await handleDeleteShopItem(editingShopItem.id);
+            setEditingShopItem(null);
+          }}
           onClose={() => setEditingShopItem(null)}
         />
       )}
