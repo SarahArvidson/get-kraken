@@ -80,14 +80,14 @@ export function GamificationPanel({
       {/* Next Milestone */}
       {nextMilestone && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-2">
             Next Milestone
           </h3>
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               {nextMilestone} 🟡
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-200">
+            <span className="text-sm text-gray-500 header-text-color">
               {nextMilestone - walletTotal} to go
             </span>
           </div>
@@ -97,7 +97,7 @@ export function GamificationPanel({
       {/* Quest Streaks */}
       {questStreaks.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-4">
             🔥 Daily Streaks
           </h3>
           <div className="space-y-3">
@@ -110,7 +110,7 @@ export function GamificationPanel({
                   key={streak.quest_id}
                   className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
-                  <span className="text-gray-900 dark:text-white">
+                  <span className="text-gray-900 header-text-color">
                     {questNames.get(streak.quest_id) || "Quest"}
                   </span>
                   <span className="text-amber-600 dark:text-amber-400 font-bold">
@@ -125,16 +125,16 @@ export function GamificationPanel({
 
       {/* Weekly Recap */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          📊 This Week
-        </h3>
+          <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-4">
+            📊 This Week
+          </h3>
         {weeklyRecap ? (
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 +{weeklyRecap.earned}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-200">
+              <div className="text-xs text-gray-500 header-text-color">
                 Earned
               </div>
             </div>
@@ -142,7 +142,7 @@ export function GamificationPanel({
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 -{weeklyRecap.spent}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-200">
+              <div className="text-xs text-gray-500 header-text-color">
                 Spent
               </div>
             </div>
@@ -157,13 +157,13 @@ export function GamificationPanel({
                 {weeklyRecap.net >= 0 ? "+" : ""}
                 {weeklyRecap.net}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-200">
+              <div className="text-xs text-gray-500 header-text-color">
                 Net
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-200 text-center">
+          <p className="text-sm text-gray-500 header-text-color text-center">
             No activity this week yet
           </p>
         )}
