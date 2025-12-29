@@ -88,14 +88,33 @@ export function AuthGate({ children }: AuthGateProps) {
         if (signUpResult.error) {
           setError(signUpResult.error.message || "Failed to create account");
         } else {
-          // Auto sign in after sign up
+          // Check if user needs email confirmation
+          if (signUpResult.data?.user && !signUpResult.data?.session) {
+            // User created but needs email confirmation
+            setError("Account created! Please check your email to confirm your account, then try logging in again.");
+            return;
+          }
+          
+          // If we have a session, user is already logged in
+          if (signUpResult.data?.session) {
+            setIsAuthenticated(true);
+            return;
+          }
+          
+          // Try to sign in after sign up (if email confirmation is disabled)
           const autoSignInResult = await supabase.signIn({
             email,
             password,
           });
 
           if (autoSignInResult.error) {
-            setError("Account created but login failed. Please try again.");
+            // Check if it's an email confirmation error
+            if (autoSignInResult.error.message?.includes("email") || 
+                autoSignInResult.error.message?.includes("confirm")) {
+              setError("Please check your email to confirm your account, then try logging in again.");
+            } else {
+              setError(autoSignInResult.error.message || "Account created but login failed. Please try again.");
+            }
           }
         }
       }

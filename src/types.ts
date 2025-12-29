@@ -71,3 +71,13 @@ export interface QuestStreak {
   current_streak: number;
   last_completed: string | null;
 }
+
+export interface Goal {
+  id: string;
+  name: string;
+  target_amount: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

@@ -1,11 +1,14 @@
 /**
  * Get Kraken - Gamification Panel Component
  *
- * Displays streaks, weekly recap, milestones, and progress
+ * Displays streaks, weekly recap, milestones, and customizable goals
  */
 
+import { useState, useEffect } from "react";
 import { useGamification } from "../hooks/useGamification";
-import type { QuestLog, ShopLog } from "../types";
+import { useGoals } from "../hooks/useGoals";
+import { Button, InputField, Modal } from "@ffx/sdk";
+import type { QuestLog, ShopLog, Goal } from "../types";
 
 interface GamificationPanelProps {
   walletTotal: number;
@@ -31,7 +34,6 @@ export function GamificationPanel({
     questStreaks,
     currentMilestone,
     nextMilestone,
-    skiTripProgress,
   } = useGamification({
     walletTotal,
     questLogs,
@@ -40,31 +42,219 @@ export function GamificationPanel({
     shopItems,
   });
 
+  const { goals, loading: goalsLoading, createGoal, deleteGoal, checkGoalCompletion } = useGoals();
+  const [isAddingGoal, setIsAddingGoal] = useState(false);
+  const [goalName, setGoalName] = useState("");
+  const [goalAmount, setGoalAmount] = useState(100);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Check goal completion when wallet total changes
+  useEffect(() => {
+    checkGoalCompletion(walletTotal);
+  }, [walletTotal, checkGoalCompletion]);
+
+  const handleCreateGoal = async () => {
+    if (!goalName.trim()) {
+      alert("Please enter a goal name");
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      await createGoal({
+        name: goalName.trim(),
+        target_amount: goalAmount,
+      });
+      setGoalName("");
+      setGoalAmount(100);
+      setIsAddingGoal(false);
+    } catch (err: any) {
+      console.error("Error creating goal:", err);
+      alert("Failed to create goal. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!confirm("Delete this goal?")) return;
+    try {
+      await deleteGoal(goalId);
+    } catch (err: any) {
+      console.error("Error deleting goal:", err);
+      alert("Failed to delete goal. Please try again.");
+    }
+  };
+
+  const calculateGoalProgress = (goal: Goal) => {
+    const progress = Math.min(100, (walletTotal / goal.target_amount) * 100);
+    const remaining = Math.max(0, goal.target_amount - walletTotal);
+    return { progress, remaining };
+  };
+
   return (
     <div className="space-y-6">
-      {/* Ski Trip Progress */}
-      <div className="bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 rounded-2xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-white mb-4">🎿 Ski Trip Fund</h3>
-        <div className="mb-2">
-          <div className="flex justify-between text-sm text-blue-100 mb-1">
-            <span>
-              {walletTotal} / {skiTripProgress.target} sea dollars
-            </span>
-            <span>{Math.round(skiTripProgress.progress)}%</span>
+      {/* Customizable Goals */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 header-text-color">
+            Goals
+          </h2>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsAddingGoal(true)}
+          >
+            + Add Goal
+          </Button>
+        </div>
+
+        {goalsLoading ? (
+          <div className="text-center py-8 text-gray-500">Loading goals...</div>
+        ) : goals.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center shadow-lg">
+            <p className="text-gray-500 dark:text-gray-400">
+              No goals yet. Create your first goal to start tracking!
+            </p>
           </div>
-          <div className="w-full bg-blue-300 dark:bg-blue-800 rounded-full h-4 overflow-hidden">
-            <div
-              className="bg-white h-full rounded-full transition-all duration-500"
-              style={{ width: `${skiTripProgress.progress}%` }}
-            />
+        ) : (
+          <div className="space-y-4">
+            {goals.map((goal) => {
+              const { progress, remaining } = calculateGoalProgress(goal);
+              const isCompleted = goal.is_completed || walletTotal >= goal.target_amount;
+
+              return (
+                <div
+                  key={goal.id}
+                  className="bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 rounded-2xl p-6 shadow-lg relative overflow-hidden"
+                >
+                  {/* Completion Overlay */}
+                  {isCompleted && (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-10 rounded-2xl">
+                      <div className="flex items-center gap-4 text-white">
+                        <img
+                          src="/kraken-icon.png"
+                          alt="Kraken"
+                          className="w-16 h-16 object-contain"
+                        />
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-3xl font-bold">Goal Met, Kraken Released!</h3>
+                          <div className="text-6xl">✅</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Goal Content */}
+                  <div className="relative z-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-bold text-white">{goal.name}</h3>
+                      <button
+                        onClick={() => handleDeleteGoal(goal.id)}
+                        className="text-white hover:text-red-200 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <div className="mb-2">
+                      <div className="flex justify-between text-sm text-blue-100 mb-1">
+                        <span>
+                          {walletTotal} / {goal.target_amount} sea dollars
+                        </span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
+                      <div className="w-full bg-blue-300 dark:bg-blue-800 rounded-full h-4 overflow-hidden">
+                        <div
+                          className="bg-white h-full rounded-full transition-all duration-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-blue-100">
+                      {remaining > 0
+                        ? `${remaining} more to go!`
+                        : "Goal reached! 🎉"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Add Goal Modal */}
+      <Modal
+        isOpen={isAddingGoal}
+        onClose={() => {
+          setIsAddingGoal(false);
+          setGoalName("");
+          setGoalAmount(100);
+        }}
+        title="Create New Goal"
+        size="md"
+      >
+        <div className="space-y-4">
+          <InputField
+            label="Goal Name"
+            value={goalName}
+            onChange={(e) => setGoalName(e.target.value)}
+            placeholder="e.g., Save for vacation, Buy new bike, etc."
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Target Amount (Sea Dollars)
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setGoalAmount(Math.max(0, goalAmount - 10))}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={goalAmount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setGoalAmount(Math.max(0, val));
+                }}
+                className="w-32 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2"
+                min="0"
+              />
+              <button
+                onClick={() => setGoalAmount(goalAmount + 10)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsAddingGoal(false);
+                setGoalName("");
+                setGoalAmount(100);
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateGoal}
+              loading={isCreating}
+              className="flex-1"
+            >
+              Create Goal
+            </Button>
           </div>
         </div>
-        <p className="text-sm text-blue-100">
-          {skiTripProgress.remaining > 0
-            ? `${skiTripProgress.remaining} more to go!`
-            : "Goal reached! 🎉"}
-        </p>
-      </div>
+      </Modal>
 
       {/* Current Milestone */}
       {currentMilestone && (
@@ -125,26 +315,22 @@ export function GamificationPanel({
 
       {/* Weekly Recap */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-4">
-            📊 This Week
-          </h3>
+        <h3 className="text-lg font-semibold text-gray-900 header-text-color mb-4">
+          📊 This Week
+        </h3>
         {weeklyRecap ? (
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 +{weeklyRecap.earned}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">
-                Earned
-              </div>
+              <div className="text-xs text-gray-500 header-text-color">Earned</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 -{weeklyRecap.spent}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">
-                Spent
-              </div>
+              <div className="text-xs text-gray-500 header-text-color">Spent</div>
             </div>
             <div>
               <div
@@ -157,9 +343,7 @@ export function GamificationPanel({
                 {weeklyRecap.net >= 0 ? "+" : ""}
                 {weeklyRecap.net}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">
-                Net
-              </div>
+              <div className="text-xs text-gray-500 header-text-color">Net</div>
             </div>
           </div>
         ) : (

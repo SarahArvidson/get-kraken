@@ -325,17 +325,17 @@ function App() {
         ))}
       </div>
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-2">
+      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-6xl font-bold text-center text-gray-900 header-text-color flex items-center justify-center gap-4">
             <img
               src="/kraken-icon.png"
               alt="Kraken"
-              className="w-8 h-8 object-contain"
+              className="w-16 h-16 object-contain"
             />
             Get Kraken
           </h1>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-200 mt-1">
+          <p className="text-center text-base text-gray-500 dark:text-gray-200 mt-2">
             A habit tracker for sea monsters
           </p>
         </div>

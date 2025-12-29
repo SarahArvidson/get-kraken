@@ -92,7 +92,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Price (sea dollars)
+              Sea Dollars
             </label>
             <div className="flex items-center gap-4">
               <button
