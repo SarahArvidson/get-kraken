@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Button, InputField, Modal } from "@ffx/sdk";
+import { Button, InputField } from "@ffx/sdk";
 import { supabase } from "../lib/supabase";
 
 interface AuthGateProps {
@@ -16,7 +16,6 @@ interface AuthGateProps {
 export function AuthGate({ children }: AuthGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showLogin, setShowLogin] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -29,12 +28,9 @@ export function AuthGate({ children }: AuthGateProps) {
         const { data: { session } } = await supabase.supabase.auth.getSession();
         if (session) {
           setIsAuthenticated(true);
-        } else {
-          setShowLogin(true);
         }
       } catch (err) {
         console.error("Error checking session:", err);
-        setShowLogin(true);
       } finally {
         setIsLoading(false);
       }
@@ -44,13 +40,11 @@ export function AuthGate({ children }: AuthGateProps) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         if (session) {
           setIsAuthenticated(true);
-          setShowLogin(false);
         } else {
           setIsAuthenticated(false);
-          setShowLogin(true);
         }
       }
     );
@@ -112,9 +106,6 @@ export function AuthGate({ children }: AuthGateProps) {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.signOut();
-  };
 
   if (isLoading) {
     return (
