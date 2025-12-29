@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 import { chdir } from "process";
 
 try {
-  chdir("ffs-sdk");
+  chdir("../ffs-sdk");
   
   console.log("Installing SDK dependencies...");
   execSync("npm install --prefer-offline --no-audit", { stdio: "inherit" });

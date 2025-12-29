@@ -8,13 +8,14 @@
     "prebuild": "npm run build:sdk",
     "build": "tsc -b && vite build",
     "build:sdk": "node build-sdk.js",
+    "postinstall": "node check-sdk.js",
     "seed:quests": "node scripts/seed-quests.mjs",
     "seed:shop": "node scripts/seed-shop-items.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ffx/sdk": "file:ffs-sdk",
+    "@ffx/sdk": "file:../ffs-sdk",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
