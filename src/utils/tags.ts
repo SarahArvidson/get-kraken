@@ -43,28 +43,28 @@ export const TAG_BORDER_CLASSES: Record<Tag, string> = {
 export const TAG_BUTTON_CLASSES: Record<Tag, { base: string; active: string }> =
   {
     work: {
-      base: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-white border-blue-300 dark:border-blue-600",
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
-        "bg-blue-500 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-400",
+        "bg-blue-500 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-400 shadow-md",
     },
     finance: {
-      base: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-white border-green-300 dark:border-green-600",
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
-        "bg-green-500 dark:bg-green-500 text-white border-green-600 dark:border-green-400",
+        "bg-green-500 dark:bg-green-500 text-white border-green-600 dark:border-green-400 shadow-md",
     },
     home: {
-      base: "bg-purple-100 dark:bg-purple-900/70 text-purple-800 dark:text-white border-purple-300 dark:border-purple-600",
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
-        "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400",
+        "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400 shadow-md",
     },
     health: {
-      base: "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-white border-red-300 dark:border-red-600",
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
-        "bg-red-500 dark:bg-red-500 text-white border-red-600 dark:border-red-400",
+        "bg-red-500 dark:bg-red-500 text-white border-red-600 dark:border-red-400 shadow-md",
     },
     relationship: {
-      base: "bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-white border-pink-300 dark:border-pink-600",
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
-        "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400",
+        "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400 shadow-md",
     },
   };

@@ -47,28 +47,28 @@ export const SHOP_TAG_BUTTON_CLASSES: Record<
   { base: string; active: string }
 > = {
   hobbies: {
-    base: "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-white border-indigo-300 dark:border-indigo-600",
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
-      "bg-indigo-500 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-400",
+      "bg-indigo-500 dark:bg-indigo-500 text-white border-indigo-600 dark:border-indigo-400 shadow-md",
   },
   "social life": {
-    base: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-white border-cyan-300 dark:border-cyan-600",
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
-      "bg-cyan-500 dark:bg-cyan-500 text-white border-cyan-600 dark:border-cyan-400",
+      "bg-cyan-500 dark:bg-cyan-500 text-white border-cyan-600 dark:border-cyan-400 shadow-md",
   },
   relationship: {
-    base: "bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-white border-pink-300 dark:border-pink-600",
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
-      "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400",
+      "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400 shadow-md",
   },
   travel: {
-    base: "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-white border-amber-300 dark:border-amber-600",
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
-      "bg-amber-500 dark:bg-amber-500 text-white border-amber-600 dark:border-amber-400",
+      "bg-amber-500 dark:bg-amber-500 text-white border-amber-600 dark:border-amber-400 shadow-md",
   },
   family: {
-    base: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-white border-emerald-300 dark:border-emerald-600",
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
-      "bg-emerald-500 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-400",
+      "bg-emerald-500 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-400 shadow-md",
   },
 };
