@@ -3,7 +3,8 @@
 
 [build]
   # Install dependencies, then build (prebuild script will build SDK first)
-  command = "npm ci && npm run build"
+  # Using npm install instead of npm ci because SDK dependencies are installed during postinstall
+  command = "npm install && npm run build"
   # Publish directory
   publish = "dist"
 
