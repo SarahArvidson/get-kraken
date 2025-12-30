@@ -17,6 +17,7 @@ interface QuestCardProps {
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
   showDollarAmounts?: boolean;
+  userCompletionCount?: number; // Count from user's own logs
 }
 
 export function QuestCard({
@@ -27,6 +28,7 @@ export function QuestCard({
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
+  userCompletionCount,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
 
@@ -81,7 +83,7 @@ export function QuestCard({
                 )}
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-200">
-                {quest.completion_count} completed
+                {userCompletionCount !== undefined ? userCompletionCount : quest.completion_count} completed
               </div>
             </div>
           </div>

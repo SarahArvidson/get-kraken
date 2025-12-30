@@ -144,6 +144,11 @@ function App() {
 
       await completeQuest(questId, reward);
       await updateWallet(reward, dollarAmount);
+      
+      // Reload logs to update the completion count display
+      const questLogs = await loadAllQuestLogs();
+      setAllQuestLogs(questLogs);
+      
       playCoinSound(); // Play coin sound on successful completion
       setToast({ message: `Earned ${reward} sea dollars! 🎉`, type: "success" });
     } catch (err: unknown) {
@@ -544,22 +549,30 @@ function App() {
                     setToast({ message: "Quest created! 🎯", type: "success" });
                   }}
                 />
-                {filteredQuests.map((quest) => (
-                  <QuestCard
-                    key={quest.id}
-                    quest={quest}
-                    onComplete={handleCompleteQuest}
-                    onUpdateReward={async (questId, newReward) => {
-                      await updateQuest(questId, { reward: newReward });
-                    }}
-                    onUpdateDollarAmount={preferences.showDollarAmounts ? async (questId, newDollarAmount) => {
-                      await updateQuest(questId, { dollar_amount: newDollarAmount });
-                    } : undefined}
-                    onViewLogs={handleViewQuestLogs}
-                    onEdit={handleEditQuest}
-                    showDollarAmounts={preferences.showDollarAmounts}
-                  />
-                ))}
+                {filteredQuests.map((quest) => {
+                  // Calculate completion count from user's own logs
+                  const userCompletionCount = allQuestLogs.filter(
+                    (log) => log.quest_id === quest.id
+                  ).length;
+                  
+                  return (
+                    <QuestCard
+                      key={quest.id}
+                      quest={quest}
+                      onComplete={handleCompleteQuest}
+                      onUpdateReward={async (questId, newReward) => {
+                        await updateQuest(questId, { reward: newReward });
+                      }}
+                      onUpdateDollarAmount={preferences.showDollarAmounts ? async (questId, newDollarAmount) => {
+                        await updateQuest(questId, { dollar_amount: newDollarAmount });
+                      } : undefined}
+                      onViewLogs={handleViewQuestLogs}
+                      onEdit={handleEditQuest}
+                      showDollarAmounts={preferences.showDollarAmounts}
+                      userCompletionCount={userCompletionCount}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
