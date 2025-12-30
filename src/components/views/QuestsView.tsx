@@ -26,8 +26,6 @@ interface QuestsViewProps {
   showDollarAmounts: boolean;
   onCreateQuest: (questData: Omit<Quest, "id" | "created_at" | "updated_at" | "completion_count">) => Promise<void>;
   onCompleteQuest: (questId: string, reward: number) => Promise<void>;
-  onUpdateQuest: (questId: string, updates: Partial<Quest>) => Promise<void>;
-  onUpdateDollarAmount?: (questId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
   onShowToast: (message: string, type: "success" | "error") => void;
@@ -44,8 +42,6 @@ export function QuestsView({
   showDollarAmounts,
   onCreateQuest,
   onCompleteQuest,
-  onUpdateQuest,
-  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   onShowToast,
@@ -115,16 +111,6 @@ export function QuestsView({
               key={quest.id}
               quest={quest}
               onComplete={onCompleteQuest}
-              onUpdateReward={async (questId, newReward) => {
-                await onUpdateQuest(questId, { reward: newReward });
-              }}
-              onUpdateDollarAmount={
-                showDollarAmounts && onUpdateDollarAmount
-                  ? async (questId, newDollarAmount) => {
-                      await onUpdateDollarAmount(questId, newDollarAmount);
-                    }
-                  : undefined
-              }
               onViewLogs={onViewLogs}
               onEdit={onEdit}
               showDollarAmounts={showDollarAmounts}

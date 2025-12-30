@@ -34,8 +34,6 @@ interface ShopViewProps {
     >
   ) => Promise<void>;
   onPurchaseItem: (itemId: string, price: number) => Promise<void>;
-  onUpdateShopItem: (itemId: string, updates: Partial<ShopItem>) => Promise<void>;
-  onUpdateDollarAmount?: (itemId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
   onShowToast: (message: string, type: "success" | "error") => void;
@@ -52,8 +50,6 @@ export function ShopView({
   showDollarAmounts,
   onCreateShopItem,
   onPurchaseItem,
-  onUpdateShopItem,
-  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   onShowToast,
@@ -119,16 +115,6 @@ export function ShopView({
               item={item}
               walletTotal={walletTotal}
               onPurchase={onPurchaseItem}
-              onUpdatePrice={async (itemId, newPrice) => {
-                await onUpdateShopItem(itemId, { price: newPrice });
-              }}
-              onUpdateDollarAmount={
-                showDollarAmounts && onUpdateDollarAmount
-                  ? async (itemId, newDollarAmount) => {
-                      await onUpdateDollarAmount(itemId, newDollarAmount);
-                    }
-                  : undefined
-              }
               onViewLogs={onViewLogs}
               onEdit={onEdit}
               showDollarAmounts={showDollarAmounts}

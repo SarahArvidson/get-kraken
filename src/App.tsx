@@ -12,6 +12,8 @@ import { useShopItems } from "./hooks/useShopItems";
 import { usePreferences } from "./hooks/usePreferences";
 import { useToast } from "./hooks/useToast";
 import { useFilterState } from "./hooks/useFilterState";
+import { useQuestOverrides } from "./hooks/useQuestOverrides";
+import { useShopItemOverrides } from "./hooks/useShopItemOverrides";
 import { WalletDisplay } from "./components/WalletDisplay";
 import { Header } from "./components/Header";
 import { NavigationTabs } from "./components/NavigationTabs";
@@ -73,6 +75,8 @@ function App() {
     loadAllShopLogs,
     deleteAllShopLogs,
   } = useShopItems();
+  const { getEffectiveReward, getEffectiveDollarAmount } = useQuestOverrides();
+  const { getEffectivePrice, getEffectiveDollarAmount: getEffectiveShopDollarAmount } = useShopItemOverrides();
 
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
@@ -119,19 +123,23 @@ function App() {
     };
   }, []);
 
-  const handleCompleteQuest = async (questId: string, reward: number) => {
+  const handleCompleteQuest = async (questId: string, _reward: number) => {
     try {
       const quest = quests.find((q) => q.id === questId);
-      const dollarAmount = quest?.dollar_amount || 0;
+      if (!quest) throw new Error("Quest not found");
+      
+      // Use effective values from overrides
+      const effectiveReward = getEffectiveReward(questId, quest.reward);
+      const effectiveDollarAmount = getEffectiveDollarAmount(questId, quest.dollar_amount || 0);
 
-      await completeQuest(questId, reward);
-      await updateWallet(reward, dollarAmount);
+      await completeQuest(questId, effectiveReward);
+      await updateWallet(effectiveReward, effectiveDollarAmount);
       
       const questLogs = await loadAllQuestLogs();
       setAllQuestLogs(questLogs);
       
       playCoinSound();
-      showSuccess(`Earned ${reward} ${CURRENCY_NAME}! 🎉`);
+      showSuccess(`Earned ${effectiveReward} ${CURRENCY_NAME}! 🎉`);
     } catch (err: unknown) {
       showError(
         err instanceof Error ? err.message : "Failed to complete quest"
@@ -139,14 +147,18 @@ function App() {
     }
   };
 
-  const handlePurchaseItem = async (itemId: string, price: number) => {
+  const handlePurchaseItem = async (itemId: string, _price: number) => {
     try {
       const item = shopItems.find((i) => i.id === itemId);
-      const dollarAmount = item?.dollar_amount || 0;
+      if (!item) throw new Error("Shop item not found");
+      
+      // Use effective values from overrides
+      const effectivePrice = getEffectivePrice(itemId, item.price);
+      const effectiveDollarAmount = getEffectiveShopDollarAmount(itemId, item.dollar_amount || 0);
 
-      await purchaseItem(itemId, price);
-      await updateWallet(-price, -dollarAmount);
-      showSuccess(`Purchased for ${price} ${CURRENCY_NAME}! 🛒`);
+      await purchaseItem(itemId, effectivePrice);
+      await updateWallet(-effectivePrice, -effectiveDollarAmount);
+      showSuccess(`Purchased for ${effectivePrice} ${CURRENCY_NAME}! 🛒`);
     } catch (err: unknown) {
       showError(
         err instanceof Error ? err.message : "Failed to purchase item"
@@ -323,14 +335,6 @@ function App() {
             showDollarAmounts={preferences.showDollarAmounts}
             onCreateQuest={createQuest}
             onCompleteQuest={handleCompleteQuest}
-            onUpdateQuest={updateQuest}
-            onUpdateDollarAmount={
-              preferences.showDollarAmounts
-                ? async (questId, newDollarAmount) => {
-                    await updateQuest(questId, { dollar_amount: newDollarAmount });
-                  }
-                : undefined
-            }
             onViewLogs={handleViewQuestLogs}
             onEdit={handleEditQuest}
             onShowToast={showToast}
@@ -349,14 +353,6 @@ function App() {
             showDollarAmounts={preferences.showDollarAmounts}
             onCreateShopItem={createShopItem}
             onPurchaseItem={handlePurchaseItem}
-            onUpdateShopItem={updateShopItem}
-            onUpdateDollarAmount={
-              preferences.showDollarAmounts
-                ? async (itemId, newDollarAmount) => {
-                    await updateShopItem(itemId, { dollar_amount: newDollarAmount });
-                  }
-                : undefined
-            }
             onViewLogs={handleViewShopLogs}
             onEdit={handleEditShopItem}
             onShowToast={showToast}

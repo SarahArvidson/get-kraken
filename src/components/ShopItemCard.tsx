@@ -4,19 +4,17 @@
  * Displays a shop item with tap-to-purchase, swipeable log, and editable price
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
 import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
-import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useShopItemOverrides } from "../hooks/useShopItemOverrides";
 
 interface ShopItemCardProps {
   item: ShopItem;
   walletTotal: number;
   onPurchase: (itemId: string, price: number) => Promise<void>;
-  onUpdatePrice: (itemId: string, newPrice: number) => Promise<void>;
-  onUpdateDollarAmount?: (itemId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
   showDollarAmounts?: boolean;
@@ -26,44 +24,48 @@ export function ShopItemCard({
   item,
   walletTotal,
   onPurchase,
-  onUpdatePrice,
-  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const { userId } = useCurrentUser();
+  const { getEffectivePrice, getEffectiveDollarAmount, updateOverride } = useShopItemOverrides();
   
-  // Check if user can edit this item (only if they created it)
-  // Seeded items (created_by is null/undefined) cannot be edited by anyone
-  const canEdit = userId !== null && item.created_by !== null && item.created_by !== undefined && item.created_by === userId;
+  // Get effective values (user override or base)
+  const effectivePrice = useMemo(
+    () => getEffectivePrice(item.id, item.price),
+    [getEffectivePrice, item.id, item.price]
+  );
+  const effectiveDollarAmount = useMemo(
+    () => getEffectiveDollarAmount(item.id, item.dollar_amount || 0),
+    [getEffectiveDollarAmount, item.id, item.dollar_amount]
+  );
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
     try {
-      await onPurchase(item.id, item.price);
+      await onPurchase(item.id, effectivePrice);
     } finally {
       setIsPurchasing(false);
     }
   };
 
   const handlePriceChange = async (delta: number) => {
-    const newPrice = Math.max(0, item.price + delta * DEFAULT_REWARD_INCREMENT);
-    if (newPrice !== item.price) {
-      await onUpdatePrice(item.id, newPrice);
+    const newPrice = Math.max(0, effectivePrice + delta * DEFAULT_REWARD_INCREMENT);
+    if (newPrice !== effectivePrice) {
+      await updateOverride(item.id, { price: newPrice });
     }
   };
 
   const handleDollarAmountChange = async (delta: number) => {
-    if (!onUpdateDollarAmount) return;
-    const newDollarAmount = Math.max(0, Math.round((item.dollar_amount || 0) + delta * DEFAULT_DOLLAR_INCREMENT));
-    if (newDollarAmount !== Math.round(item.dollar_amount || 0)) {
-      await onUpdateDollarAmount(item.id, newDollarAmount);
+    if (!showDollarAmounts) return;
+    const newDollarAmount = Math.max(0, Math.round(effectiveDollarAmount + delta * DEFAULT_DOLLAR_INCREMENT));
+    if (newDollarAmount !== Math.round(effectiveDollarAmount)) {
+      await updateOverride(item.id, { dollar_amount: newDollarAmount });
     }
   };
 
-  const canAfford = walletTotal >= item.price;
+  const canAfford = walletTotal >= effectivePrice;
 
   return (
     <CyclingShopBorder tags={item.tags}>
@@ -79,14 +81,14 @@ export function ShopItemCard({
               <div className="flex items-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {item.price}
+                  {effectivePrice}
                 </span>
                 {showDollarAmounts && (
                   <>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
                     <span className="text-lg">💵</span>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                      {(item.dollar_amount || 0).toFixed(2)}
+                      {Math.round(effectiveDollarAmount)}
                     </span>
                   </>
                 )}
@@ -97,9 +99,8 @@ export function ShopItemCard({
             </div>
           </div>
 
-          {/* Price Controls - Only show if user can edit */}
-          {canEdit && (
-            <div className="space-y-3 mb-4">
+          {/* Price Controls - All users can edit (changes are per-user) */}
+          <div className="space-y-3 mb-4">
               <div className="flex items-center justify-center gap-4">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
                 <button
@@ -110,7 +111,7 @@ export function ShopItemCard({
                   −
                 </button>
                 <span className="text-lg font-semibold min-w-[60px] text-center">
-                  {item.price}
+                  {effectivePrice}
                 </span>
                 <button
                   onClick={() => handlePriceChange(1)}
@@ -120,7 +121,7 @@ export function ShopItemCard({
                   +
                 </button>
               </div>
-              {showDollarAmounts && onUpdateDollarAmount && (
+              {showDollarAmounts && (
                 <div className="flex items-center justify-center gap-4">
                   <span className="text-lg">💵</span>
                   <button
@@ -131,7 +132,7 @@ export function ShopItemCard({
                     −
                   </button>
                   <span className="text-lg font-semibold min-w-[80px] text-center">
-                    ${Math.round(item.dollar_amount || 0)}
+                    ${Math.round(effectiveDollarAmount)}
                   </span>
                   <button
                     onClick={() => handleDollarAmountChange(1)}
@@ -142,8 +143,7 @@ export function ShopItemCard({
                   </button>
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -157,7 +157,7 @@ export function ShopItemCard({
             >
               {canAfford || walletTotal < 0
                 ? "Purchase"
-                : `Need ${item.price - walletTotal} more`}
+                : `Need ${effectivePrice - walletTotal} more`}
             </Button>
             <Button
               variant="outline"
@@ -167,16 +167,14 @@ export function ShopItemCard({
             >
               Logs
             </Button>
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={() => onEdit(item)}
-                className="touch-manipulation"
-              >
-                Edit
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => onEdit(item)}
+              className="touch-manipulation"
+            >
+              Edit
+            </Button>
           </div>
         </div>
       </div>

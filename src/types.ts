@@ -4,7 +4,7 @@
  * Type definitions for quests, shop items, wallet, and logs
  */
 
-export type Tag = "work" | "finance" | "home" | "health" | "relationship";
+export type Tag = "work" | "finance" | "home" | "health" | "relationship" | "social life";
 export type ShopTag =
   | "hobbies"
   | "social life"
@@ -33,6 +33,26 @@ export interface ShopItem {
   dollar_amount: number; // real dollars spent per purchase
   purchase_count: number;
   created_by?: string | null; // user ID who created this item (null for seeded items, optional for backwards compatibility)
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserQuestOverride {
+  id: string;
+  user_id: string;
+  quest_id: string;
+  reward: number | null;
+  dollar_amount: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserShopItemOverride {
+  id: string;
+  user_id: string;
+  shop_item_id: string;
+  price: number | null;
+  dollar_amount: number | null;
   created_at: string;
   updated_at: string;
 }

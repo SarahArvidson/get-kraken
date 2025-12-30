@@ -10,6 +10,7 @@ export const TAGS: Tag[] = [
   "home",
   "health",
   "relationship",
+  "social life",
 ];
 
 export const TAG_COLORS: Record<Tag, string> = {
@@ -18,6 +19,7 @@ export const TAG_COLORS: Record<Tag, string> = {
   home: "purple",
   health: "red",
   relationship: "pink",
+  "social life": "cyan",
 };
 
 export const TAG_LABELS: Record<Tag, string> = {
@@ -26,6 +28,7 @@ export const TAG_LABELS: Record<Tag, string> = {
   home: "Home",
   health: "Health",
   relationship: "Relationship",
+  "social life": "Social Life",
 };
 
 // Tailwind-safe border classes (must be in full class names for JIT)
@@ -38,6 +41,8 @@ export const TAG_BORDER_CLASSES: Record<Tag, string> = {
     "border-red-400 dark:border-red-500 shadow-[0_0_8px_rgba(248,113,113,0.4)] dark:shadow-[0_0_8px_rgba(239,68,68,0.4)]",
   relationship:
     "border-pink-400 dark:border-pink-500 shadow-[0_0_8px_rgba(244,114,182,0.4)] dark:shadow-[0_0_8px_rgba(236,72,153,0.4)]",
+  "social life":
+    "border-cyan-400 dark:border-cyan-500 shadow-[0_0_8px_rgba(103,232,249,0.4)] dark:shadow-[0_0_8px_rgba(34,211,238,0.4)]",
 };
 
 export const TAG_BUTTON_CLASSES: Record<Tag, { base: string; active: string }> =
@@ -66,5 +71,10 @@ export const TAG_BUTTON_CLASSES: Record<Tag, { base: string; active: string }> =
       base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
       active:
         "bg-pink-500 dark:bg-pink-500 text-white border-pink-600 dark:border-pink-400 shadow-md",
+    },
+    "social life": {
+      base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
+      active:
+        "bg-cyan-500 dark:bg-cyan-500 text-white border-cyan-600 dark:border-cyan-400 shadow-md",
     },
   };

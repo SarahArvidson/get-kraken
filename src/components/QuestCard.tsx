@@ -4,18 +4,16 @@
  * Displays a quest with tap-to-complete, swipeable log, and editable reward
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@ffx/sdk";
 import type { Quest } from "../types";
 import { CyclingBorder } from "./CyclingBorder";
 import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
-import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useQuestOverrides } from "../hooks/useQuestOverrides";
 
 interface QuestCardProps {
   quest: Quest;
   onComplete: (questId: string, reward: number) => Promise<void>;
-  onUpdateReward: (questId: string, newReward: number) => Promise<void>;
-  onUpdateDollarAmount?: (questId: string, newDollarAmount: number) => Promise<void>;
   onViewLogs: (questId: string) => void;
   onEdit: (quest: Quest) => void;
   showDollarAmounts?: boolean;
@@ -25,41 +23,45 @@ interface QuestCardProps {
 export function QuestCard({
   quest,
   onComplete,
-  onUpdateReward,
-  onUpdateDollarAmount,
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
   userCompletionCount,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
-  const { userId } = useCurrentUser();
+  const { getEffectiveReward, getEffectiveDollarAmount, updateOverride } = useQuestOverrides();
   
-  // Check if user can edit this quest (only if they created it)
-  // Seeded quests (created_by is null/undefined) cannot be edited by anyone
-  const canEdit = userId !== null && quest.created_by !== null && quest.created_by !== undefined && quest.created_by === userId;
+  // Get effective values (user override or base)
+  const effectiveReward = useMemo(
+    () => getEffectiveReward(quest.id, quest.reward),
+    [getEffectiveReward, quest.id, quest.reward]
+  );
+  const effectiveDollarAmount = useMemo(
+    () => getEffectiveDollarAmount(quest.id, quest.dollar_amount || 0),
+    [getEffectiveDollarAmount, quest.id, quest.dollar_amount]
+  );
 
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
-      await onComplete(quest.id, quest.reward);
+      await onComplete(quest.id, effectiveReward);
     } finally {
       setIsCompleting(false);
     }
   };
 
   const handleRewardChange = async (delta: number) => {
-    const newReward = Math.max(0, quest.reward + delta * DEFAULT_REWARD_INCREMENT);
-    if (newReward !== quest.reward) {
-      await onUpdateReward(quest.id, newReward);
+    const newReward = Math.max(0, effectiveReward + delta * DEFAULT_REWARD_INCREMENT);
+    if (newReward !== effectiveReward) {
+      await updateOverride(quest.id, { reward: newReward });
     }
   };
 
   const handleDollarAmountChange = async (delta: number) => {
-    if (!onUpdateDollarAmount) return;
-    const newDollarAmount = Math.max(0, Math.round((quest.dollar_amount || 0) + delta * DEFAULT_DOLLAR_INCREMENT));
-    if (newDollarAmount !== Math.round(quest.dollar_amount || 0)) {
-      await onUpdateDollarAmount(quest.id, newDollarAmount);
+    if (!showDollarAmounts) return;
+    const newDollarAmount = Math.max(0, Math.round(effectiveDollarAmount + delta * DEFAULT_DOLLAR_INCREMENT));
+    if (newDollarAmount !== Math.round(effectiveDollarAmount)) {
+      await updateOverride(quest.id, { dollar_amount: newDollarAmount });
     }
   };
 
@@ -77,14 +79,14 @@ export function QuestCard({
               <div className="flex items-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                  {quest.reward}
+                  {effectiveReward}
                 </span>
                 {showDollarAmounts && (
                   <>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">|</span>
                     <span className="text-lg">💵</span>
                     <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
-                      {(quest.dollar_amount || 0).toFixed(2)}
+                      {Math.round(effectiveDollarAmount)}
                     </span>
                   </>
                 )}
@@ -95,9 +97,8 @@ export function QuestCard({
             </div>
           </div>
 
-          {/* Reward Controls - Only show if user can edit */}
-          {canEdit && (
-            <div className="space-y-3 mb-4">
+          {/* Reward Controls - All users can edit (changes are per-user) */}
+          <div className="space-y-3 mb-4">
               <div className="flex items-center justify-center gap-4">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
                 <button
@@ -108,7 +109,7 @@ export function QuestCard({
                   −
                 </button>
                 <span className="text-lg font-semibold min-w-[60px] text-center">
-                  {quest.reward}
+                  {effectiveReward}
                 </span>
                 <button
                   onClick={() => handleRewardChange(1)}
@@ -118,7 +119,7 @@ export function QuestCard({
                   +
                 </button>
               </div>
-              {showDollarAmounts && onUpdateDollarAmount && (
+              {showDollarAmounts && (
                 <div className="flex items-center justify-center gap-4">
                   <span className="text-lg">💵</span>
                   <button
@@ -129,7 +130,7 @@ export function QuestCard({
                     −
                   </button>
                   <span className="text-lg font-semibold min-w-[80px] text-center">
-                    ${Math.round(quest.dollar_amount || 0)}
+                    ${Math.round(effectiveDollarAmount)}
                   </span>
                   <button
                     onClick={() => handleDollarAmountChange(1)}
@@ -140,8 +141,7 @@ export function QuestCard({
                   </button>
                 </div>
               )}
-            </div>
-          )}
+          </div>
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -162,16 +162,14 @@ export function QuestCard({
             >
               Logs
             </Button>
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={() => onEdit(quest)}
-                className="touch-manipulation"
-              >
-                Edit
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => onEdit(quest)}
+              className="touch-manipulation"
+            >
+              Edit
+            </Button>
           </div>
         </div>
       </div>
