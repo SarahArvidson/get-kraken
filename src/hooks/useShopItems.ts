@@ -249,7 +249,7 @@ export function useShopItems() {
     }
   }, []);
 
-  // Delete all shop logs for current user
+  // Delete all shop logs for current user and reset purchase counts
   const deleteAllShopLogs = useCallback(async () => {
     try {
       // Get current user
@@ -258,18 +258,30 @@ export function useShopItems() {
         throw new Error("User must be authenticated");
       }
 
+      // Delete all shop logs for this user
       const { error: deleteError } = await supabase
         .from("shop_logs")
         .delete()
         .eq("user_id", user.id);
 
       if (deleteError) throw deleteError;
+
+      // Reset all shop item purchase_count to 0
+      const { error: updateError } = await supabase
+        .from("shop_items")
+        .update({ purchase_count: 0 })
+        .not("id", "is", null); // Update all shop items
+
+      if (updateError) throw updateError;
+
+      // Refresh shop items to reflect the reset counts
+      await loadShopItems();
     } catch (err: any) {
       console.error("Error deleting all shop logs:", err);
       setError(err.message || "Failed to delete shop logs");
       throw err;
     }
-  }, []);
+  }, [loadShopItems]);
 
   return {
     shopItems,

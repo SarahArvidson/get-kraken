@@ -247,7 +247,7 @@ export function useQuests() {
     }
   }, []);
 
-  // Delete all quest logs for current user
+  // Delete all quest logs for current user and reset completion counts
   const deleteAllQuestLogs = useCallback(async () => {
     try {
       // Get current user
@@ -256,18 +256,30 @@ export function useQuests() {
         throw new Error("User must be authenticated");
       }
 
+      // Delete all quest logs for this user
       const { error: deleteError } = await supabase
         .from("quest_logs")
         .delete()
         .eq("user_id", user.id);
 
       if (deleteError) throw deleteError;
+
+      // Reset all quest completion_count to 0
+      const { error: updateError } = await supabase
+        .from("quests")
+        .update({ completion_count: 0 })
+        .not("id", "is", null); // Update all quests
+
+      if (updateError) throw updateError;
+
+      // Refresh quests to reflect the reset counts
+      await loadQuests();
     } catch (err: any) {
       console.error("Error deleting all quest logs:", err);
       setError(err.message || "Failed to delete quest logs");
       throw err;
     }
-  }, []);
+  }, [loadQuests]);
 
   return {
     quests,
