@@ -738,7 +738,7 @@ function App() {
         <p>
           Built by{" "}
           <a
-            href="https://github.com/SarahArvidson"
+            href="https://saraharvidson.github.io/sarahArvidson/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-gray-700 dark:hover:text-gray-300"
@@ -747,7 +747,7 @@ function App() {
           </a>
           {" · "}
           <a
-            href="https://github.com/SarahArvidson/get-kraken"
+            href="https://github.com/SarahArvidson"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-gray-700 dark:hover:text-gray-300"

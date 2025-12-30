@@ -79,6 +79,7 @@ export interface QuestStreak {
 
 export interface Goal {
   id: string;
+  user_id: string; // user who owns this goal
   name: string;
   target_amount: number;
   is_completed: boolean;

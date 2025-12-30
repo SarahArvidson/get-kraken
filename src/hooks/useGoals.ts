@@ -13,13 +13,22 @@ export function useGoals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load all goals
+  // Load all goals for current user
   const loadGoals = useCallback(async () => {
     try {
       setLoading(true);
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        setGoals([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error: fetchError } = await supabase
         .from("goals")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -35,12 +44,19 @@ export function useGoals() {
 
   // Create a new goal
   const createGoal = useCallback(
-    async (goal: Omit<Goal, "id" | "created_at" | "updated_at" | "is_completed" | "completed_at">) => {
+    async (goal: Omit<Goal, "id" | "user_id" | "created_at" | "updated_at" | "is_completed" | "completed_at">) => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
         const { data, error: createError } = await supabase
           .from("goals")
           .insert({
             ...goal,
+            user_id: user.id,
             is_completed: false,
             completed_at: null,
             created_at: new Date().toISOString(),
@@ -111,10 +127,15 @@ export function useGoals() {
   // Check and update goal completion based on wallet total
   const checkGoalCompletion = useCallback(
     async (walletTotal: number) => {
-      // Get fresh goals list
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) return;
+
+      // Get fresh goals list for current user
       const { data: freshGoals } = await supabase
         .from("goals")
         .select("*")
+        .eq("user_id", user.id)
         .eq("is_completed", false);
       
       if (!freshGoals) return;
