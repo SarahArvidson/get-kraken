@@ -140,9 +140,9 @@ export function useQuests() {
           await refreshOverrides();
           // Reload quests to get merged data
           await loadQuests();
-          // Return updated quest (will be merged with override)
-          const updatedQuest = quests.find((q) => q.id === id);
-          return updatedQuest || null;
+          // Return the quest from the newly loaded state
+          // Note: loadQuests updates the state, so we need to wait for it
+          return null; // Will be refreshed by loadQuests
         }
       } catch (err: any) {
         console.error("Error updating quest:", err);
@@ -229,7 +229,7 @@ export function useQuests() {
     []
   );
 
-  // Subscribe to real-time changes and reload when overrides change
+  // Subscribe to real-time changes
   useEffect(() => {
     loadQuests();
 
@@ -243,16 +243,11 @@ export function useQuests() {
       }
     });
 
-    // Also reload periodically to catch override changes
-    const interval = setInterval(() => {
-      loadQuests(); // Periodically reload to catch override changes
-    }, 2000); // Check every 2 seconds
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(interval);
     };
-  }, [loadQuests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Delete a quest (user-created quests delete base, seeded quests hide for user)
   const deleteQuest = useCallback(async (id: string) => {

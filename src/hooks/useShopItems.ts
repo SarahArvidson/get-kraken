@@ -140,9 +140,8 @@ export function useShopItems() {
           await refreshOverrides();
           // Reload shop items to get merged data
           await loadShopItems();
-          // Return updated item (will be merged with override)
-          const updatedItem = shopItems.find((item) => item.id === id);
-          return updatedItem || null;
+          // Return null - will be refreshed by loadShopItems
+          return null;
         }
       } catch (err: any) {
         console.error("Error updating shop item:", err);
@@ -229,7 +228,7 @@ export function useShopItems() {
     []
   );
 
-  // Subscribe to real-time changes and reload when overrides change
+  // Subscribe to real-time changes
   useEffect(() => {
     loadShopItems();
 
@@ -243,16 +242,11 @@ export function useShopItems() {
       }
     });
 
-    // Also reload periodically to catch override changes
-    const interval = setInterval(() => {
-      loadShopItems(); // Periodically reload to catch override changes
-    }, 2000); // Check every 2 seconds
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(interval);
     };
-  }, [loadShopItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Delete a shop item (user-created items delete base, seeded items hide for user)
   const deleteShopItem = useCallback(async (id: string) => {
