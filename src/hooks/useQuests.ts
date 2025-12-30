@@ -96,6 +96,48 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        // Handle completion_count separately - it's calculated from logs, so we need to adjust logs
+        if (updates.completion_count !== undefined) {
+          // Get current completion count from logs, sorted by date (oldest first for deletion)
+          const { data: currentLogs } = await supabase
+            .from("quest_logs")
+            .select("id")
+            .eq("quest_id", id)
+            .eq("user_id", user.id)
+            .order("completed_at", { ascending: true });
+
+          const currentCount = currentLogs?.length || 0;
+          const targetCount = updates.completion_count;
+          const difference = targetCount - currentCount;
+
+          if (difference > 0) {
+            // Need to add log entries
+            const newLogs = Array.from({ length: difference }, () => ({
+              quest_id: id,
+              user_id: user.id,
+              completed_at: new Date().toISOString(),
+            }));
+            const { error: logError } = await supabase
+              .from("quest_logs")
+              .insert(newLogs);
+            if (logError) throw logError;
+          } else if (difference < 0) {
+            // Need to remove log entries (remove oldest ones first)
+            const logsToDelete = currentLogs?.slice(0, Math.abs(difference)) || [];
+            if (logsToDelete.length > 0) {
+              const idsToDelete = logsToDelete.map((log) => log.id);
+              const { error: deleteError } = await supabase
+                .from("quest_logs")
+                .delete()
+                .in("id", idsToDelete);
+              if (deleteError) throw deleteError;
+            }
+          }
+          // Remove completion_count from updates since we handled it via logs
+          const { completion_count, ...restUpdates } = updates;
+          updates = restUpdates;
+        }
+
         // First, check if the quest exists and if the user created it
         const { data: existingQuest, error: fetchError } = await supabase
           .from("quests")

@@ -55,8 +55,8 @@ export function GamificationPanel({
 
   // Check goal completion when wallet total changes
   useEffect(() => {
-    checkGoalCompletion(walletTotal);
-  }, [walletTotal, checkGoalCompletion]);
+    checkGoalCompletion(walletTotal, walletDollarTotal);
+  }, [walletTotal, walletDollarTotal, checkGoalCompletion]);
 
   const handleCreateGoal = async () => {
     if (!goalName.trim()) {

@@ -29,7 +29,11 @@ import { playCoinSound, preloadAudio } from "./utils/sound";
 import { calculateUserCompletionCounts } from "./utils/completionCount";
 import { calculateUserPurchaseCounts } from "./utils/purchaseCount";
 import type { Quest, ShopItem, QuestLog, ShopLog, Tag, ShopTag } from "./types";
-import { LOG_REFRESH_INTERVAL_MS, TOAST_DURATION_MS, CURRENCY_NAME } from "./constants";
+import {
+  LOG_REFRESH_INTERVAL_MS,
+  TOAST_DURATION_MS,
+  CURRENCY_NAME,
+} from "./constants";
 import { supabase } from "./lib/supabase";
 
 type View = "quests" | "shop" | "progress";
@@ -38,7 +42,7 @@ function App() {
   const [currentView, setCurrentView] = useState<View>("quests");
   const preferences = usePreferences();
   const { toast, showToast, showSuccess, showError, dismissToast } = useToast();
-  
+
   const [selectedQuestLogs, setSelectedQuestLogs] = useState<{
     quest: Quest;
     logs: QuestLog[];
@@ -79,11 +83,14 @@ function App() {
     deleteAllShopLogs,
   } = useShopItems();
   const { getEffectiveReward, getEffectiveDollarAmount } = useQuestOverrides();
-  const { getEffectivePrice, getEffectiveDollarAmount: getEffectiveShopDollarAmount } = useShopItemOverrides();
+  const {
+    getEffectivePrice,
+    getEffectiveDollarAmount: getEffectiveShopDollarAmount,
+  } = useShopItemOverrides();
 
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
-  
+
   // Use per-user filter state
   const {
     questSearchQuery,
@@ -130,17 +137,20 @@ function App() {
     try {
       const quest = quests.find((q) => q.id === questId);
       if (!quest) throw new Error("Quest not found");
-      
+
       // Use effective values from overrides
       const effectiveReward = getEffectiveReward(questId, quest.reward);
-      const effectiveDollarAmount = getEffectiveDollarAmount(questId, quest.dollar_amount || 0);
+      const effectiveDollarAmount = getEffectiveDollarAmount(
+        questId,
+        quest.dollar_amount || 0
+      );
 
       await completeQuest(questId, effectiveReward);
       await updateWallet(effectiveReward, effectiveDollarAmount);
-      
+
       const questLogs = await loadAllQuestLogs();
       setAllQuestLogs(questLogs);
-      
+
       playCoinSound();
       showSuccess(`Earned ${effectiveReward} ${CURRENCY_NAME}! 🎉`);
     } catch (err: unknown) {
@@ -154,18 +164,19 @@ function App() {
     try {
       const item = shopItems.find((i) => i.id === itemId);
       if (!item) throw new Error("Shop item not found");
-      
+
       // Use effective values from overrides
       const effectivePrice = getEffectivePrice(itemId, item.price);
-      const effectiveDollarAmount = getEffectiveShopDollarAmount(itemId, item.dollar_amount || 0);
+      const effectiveDollarAmount = getEffectiveShopDollarAmount(
+        itemId,
+        item.dollar_amount || 0
+      );
 
       await purchaseItem(itemId, effectivePrice);
       await updateWallet(-effectivePrice, -effectiveDollarAmount);
       showSuccess(`Purchased for ${effectivePrice} ${CURRENCY_NAME}! 🛒`);
     } catch (err: unknown) {
-      showError(
-        err instanceof Error ? err.message : "Failed to purchase item"
-      );
+      showError(err instanceof Error ? err.message : "Failed to purchase item");
     }
   };
 
@@ -213,12 +224,13 @@ function App() {
     try {
       await updateQuest(editingQuest.id, updates);
       // updateQuest already calls loadQuests internally, so we don't need to call it again
+      // Reload logs to reflect any count changes
+      const logs = await loadAllQuestLogs();
+      setAllQuestLogs(logs);
       setEditingQuest(null);
       showSuccess("Quest updated! ✅");
     } catch (err: unknown) {
-      showError(
-        err instanceof Error ? err.message : "Failed to update quest"
-      );
+      showError(err instanceof Error ? err.message : "Failed to update quest");
     }
   };
 
@@ -232,6 +244,9 @@ function App() {
     try {
       await updateShopItem(editingShopItem.id, updates);
       // updateShopItem already calls loadShopItems internally, so we don't need to call it again
+      // Reload logs to reflect any count changes
+      const logs = await loadAllShopLogs();
+      setAllShopLogs(logs);
       setEditingShopItem(null);
       showSuccess("Shop item updated! ✅");
     } catch (err: unknown) {
@@ -248,9 +263,7 @@ function App() {
       const logs = await loadAllQuestLogs();
       setAllQuestLogs(logs);
     } catch (err: unknown) {
-      showError(
-        err instanceof Error ? err.message : "Failed to delete quest"
-      );
+      showError(err instanceof Error ? err.message : "Failed to delete quest");
     }
   };
 
@@ -275,9 +288,7 @@ function App() {
       await resetWallet();
       showSuccess("Wallet reset to zero! ✅");
     } catch (err: unknown) {
-      showError(
-        err instanceof Error ? err.message : "Failed to reset wallet"
-      );
+      showError(err instanceof Error ? err.message : "Failed to reset wallet");
     }
   };
 
@@ -314,16 +325,17 @@ function App() {
       // The AuthGate component will handle the redirect to login
     } catch (err: unknown) {
       console.error("Error logging out:", err);
-      showError(
-        err instanceof Error ? err.message : "Failed to log out"
-      );
+      showError(err instanceof Error ? err.message : "Failed to log out");
     }
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 dark:bg-gray-900 relative" style={{ zIndex: 1 }}>
+    <div
+      className="min-h-screen bg-blue-50 dark:bg-gray-900 relative"
+      style={{ zIndex: 1 }}
+    >
       <BubbleBackground />
-      
+
       <Header
         showDollarAmounts={preferences.showDollarAmounts}
         onToggleDollarAmounts={() => preferences.toggleDollarAmounts()}
@@ -339,7 +351,10 @@ function App() {
           />
         </div>
 
-        <NavigationTabs currentView={currentView} onViewChange={setCurrentView} />
+        <NavigationTabs
+          currentView={currentView}
+          onViewChange={setCurrentView}
+        />
 
         {currentView === "quests" && (
           <QuestsView
@@ -412,37 +427,40 @@ function App() {
         />
       )}
 
-      {editingQuest && (() => {
-        const userCompletionCounts = calculateUserCompletionCounts(allQuestLogs);
-        return (
-          <EditQuestCard
-            quest={editingQuest}
-            userCompletionCount={userCompletionCounts[editingQuest.id]}
-            onSave={handleSaveQuestEdit}
-            onDelete={async () => {
-              await handleDeleteQuest(editingQuest.id);
-              setEditingQuest(null);
-            }}
-            onClose={() => setEditingQuest(null)}
-          />
-        );
-      })()}
+      {editingQuest &&
+        (() => {
+          const userCompletionCounts =
+            calculateUserCompletionCounts(allQuestLogs);
+          return (
+            <EditQuestCard
+              quest={editingQuest}
+              userCompletionCount={userCompletionCounts[editingQuest.id]}
+              onSave={handleSaveQuestEdit}
+              onDelete={async () => {
+                await handleDeleteQuest(editingQuest.id);
+                setEditingQuest(null);
+              }}
+              onClose={() => setEditingQuest(null)}
+            />
+          );
+        })()}
 
-      {editingShopItem && (() => {
-        const userPurchaseCounts = calculateUserPurchaseCounts(allShopLogs);
-        return (
-          <EditShopItemCard
-            item={editingShopItem}
-            userPurchaseCount={userPurchaseCounts[editingShopItem.id]}
-            onSave={handleSaveShopItemEdit}
-            onDelete={async () => {
-              await handleDeleteShopItem(editingShopItem.id);
-              setEditingShopItem(null);
-            }}
-            onClose={() => setEditingShopItem(null)}
-          />
-        );
-      })()}
+      {editingShopItem &&
+        (() => {
+          const userPurchaseCounts = calculateUserPurchaseCounts(allShopLogs);
+          return (
+            <EditShopItemCard
+              item={editingShopItem}
+              userPurchaseCount={userPurchaseCounts[editingShopItem.id]}
+              onSave={handleSaveShopItemEdit}
+              onDelete={async () => {
+                await handleDeleteShopItem(editingShopItem.id);
+                setEditingShopItem(null);
+              }}
+              onClose={() => setEditingShopItem(null)}
+            />
+          );
+        })()}
 
       {toast && (
         <Toast

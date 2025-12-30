@@ -98,6 +98,48 @@ export function useShopItems() {
           throw new Error("User must be authenticated");
         }
 
+        // Handle purchase_count separately - it's calculated from logs, so we need to adjust logs
+        if (updates.purchase_count !== undefined) {
+          // Get current purchase count from logs, sorted by date (oldest first for deletion)
+          const { data: currentLogs } = await supabase
+            .from("shop_logs")
+            .select("id")
+            .eq("shop_item_id", id)
+            .eq("user_id", user.id)
+            .order("purchased_at", { ascending: true });
+
+          const currentCount = currentLogs?.length || 0;
+          const targetCount = updates.purchase_count;
+          const difference = targetCount - currentCount;
+
+          if (difference > 0) {
+            // Need to add log entries
+            const newLogs = Array.from({ length: difference }, () => ({
+              shop_item_id: id,
+              user_id: user.id,
+              purchased_at: new Date().toISOString(),
+            }));
+            const { error: logError } = await supabase
+              .from("shop_logs")
+              .insert(newLogs);
+            if (logError) throw logError;
+          } else if (difference < 0) {
+            // Need to remove log entries (remove oldest ones first)
+            const logsToDelete = currentLogs?.slice(0, Math.abs(difference)) || [];
+            if (logsToDelete.length > 0) {
+              const idsToDelete = logsToDelete.map((log) => log.id);
+              const { error: deleteError } = await supabase
+                .from("shop_logs")
+                .delete()
+                .in("id", idsToDelete);
+              if (deleteError) throw deleteError;
+            }
+          }
+          // Remove purchase_count from updates since we handled it via logs
+          const { purchase_count, ...restUpdates } = updates;
+          updates = restUpdates;
+        }
+
         // First, check if the shop item exists and if the user created it
         const { data: existingItem, error: fetchError } = await supabase
           .from("shop_items")

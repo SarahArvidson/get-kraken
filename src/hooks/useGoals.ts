@@ -52,16 +52,26 @@ export function useGoals() {
           throw new Error("User must be authenticated");
         }
 
+        // Build insert object, only including dollar_amount if it's provided
+        const insertData: any = {
+          name: goal.name,
+          target_amount: goal.target_amount,
+          user_id: user.id,
+          is_completed: false,
+          completed_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Only include dollar_amount if it's not null/undefined
+        // This handles cases where the column might not exist in the database
+        if (goal.dollar_amount !== null && goal.dollar_amount !== undefined) {
+          insertData.dollar_amount = goal.dollar_amount;
+        }
+
         const { data, error: createError } = await supabase
           .from("goals")
-          .insert({
-            ...goal,
-            user_id: user.id,
-            is_completed: false,
-            completed_at: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .insert(insertData)
           .select()
           .single();
 
