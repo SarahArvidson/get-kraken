@@ -18,6 +18,7 @@ interface GamificationPanelProps {
   quests: Array<{ id: string; reward: number }>;
   shopItems: Array<{ id: string; price: number }>;
   onResetProgress?: () => void;
+  onResetAllProgress?: () => void;
 }
 
 export function GamificationPanel({
@@ -28,6 +29,7 @@ export function GamificationPanel({
   quests,
   shopItems,
   onResetProgress,
+  onResetAllProgress,
 }: GamificationPanelProps) {
   const {
     weeklyRecap,
@@ -353,15 +355,25 @@ export function GamificationPanel({
         )}
       </div>
 
-      {/* Reset Progress Button */}
-      {onResetProgress && (
-        <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
-          <button
-            onClick={onResetProgress}
-            className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors touch-manipulation"
-          >
-            Reset Wallet to Zero
-          </button>
+      {/* Reset Progress Buttons */}
+      {(onResetProgress || onResetAllProgress) && (
+        <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-6 shadow-lg backdrop-blur-sm space-y-3">
+          {onResetProgress && (
+            <button
+              onClick={onResetProgress}
+              className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors touch-manipulation"
+            >
+              Reset Wallet to Zero
+            </button>
+          )}
+          {onResetAllProgress && (
+            <button
+              onClick={onResetAllProgress}
+              className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors touch-manipulation"
+            >
+              Reset All Progress
+            </button>
+          )}
         </div>
       )}
     </div>

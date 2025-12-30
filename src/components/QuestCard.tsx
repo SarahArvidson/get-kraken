@@ -48,8 +48,8 @@ export function QuestCard({
 
   const handleDollarAmountChange = async (delta: number) => {
     if (!onUpdateDollarAmount) return;
-    const newDollarAmount = Math.max(0, (quest.dollar_amount || 0) + delta);
-    if (newDollarAmount !== (quest.dollar_amount || 0)) {
+    const newDollarAmount = Math.max(0, Math.round((quest.dollar_amount || 0) + delta));
+    if (newDollarAmount !== Math.round(quest.dollar_amount || 0)) {
       await onUpdateDollarAmount(quest.id, newDollarAmount);
     }
   };
@@ -112,17 +112,17 @@ export function QuestCard({
               <div className="flex items-center justify-center gap-4">
                 <span className="text-lg">💵</span>
                 <button
-                  onClick={() => handleDollarAmountChange(-0.50)}
+                  onClick={() => handleDollarAmountChange(-1)}
                   className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
                   aria-label="Decrease dollar amount"
                 >
                   −
                 </button>
                 <span className="text-lg font-semibold min-w-[80px] text-center">
-                  ${(quest.dollar_amount || 0).toFixed(2)}
+                  ${Math.round(quest.dollar_amount || 0)}
                 </span>
                 <button
-                  onClick={() => handleDollarAmountChange(0.50)}
+                  onClick={() => handleDollarAmountChange(1)}
                   className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
                   aria-label="Increase dollar amount"
                 >

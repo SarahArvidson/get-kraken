@@ -50,7 +50,7 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
                       : "text-amber-900 dark:text-amber-100"
                   }`}
                 >
-                  {dollarTotal.toFixed(2)}
+                  {Math.round(dollarTotal)}
                 </span>
               </>
             )}

@@ -20,7 +20,7 @@ export function useShopItems() {
       const { data, error: fetchError } = await supabase
         .from("shop_items")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (fetchError) throw fetchError;
       setShopItems(data || []);
@@ -243,6 +243,28 @@ export function useShopItems() {
     }
   }, []);
 
+  // Delete all shop logs for current user
+  const deleteAllShopLogs = useCallback(async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      const { error: deleteError } = await supabase
+        .from("shop_logs")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (deleteError) throw deleteError;
+    } catch (err: any) {
+      console.error("Error deleting all shop logs:", err);
+      setError(err.message || "Failed to delete shop logs");
+      throw err;
+    }
+  }, []);
+
   return {
     shopItems,
     loading,
@@ -253,6 +275,7 @@ export function useShopItems() {
     deleteShopItem,
     getShopItemWithLogs,
     loadAllShopLogs,
+    deleteAllShopLogs,
     refresh: loadShopItems,
   };
 }

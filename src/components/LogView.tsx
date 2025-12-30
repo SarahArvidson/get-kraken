@@ -76,7 +76,7 @@ export function LogView<T extends { id: string }>({
   if (logs.length === 0) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
-        <div className="text-center py-8 text-gray-500 dark:text-gray-200">
+        <div className="text-center py-8 text-gray-500 dark:header-text-color">
           No logs yet. Start completing quests or purchasing items!
         </div>
       </Modal>
@@ -103,7 +103,7 @@ export function LogView<T extends { id: string }>({
           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {formatDate(getDateKey(currentLog))}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-200">
+          <div className="text-sm text-gray-500 dark:header-text-color">
             {swipeIndex + 1} of {logs.length}
           </div>
         </div>
@@ -125,7 +125,7 @@ export function LogView<T extends { id: string }>({
         </div>
 
         {/* Swipe Hints */}
-        <div className="text-center mt-4 text-xs text-gray-400 dark:text-gray-300">
+        <div className="text-center mt-4 text-xs text-gray-400 dark:header-text-color">
           Swipe left/right to navigate
         </div>
       </div>

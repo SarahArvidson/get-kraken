@@ -61,6 +61,7 @@ function App() {
     deleteQuest,
     getQuestWithLogs,
     loadAllQuestLogs,
+    deleteAllQuestLogs,
   } = useQuests();
   const {
     shopItems,
@@ -71,6 +72,7 @@ function App() {
     deleteShopItem,
     getShopItemWithLogs,
     loadAllShopLogs,
+    deleteAllShopLogs,
   } = useShopItems();
 
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
@@ -321,6 +323,32 @@ function App() {
     } catch (err: unknown) {
       setToast({
         message: err instanceof Error ? err.message : "Failed to reset wallet",
+        type: "error",
+      });
+    }
+  };
+
+  const handleResetAllProgress = async () => {
+    if (!confirm("Reset all progress? This will delete all quest and shop logs and reset your wallet. This cannot be undone.")) {
+      return;
+    }
+    try {
+      await Promise.all([
+        deleteAllQuestLogs(),
+        deleteAllShopLogs(),
+        resetWallet(),
+      ]);
+      // Reload logs to reflect the changes
+      const [questLogs, shopLogs] = await Promise.all([
+        loadAllQuestLogs(),
+        loadAllShopLogs(),
+      ]);
+      setAllQuestLogs(questLogs);
+      setAllShopLogs(shopLogs);
+      setToast({ message: "All progress reset! ✅", type: "success" });
+    } catch (err: unknown) {
+      setToast({
+        message: err instanceof Error ? err.message : "Failed to reset all progress",
         type: "error",
       });
     }
@@ -642,6 +670,7 @@ function App() {
                 price: item.price,
               }))}
               onResetProgress={handleResetProgress}
+              onResetAllProgress={handleResetAllProgress}
             />
           </div>
         )}
@@ -703,6 +732,39 @@ function App() {
           duration={3000}
         />
       )}
+
+      {/* Footer */}
+      <footer className="mt-12 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p>
+          Built by{" "}
+          <a
+            href="https://github.com/SarahArvidson"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            Sarah Arvidson
+          </a>
+          {" · "}
+          <a
+            href="https://github.com/SarahArvidson/get-kraken"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            GitHub
+          </a>
+          {" · "}
+          <a
+            href="https://www.venmo.com/u/Sarah-Arvidson"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            Venmo
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

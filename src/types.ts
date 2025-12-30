@@ -10,7 +10,8 @@ export type ShopTag =
   | "social life"
   | "relationship"
   | "travel"
-  | "family";
+  | "family"
+  | "little treat";
 
 export interface Quest {
   id: string;

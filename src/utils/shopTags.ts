@@ -10,6 +10,7 @@ export const SHOP_TAGS: ShopTag[] = [
   "relationship",
   "travel",
   "family",
+  "little treat",
 ];
 
 export const SHOP_TAG_COLORS: Record<ShopTag, string> = {
@@ -18,6 +19,7 @@ export const SHOP_TAG_COLORS: Record<ShopTag, string> = {
   relationship: "pink",
   travel: "amber",
   family: "emerald",
+  "little treat": "purple",
 };
 
 export const SHOP_TAG_LABELS: Record<ShopTag, string> = {
@@ -26,6 +28,7 @@ export const SHOP_TAG_LABELS: Record<ShopTag, string> = {
   relationship: "Relationship",
   travel: "Travel",
   family: "Family",
+  "little treat": "Little Treat",
 };
 
 // Tailwind-safe border classes (must be in full class names for JIT)
@@ -40,6 +43,8 @@ export const SHOP_TAG_BORDER_CLASSES: Record<ShopTag, string> = {
     "border-amber-400 dark:border-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.4)] dark:shadow-[0_0_8px_rgba(245,158,11,0.4)]",
   family:
     "border-emerald-400 dark:border-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.4)] dark:shadow-[0_0_8px_rgba(16,185,129,0.4)]",
+  "little treat":
+    "border-purple-400 dark:border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)] dark:shadow-[0_0_8px_rgba(147,51,234,0.4)]",
 };
 
 export const SHOP_TAG_BUTTON_CLASSES: Record<
@@ -70,5 +75,10 @@ export const SHOP_TAG_BUTTON_CLASSES: Record<
     base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
     active:
       "bg-emerald-500 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-400 shadow-md",
+  },
+  "little treat": {
+    base: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700",
+    active:
+      "bg-purple-500 dark:bg-purple-500 text-white border-purple-600 dark:border-purple-400 shadow-md",
   },
 };

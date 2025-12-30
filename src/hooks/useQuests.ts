@@ -20,7 +20,7 @@ export function useQuests() {
       const { data, error: fetchError } = await supabase
         .from("quests")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (fetchError) throw fetchError;
       setQuests(data || []);
@@ -239,6 +239,28 @@ export function useQuests() {
     }
   }, []);
 
+  // Delete all quest logs for current user
+  const deleteAllQuestLogs = useCallback(async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      const { error: deleteError } = await supabase
+        .from("quest_logs")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (deleteError) throw deleteError;
+    } catch (err: any) {
+      console.error("Error deleting all quest logs:", err);
+      setError(err.message || "Failed to delete quest logs");
+      throw err;
+    }
+  }, []);
+
   return {
     quests,
     loading,
@@ -249,6 +271,7 @@ export function useQuests() {
     deleteQuest,
     getQuestWithLogs,
     loadAllQuestLogs,
+    deleteAllQuestLogs,
     refresh: loadQuests,
   };
 }
