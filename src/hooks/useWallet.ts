@@ -149,7 +149,7 @@ export function useWallet() {
                 user_id: user.id,
                 id: null, // id is nullable now, user_id is the primary key
                 total: amount,
-                dollar_total: dollarAmount,
+                dollar_total: Math.round(dollarAmount),
                 updated_at: new Date().toISOString(),
               })
               .select()
@@ -166,7 +166,7 @@ export function useWallet() {
                   .single();
                 if (existingWallet) {
                   const newTotal = existingWallet.total + amount;
-                  const newDollarTotal = (existingWallet.dollar_total || 0) + dollarAmount;
+                  const newDollarTotal = Math.round((existingWallet.dollar_total || 0) + Math.round(dollarAmount));
                   const { data: updatedWallet, error: updateError } = await supabase
                     .from("wallets")
                     .update({
@@ -193,7 +193,7 @@ export function useWallet() {
           } else {
             // Wallet exists, update it
             const newTotal = walletData.total + amount;
-            const newDollarTotal = (walletData.dollar_total || 0) + dollarAmount;
+            const newDollarTotal = Math.round((walletData.dollar_total || 0) + Math.round(dollarAmount));
             const { data, error: updateError } = await supabase
               .from("wallets")
               .update({
@@ -220,7 +220,7 @@ export function useWallet() {
         }
 
         const newTotal = wallet.total + amount;
-        const newDollarTotal = (wallet.dollar_total || 0) + dollarAmount;
+        const newDollarTotal = Math.round((wallet.dollar_total || 0) + Math.round(dollarAmount));
         const { data, error: updateError } = await supabase
           .from("wallets")
           .update({

@@ -23,6 +23,7 @@ interface ShopViewProps {
   shopItems: ShopItem[];
   allShopLogs: ShopLog[];
   walletTotal: number;
+  walletDollarTotal?: number;
   loading: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -45,6 +46,7 @@ export function ShopView({
   shopItems,
   allShopLogs,
   walletTotal,
+  walletDollarTotal = 0,
   loading,
   searchQuery,
   onSearchChange,
@@ -122,6 +124,7 @@ export function ShopView({
               key={item.id}
               item={item}
               walletTotal={walletTotal}
+              walletDollarTotal={walletDollarTotal}
               onPurchase={onPurchaseItem}
               onViewLogs={onViewLogs}
               onEdit={onEdit}

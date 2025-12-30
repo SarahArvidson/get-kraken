@@ -40,13 +40,13 @@ export function useGamification({
 
   const questDollarMap = useMemo(() => {
     const map = new Map<string, number>();
-    quests.forEach((q) => map.set(q.id, q.dollar_amount || 0));
+    quests.forEach((q) => map.set(q.id, Math.round(q.dollar_amount || 0)));
     return map;
   }, [quests]);
 
   const shopDollarMap = useMemo(() => {
     const map = new Map<string, number>();
-    shopItems.forEach((item) => map.set(item.id, item.dollar_amount || 0));
+    shopItems.forEach((item) => map.set(item.id, Math.round(item.dollar_amount || 0)));
     return map;
   }, [shopItems]);
 
@@ -77,10 +77,10 @@ export function useGamification({
       return sum + reward;
     }, 0);
 
-    // Calculate earned dollars from quest completions
+    // Calculate earned dollars from quest completions (rounded to integers)
     const earnedDollars = thisWeekQuestLogs.reduce((sum, log) => {
       const dollarAmount = questDollarMap.get(log.quest_id) || 0;
-      return sum + dollarAmount;
+      return sum + Math.round(dollarAmount);
     }, 0);
 
     // Calculate spent from shop purchases (sea dollars)
@@ -89,10 +89,10 @@ export function useGamification({
       return sum + price;
     }, 0);
 
-    // Calculate spent dollars from shop purchases
+    // Calculate spent dollars from shop purchases (rounded to integers)
     const spentDollars = thisWeekShopLogs.reduce((sum, log) => {
       const dollarAmount = shopDollarMap.get(log.shop_item_id) || 0;
-      return sum + dollarAmount;
+      return sum + Math.round(dollarAmount);
     }, 0);
 
     const net = earned - spent;

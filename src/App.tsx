@@ -172,6 +172,22 @@ function App() {
         item.dollar_amount || 0
       );
 
+      // Validate purchase: check both sea dollars and dollars (if dollar amounts are enabled)
+      const walletTotal = wallet?.total ?? 0;
+      const walletDollarTotal = wallet?.dollar_total ?? 0;
+      
+      if (walletTotal < effectivePrice) {
+        throw new Error(`Not enough sea dollars. Need ${effectivePrice - walletTotal} more.`);
+      }
+
+      if (preferences.showDollarAmounts && effectiveDollarAmount > 0) {
+        const roundedDollarAmount = Math.round(effectiveDollarAmount);
+        const roundedWalletDollarTotal = Math.round(walletDollarTotal);
+        if (roundedWalletDollarTotal < roundedDollarAmount) {
+          throw new Error(`Not enough dollars. Need ${roundedDollarAmount - roundedWalletDollarTotal} more.`);
+        }
+      }
+
       await purchaseItem(itemId, effectivePrice);
       await updateWallet(-effectivePrice, -effectiveDollarAmount);
       showSuccess(`Purchased for ${effectivePrice} ${CURRENCY_NAME}! 🛒`);
@@ -381,6 +397,7 @@ function App() {
             shopItems={shopItems}
             allShopLogs={allShopLogs}
             walletTotal={wallet?.total ?? 0}
+            walletDollarTotal={wallet?.dollar_total ?? 0}
             loading={shopItemsLoading}
             searchQuery={shopSearchQuery}
             onSearchChange={setShopSearchQuery}

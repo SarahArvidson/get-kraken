@@ -14,6 +14,7 @@ import { useShopItemOverrides } from "../hooks/useShopItemOverrides";
 interface ShopItemCardProps {
   item: ShopItem;
   walletTotal: number;
+  walletDollarTotal?: number;
   onPurchase: (itemId: string, price: number) => Promise<void>;
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
@@ -24,6 +25,7 @@ interface ShopItemCardProps {
 export function ShopItemCard({
   item,
   walletTotal,
+  walletDollarTotal = 0,
   onPurchase,
   onViewLogs,
   onEdit,
@@ -75,7 +77,10 @@ export function ShopItemCard({
     }
   };
 
-  const canAfford = walletTotal >= effectivePrice;
+  // Check if user can afford both sea dollars and dollars (if dollar amounts are enabled)
+  const canAffordSeaDollars = walletTotal >= effectivePrice;
+  const canAffordDollars = !showDollarAmounts || effectiveDollarAmount === 0 || (walletDollarTotal >= Math.round(effectiveDollarAmount));
+  const canAfford = canAffordSeaDollars && canAffordDollars;
 
   return (
     <CyclingShopBorder tags={effectiveTags}>
@@ -167,7 +172,11 @@ export function ShopItemCard({
             >
               {canAfford || walletTotal < 0
                 ? "Purchase"
-                : `Need ${effectivePrice - walletTotal} more`}
+                : !canAffordSeaDollars
+                ? `Need ${effectivePrice - walletTotal} more sea dollars`
+                : !canAffordDollars
+                ? `Need ${Math.round(effectiveDollarAmount) - Math.round(walletDollarTotal)} more dollars`
+                : "Cannot afford"}
             </Button>
             <Button
               variant="outline"
