@@ -284,6 +284,8 @@ export function useQuests() {
         await refreshOverrides();
         // Reload quests to filter out hidden quest
         await loadQuests();
+        // Update state to remove the quest immediately
+        setQuests((prev) => prev.filter((q) => q.id !== id));
       }
     } catch (err: any) {
       console.error("Error deleting quest:", err);

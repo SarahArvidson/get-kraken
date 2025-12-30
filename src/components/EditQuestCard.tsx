@@ -11,6 +11,7 @@ import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
 
 interface EditQuestCardProps {
   quest: Quest;
+  userCompletionCount?: number;
   onSave: (updates: {
     name: string;
     tags: Tag[];
@@ -23,6 +24,7 @@ interface EditQuestCardProps {
 
 export function EditQuestCard({
   quest,
+  userCompletionCount,
   onSave,
   onDelete,
   onClose,
@@ -30,7 +32,7 @@ export function EditQuestCard({
   const [name, setName] = useState(quest.name);
   const [reward, setReward] = useState(quest.reward);
   const [completionCount, setCompletionCount] = useState(
-    quest.completion_count
+    userCompletionCount !== undefined ? userCompletionCount : quest.completion_count
   );
   const [tags, setTags] = useState<Tag[]>(quest.tags || []);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,9 +43,9 @@ export function EditQuestCard({
   useEffect(() => {
     setName(quest.name);
     setReward(quest.reward);
-    setCompletionCount(quest.completion_count);
+    setCompletionCount(userCompletionCount !== undefined ? userCompletionCount : quest.completion_count);
     setTags(quest.tags || []);
-  }, [quest]);
+  }, [quest, userCompletionCount]);
 
   const toggleTag = (tagOption: Tag) => {
     setTags((prev) =>

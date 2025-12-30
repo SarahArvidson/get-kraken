@@ -281,6 +281,8 @@ export function useShopItems() {
         await refreshOverrides();
         // Reload shop items to filter out hidden item
         await loadShopItems();
+        // Update state to remove the item immediately
+        setShopItems((prev) => prev.filter((item) => item.id !== id));
       }
     } catch (err: any) {
       console.error("Error deleting shop item:", err);

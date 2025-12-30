@@ -95,6 +95,9 @@ export interface WeeklyRecap {
   earned: number;
   spent: number;
   net: number;
+  earnedDollars: number;
+  spentDollars: number;
+  netDollars: number;
   week_start: string;
   week_end: string;
 }
@@ -110,6 +113,7 @@ export interface Goal {
   user_id: string; // user who owns this goal
   name: string;
   target_amount: number;
+  dollar_amount: number | null; // optional dollar amount target
   is_completed: boolean;
   completed_at: string | null;
   created_at: string;

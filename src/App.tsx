@@ -26,6 +26,8 @@ import { QuestsView } from "./components/views/QuestsView";
 import { ShopView } from "./components/views/ShopView";
 import { ProgressView } from "./components/views/ProgressView";
 import { playCoinSound, preloadAudio } from "./utils/sound";
+import { calculateUserCompletionCounts } from "./utils/completionCount";
+import { calculateUserPurchaseCounts } from "./utils/purchaseCount";
 import type { Quest, ShopItem, QuestLog, ShopLog, Tag, ShopTag } from "./types";
 import { LOG_REFRESH_INTERVAL_MS, TOAST_DURATION_MS, CURRENCY_NAME } from "./constants";
 import { supabase } from "./lib/supabase";
@@ -360,6 +362,7 @@ function App() {
         {currentView === "shop" && (
           <ShopView
             shopItems={shopItems}
+            allShopLogs={allShopLogs}
             walletTotal={wallet?.total ?? 0}
             loading={shopItemsLoading}
             searchQuery={shopSearchQuery}
@@ -378,6 +381,7 @@ function App() {
         {currentView === "progress" && (
           <ProgressView
             walletTotal={wallet?.total ?? 0}
+            walletDollarTotal={wallet?.dollar_total ?? 0}
             questLogs={allQuestLogs}
             shopLogs={allShopLogs}
             quests={quests}
@@ -408,29 +412,37 @@ function App() {
         />
       )}
 
-      {editingQuest && (
-        <EditQuestCard
-          quest={editingQuest}
-          onSave={handleSaveQuestEdit}
-          onDelete={async () => {
-            await handleDeleteQuest(editingQuest.id);
-            setEditingQuest(null);
-          }}
-          onClose={() => setEditingQuest(null)}
-        />
-      )}
+      {editingQuest && (() => {
+        const userCompletionCounts = calculateUserCompletionCounts(allQuestLogs);
+        return (
+          <EditQuestCard
+            quest={editingQuest}
+            userCompletionCount={userCompletionCounts[editingQuest.id]}
+            onSave={handleSaveQuestEdit}
+            onDelete={async () => {
+              await handleDeleteQuest(editingQuest.id);
+              setEditingQuest(null);
+            }}
+            onClose={() => setEditingQuest(null)}
+          />
+        );
+      })()}
 
-      {editingShopItem && (
-        <EditShopItemCard
-          item={editingShopItem}
-          onSave={handleSaveShopItemEdit}
-          onDelete={async () => {
-            await handleDeleteShopItem(editingShopItem.id);
-            setEditingShopItem(null);
-          }}
-          onClose={() => setEditingShopItem(null)}
-        />
-      )}
+      {editingShopItem && (() => {
+        const userPurchaseCounts = calculateUserPurchaseCounts(allShopLogs);
+        return (
+          <EditShopItemCard
+            item={editingShopItem}
+            userPurchaseCount={userPurchaseCounts[editingShopItem.id]}
+            onSave={handleSaveShopItemEdit}
+            onDelete={async () => {
+              await handleDeleteShopItem(editingShopItem.id);
+              setEditingShopItem(null);
+            }}
+            onClose={() => setEditingShopItem(null)}
+          />
+        );
+      })()}
 
       {toast && (
         <Toast

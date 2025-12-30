@@ -124,9 +124,9 @@ export function useGoals() {
     }
   }, []);
 
-  // Check and update goal completion based on wallet total
+  // Check and update goal completion based on wallet total and dollar total
   const checkGoalCompletion = useCallback(
-    async (walletTotal: number) => {
+    async (walletTotal: number, walletDollarTotal: number = 0) => {
       // Get current user
       const { data: { user } } = await supabase.supabase.auth.getUser();
       if (!user) return;
@@ -140,7 +140,12 @@ export function useGoals() {
       
       if (!freshGoals) return;
       
-      const incompleteGoals = freshGoals.filter((g: Goal) => walletTotal >= g.target_amount);
+      // Check both sea dollar and dollar targets
+      const incompleteGoals = freshGoals.filter((g: Goal) => {
+        const seaDollarMet = walletTotal >= g.target_amount;
+        const dollarMet = g.dollar_amount ? walletDollarTotal >= g.dollar_amount : true;
+        return seaDollarMet && dollarMet;
+      });
       
       for (const goal of incompleteGoals) {
         await updateGoal(goal.id, {

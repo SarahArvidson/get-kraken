@@ -15,6 +15,7 @@ import {
 
 interface EditShopItemCardProps {
   item: ShopItem;
+  userPurchaseCount?: number;
   onSave: (updates: {
     name: string;
     tags: ShopTag[];
@@ -27,13 +28,16 @@ interface EditShopItemCardProps {
 
 export function EditShopItemCard({
   item,
+  userPurchaseCount,
   onSave,
   onDelete,
   onClose,
 }: EditShopItemCardProps) {
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
-  const [purchaseCount, setPurchaseCount] = useState(item.purchase_count);
+  const [purchaseCount, setPurchaseCount] = useState(
+    userPurchaseCount !== undefined ? userPurchaseCount : item.purchase_count
+  );
   const [tags, setTags] = useState<ShopTag[]>(item.tags || []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -43,9 +47,9 @@ export function EditShopItemCard({
   useEffect(() => {
     setName(item.name);
     setPrice(item.price);
-    setPurchaseCount(item.purchase_count);
+    setPurchaseCount(userPurchaseCount !== undefined ? userPurchaseCount : item.purchase_count);
     setTags(item.tags || []);
-  }, [item]);
+  }, [item, userPurchaseCount]);
 
   const toggleTag = (tagOption: ShopTag) => {
     setTags((prev) =>

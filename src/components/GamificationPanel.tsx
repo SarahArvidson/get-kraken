@@ -8,10 +8,11 @@ import { useState, useEffect } from "react";
 import { useGamification } from "../hooks/useGamification";
 import { useGoals } from "../hooks/useGoals";
 import { Button, InputField, Modal } from "@ffx/sdk";
-import type { QuestLog, ShopLog, Goal } from "../types";
+import type { QuestLog, ShopLog } from "../types";
 
 interface GamificationPanelProps {
   walletTotal: number;
+  walletDollarTotal?: number;
   questLogs: QuestLog[];
   shopLogs: ShopLog[];
   questNames: Map<string, string>;
@@ -23,6 +24,7 @@ interface GamificationPanelProps {
 
 export function GamificationPanel({
   walletTotal,
+  walletDollarTotal = 0,
   questLogs,
   shopLogs,
   questNames,
@@ -48,6 +50,7 @@ export function GamificationPanel({
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [goalName, setGoalName] = useState("");
   const [goalAmount, setGoalAmount] = useState(100);
+  const [goalDollarAmount, setGoalDollarAmount] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
 
   // Check goal completion when wallet total changes
@@ -66,9 +69,11 @@ export function GamificationPanel({
       await createGoal({
         name: goalName.trim(),
         target_amount: goalAmount,
+        dollar_amount: goalDollarAmount > 0 ? goalDollarAmount : null,
       });
       setGoalName("");
       setGoalAmount(100);
+      setGoalDollarAmount(0);
       setIsAddingGoal(false);
     } catch (err: any) {
       console.error("Error creating goal:", err);
@@ -88,11 +93,6 @@ export function GamificationPanel({
     }
   };
 
-  const calculateGoalProgress = (goal: Goal) => {
-    const progress = Math.min(100, (walletTotal / goal.target_amount) * 100);
-    const remaining = Math.max(0, goal.target_amount - walletTotal);
-    return { progress, remaining };
-  };
 
   return (
     <div className="space-y-6">
@@ -122,8 +122,10 @@ export function GamificationPanel({
         ) : (
           <div className="space-y-4">
             {goals.map((goal) => {
-              const { progress, remaining } = calculateGoalProgress(goal);
-              const isCompleted = goal.is_completed || walletTotal >= goal.target_amount;
+              const progress = Math.min(100, (walletTotal / goal.target_amount) * 100);
+              const remaining = Math.max(0, goal.target_amount - walletTotal);
+              const dollarRemaining = goal.dollar_amount ? Math.max(0, goal.dollar_amount - (walletDollarTotal || 0)) : 0;
+              const isCompleted = goal.is_completed || (walletTotal >= goal.target_amount && (!goal.dollar_amount || (walletDollarTotal || 0) >= goal.dollar_amount));
 
               return (
                 <div
@@ -162,6 +164,11 @@ export function GamificationPanel({
                       <div className="flex justify-between text-sm text-blue-100 mb-1">
                         <span>
                           {walletTotal} / {goal.target_amount} sea dollars
+                          {goal.dollar_amount && (
+                            <span className="ml-2">
+                              | 💵 {walletDollarTotal} / {goal.dollar_amount}
+                            </span>
+                          )}
                         </span>
                         <span>{Math.round(progress)}%</span>
                       </div>
@@ -173,8 +180,8 @@ export function GamificationPanel({
                       </div>
                     </div>
                     <p className="text-sm text-blue-100">
-                      {remaining > 0
-                        ? `${remaining} more to go!`
+                      {remaining > 0 || dollarRemaining > 0
+                        ? `${remaining > 0 ? `${remaining} more sea dollars` : ''}${remaining > 0 && dollarRemaining > 0 ? ' and ' : ''}${dollarRemaining > 0 ? `💵 ${dollarRemaining} more dollars` : ''} to go!`
                         : "Goal reached! 🎉"}
                     </p>
                   </div>
@@ -234,6 +241,36 @@ export function GamificationPanel({
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              Target Amount (Dollars) <span className="text-xs text-gray-500">(Optional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setGoalDollarAmount(Math.max(0, goalDollarAmount - 10))}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={goalDollarAmount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setGoalDollarAmount(Math.max(0, val));
+                }}
+                className="w-32 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2"
+                min="0"
+              />
+              <button
+                onClick={() => setGoalDollarAmount(goalDollarAmount + 10)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           <div className="flex gap-2 pt-4">
             <Button
               variant="ghost"
@@ -241,6 +278,7 @@ export function GamificationPanel({
                 setIsAddingGoal(false);
                 setGoalName("");
                 setGoalAmount(100);
+                setGoalDollarAmount(0);
               }}
               className="flex-1"
             >
@@ -321,31 +359,52 @@ export function GamificationPanel({
           📊 This Week
         </h3>
         {weeklyRecap ? (
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                +{weeklyRecap.earned}
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  +{weeklyRecap.earned}
+                </div>
+                <div className="text-xs text-gray-500 header-text-color">Earned (Sea $)</div>
+                {weeklyRecap.earnedDollars > 0 && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    💵 +{weeklyRecap.earnedDollars}
+                  </div>
+                )}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">Earned</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                -{weeklyRecap.spent}
+              <div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  -{weeklyRecap.spent}
+                </div>
+                <div className="text-xs text-gray-500 header-text-color">Spent (Sea $)</div>
+                {weeklyRecap.spentDollars > 0 && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    💵 -{weeklyRecap.spentDollars}
+                  </div>
+                )}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">Spent</div>
-            </div>
-            <div>
-              <div
-                className={`text-2xl font-bold ${
-                  weeklyRecap.net >= 0
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                {weeklyRecap.net >= 0 ? "+" : ""}
-                {weeklyRecap.net}
+              <div>
+                <div
+                  className={`text-2xl font-bold ${
+                    weeklyRecap.net >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {weeklyRecap.net >= 0 ? "+" : ""}
+                  {weeklyRecap.net}
+                </div>
+                <div className="text-xs text-gray-500 header-text-color">Net (Sea $)</div>
+                {(weeklyRecap.netDollars !== 0) && (
+                  <div className={`text-sm mt-1 ${
+                    weeklyRecap.netDollars >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}>
+                    💵 {weeklyRecap.netDollars >= 0 ? "+" : ""}{weeklyRecap.netDollars}
+                  </div>
+                )}
               </div>
-              <div className="text-xs text-gray-500 header-text-color">Net</div>
             </div>
           </div>
         ) : (

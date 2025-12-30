@@ -14,8 +14,8 @@ interface UseGamificationProps {
   walletTotal: number;
   questLogs: QuestLog[];
   shopLogs: ShopLog[];
-  quests: Array<{ id: string; reward: number }>;
-  shopItems: Array<{ id: string; price: number }>;
+  quests: Array<{ id: string; reward: number; dollar_amount?: number | null }>;
+  shopItems: Array<{ id: string; price: number; dollar_amount?: number | null }>;
 }
 
 export function useGamification({
@@ -35,6 +35,18 @@ export function useGamification({
   const shopPriceMap = useMemo(() => {
     const map = new Map<string, number>();
     shopItems.forEach((item) => map.set(item.id, item.price));
+    return map;
+  }, [shopItems]);
+
+  const questDollarMap = useMemo(() => {
+    const map = new Map<string, number>();
+    quests.forEach((q) => map.set(q.id, q.dollar_amount || 0));
+    return map;
+  }, [quests]);
+
+  const shopDollarMap = useMemo(() => {
+    const map = new Map<string, number>();
+    shopItems.forEach((item) => map.set(item.id, item.dollar_amount || 0));
     return map;
   }, [shopItems]);
 
@@ -59,28 +71,44 @@ export function useGamification({
       return logDate >= weekStart && logDate < weekEnd;
     });
 
-    // Calculate earned from quest completions
+    // Calculate earned from quest completions (sea dollars)
     const earned = thisWeekQuestLogs.reduce((sum, log) => {
       const reward = questRewardMap.get(log.quest_id) || 0;
       return sum + reward;
     }, 0);
 
-    // Calculate spent from shop purchases
+    // Calculate earned dollars from quest completions
+    const earnedDollars = thisWeekQuestLogs.reduce((sum, log) => {
+      const dollarAmount = questDollarMap.get(log.quest_id) || 0;
+      return sum + dollarAmount;
+    }, 0);
+
+    // Calculate spent from shop purchases (sea dollars)
     const spent = thisWeekShopLogs.reduce((sum, log) => {
       const price = shopPriceMap.get(log.shop_item_id) || 0;
       return sum + price;
     }, 0);
 
+    // Calculate spent dollars from shop purchases
+    const spentDollars = thisWeekShopLogs.reduce((sum, log) => {
+      const dollarAmount = shopDollarMap.get(log.shop_item_id) || 0;
+      return sum + dollarAmount;
+    }, 0);
+
     const net = earned - spent;
+    const netDollars = earnedDollars - spentDollars;
 
     return {
       earned,
       spent,
       net,
+      earnedDollars,
+      spentDollars,
+      netDollars,
       week_start: weekStart.toISOString(),
       week_end: weekEnd.toISOString(),
     };
-  }, [questLogs, shopLogs, questRewardMap, shopPriceMap]);
+  }, [questLogs, shopLogs, questRewardMap, questDollarMap, shopPriceMap, shopDollarMap]);
 
   // Calculate quest streaks
   const questStreaks = useMemo((): QuestStreak[] => {

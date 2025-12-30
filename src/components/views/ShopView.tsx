@@ -10,16 +10,18 @@ import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
 import { TagFilterButtons } from "../TagFilterButtons";
 import { filterItems } from "../../utils/filtering";
+import { calculateUserPurchaseCounts } from "../../utils/purchaseCount";
 import {
   SHOP_TAGS,
   SHOP_TAG_LABELS,
   SHOP_TAG_BUTTON_CLASSES,
 } from "../../utils/shopTags";
-import type { ShopItem, ShopTag } from "../../types";
+import type { ShopItem, ShopTag, ShopLog } from "../../types";
 import { DEFAULT_DOLLAR_AMOUNT } from "../../constants";
 
 interface ShopViewProps {
   shopItems: ShopItem[];
+  allShopLogs: ShopLog[];
   walletTotal: number;
   loading: boolean;
   searchQuery: string;
@@ -41,6 +43,7 @@ interface ShopViewProps {
 
 export function ShopView({
   shopItems,
+  allShopLogs,
   walletTotal,
   loading,
   searchQuery,
@@ -54,6 +57,11 @@ export function ShopView({
   onEdit,
   onShowToast,
 }: ShopViewProps) {
+  const userPurchaseCounts = useMemo(
+    () => calculateUserPurchaseCounts(allShopLogs),
+    [allShopLogs]
+  );
+
   const filteredShopItems = useMemo(
     () =>
       filterItems<ShopItem, ShopTag>({
@@ -118,6 +126,7 @@ export function ShopView({
               onViewLogs={onViewLogs}
               onEdit={onEdit}
               showDollarAmounts={showDollarAmounts}
+              userPurchaseCount={userPurchaseCounts[item.id] || 0}
             />
           ))}
         </div>

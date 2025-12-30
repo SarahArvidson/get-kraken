@@ -61,7 +61,7 @@ export function CyclingBorder({
 
   return (
     <div
-      className={`border-2 rounded-2xl transition-all duration-1000 ${borderClass} ${className}`}
+      className={`border-2 rounded-2xl transition-all duration-300 ${borderClass} ${className}`}
     >
       {children}
     </div>
@@ -108,7 +108,7 @@ export function CyclingShopBorder({
 
   return (
     <div
-      className={`border-2 rounded-2xl transition-all duration-1000 ${borderClass} ${className}`}
+      className={`border-2 rounded-2xl transition-all duration-300 ${borderClass} ${className}`}
     >
       {children}
     </div>

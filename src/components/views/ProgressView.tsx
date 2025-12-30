@@ -9,6 +9,7 @@ import type { Quest, ShopItem, QuestLog, ShopLog } from "../../types";
 
 interface ProgressViewProps {
   walletTotal: number;
+  walletDollarTotal?: number;
   questLogs: QuestLog[];
   shopLogs: ShopLog[];
   quests: Quest[];
@@ -19,6 +20,7 @@ interface ProgressViewProps {
 
 export function ProgressView({
   walletTotal,
+  walletDollarTotal = 0,
   questLogs,
   shopLogs,
   quests,
@@ -33,13 +35,15 @@ export function ProgressView({
       </h2>
       <GamificationPanel
         walletTotal={walletTotal}
+        walletDollarTotal={walletDollarTotal}
         questLogs={questLogs}
         shopLogs={shopLogs}
         questNames={new Map(quests.map((q) => [q.id, q.name]))}
-        quests={quests.map((q) => ({ id: q.id, reward: q.reward }))}
+        quests={quests.map((q) => ({ id: q.id, reward: q.reward, dollar_amount: q.dollar_amount }))}
         shopItems={shopItems.map((item) => ({
           id: item.id,
           price: item.price,
+          dollar_amount: item.dollar_amount,
         }))}
         onResetProgress={onResetProgress}
         onResetAllProgress={onResetAllProgress}

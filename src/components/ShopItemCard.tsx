@@ -18,6 +18,7 @@ interface ShopItemCardProps {
   onViewLogs: (itemId: string) => void;
   onEdit: (item: ShopItem) => void;
   showDollarAmounts?: boolean;
+  userPurchaseCount?: number; // Count from user's own logs
 }
 
 export function ShopItemCard({
@@ -27,6 +28,7 @@ export function ShopItemCard({
   onViewLogs,
   onEdit,
   showDollarAmounts = false,
+  userPurchaseCount,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const { getEffectivePrice, getEffectiveDollarAmount, getEffectiveTags, getEffectiveName, updateOverride } = useShopItemOverrides();
@@ -102,7 +104,7 @@ export function ShopItemCard({
                 )}
               </div>
               <div className="text-sm text-gray-500 dark:header-text-color">
-                {item.purchase_count} purchased
+                {userPurchaseCount !== undefined ? userPurchaseCount : item.purchase_count} purchased
               </div>
             </div>
           </div>
