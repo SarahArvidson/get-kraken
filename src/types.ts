@@ -36,6 +36,7 @@ export interface ShopItem {
 
 export interface Wallet {
   id: string;
+  user_id: string; // user who owns this wallet
   total: number; // sea dollars total (can be negative)
   dollar_total: number; // real dollars total (can be negative)
   updated_at: string;

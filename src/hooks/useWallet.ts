@@ -1,28 +1,36 @@
 /**
  * Get Kraken - Wallet Hook
  *
- * Manages the shared kibbling wallet state and syncs with Supabase
+ * Manages per-user wallet state and syncs with Supabase
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Wallet } from "../types";
 
-const WALLET_ID = "shared-wallet"; // Single shared wallet
-
 export function useWallet() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load wallet from Supabase
+  // Load wallet from Supabase for current user
   const loadWallet = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        setWallet(null);
+        setLoading(false);
+        return;
+      }
+
+      // Try to load user's wallet
       const { data, error: fetchError } = await supabase
         .from("wallets")
         .select("*")
-        .eq("id", WALLET_ID)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (fetchError) {
@@ -34,8 +42,9 @@ export function useWallet() {
           const { data: newWallet, error: createError } = await supabase
             .from("wallets")
             .insert({
-              id: WALLET_ID,
+              user_id: user.id,
               total: 0,
+              dollar_total: 0,
               updated_at: new Date().toISOString(),
             })
             .select()
@@ -57,8 +66,9 @@ export function useWallet() {
         const { data: newWallet, error: createError } = await supabase
           .from("wallets")
           .insert({
-            id: WALLET_ID,
+            user_id: user.id,
             total: 0,
+            dollar_total: 0,
             updated_at: new Date().toISOString(),
           })
           .select()
@@ -86,6 +96,12 @@ export function useWallet() {
       if (!wallet) return;
 
       try {
+        // Get current user to ensure we're updating the right wallet
+        const { data: { user } } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
         const newTotal = wallet.total + amount;
         const { data, error: updateError } = await supabase
           .from("wallets")
@@ -93,12 +109,14 @@ export function useWallet() {
             total: newTotal,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", WALLET_ID)
+          .eq("user_id", user.id)
           .select()
           .single();
 
         if (updateError) throw updateError;
-        setWallet(data);
+        if (data) {
+          setWallet(data);
+        }
       } catch (err: any) {
         console.error("Error updating wallet:", err);
         setError(err.message || "Failed to update wallet");
@@ -112,31 +130,63 @@ export function useWallet() {
   useEffect(() => {
     loadWallet();
 
-    const subscription = supabase.subscribe(
-      "wallets",
-      (payload: any) => {
-        if (payload.new?.id === WALLET_ID) {
-          setWallet(payload.new);
-        }
-      },
-      `id=eq.${WALLET_ID}`
-    );
+    let subscription: any = null;
+
+    // Get current user for subscription filter
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) return;
+
+      subscription = supabase.subscribe(
+        "wallets",
+        (payload: any) => {
+          if (payload.new?.user_id === user.id) {
+            setWallet(payload.new);
+          }
+        },
+        `user_id=eq.${user.id}`
+      );
+    };
+
+    setupSubscription();
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [loadWallet]);
 
-  // Reset wallet to zero
+  // Reset wallet to zero (both sea dollars and dollar total)
   const resetWallet = useCallback(async () => {
     if (!wallet) return;
     try {
-      await updateWallet(-wallet.total);
+      // Get current user
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      const { data, error: updateError } = await supabase
+        .from("wallets")
+        .update({
+          total: 0,
+          dollar_total: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      if (data) {
+        setWallet(data);
+      }
     } catch (err: any) {
       console.error("Error resetting wallet:", err);
       throw err;
     }
-  }, [wallet, updateWallet]);
+  }, [wallet]);
 
   return {
     wallet,
