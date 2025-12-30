@@ -62,7 +62,11 @@ export function useShopItems() {
 
         if (createError) throw createError;
         if (data) {
-          setShopItems((prev) => [data, ...prev]);
+          setShopItems((prev) => {
+            const updated = [data, ...prev];
+            // Sort alphabetically by name
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
         }
         return data;
       } catch (err: any) {
@@ -90,9 +94,11 @@ export function useShopItems() {
 
         if (updateError) throw updateError;
         if (data) {
-          setShopItems((prev) =>
-            prev.map((item) => (item.id === id ? data : item))
-          );
+          setShopItems((prev) => {
+            const updated = prev.map((item) => (item.id === id ? data : item));
+            // Sort alphabetically by name
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
         }
         return data;
       } catch (err: any) {

@@ -62,7 +62,11 @@ export function useQuests() {
 
         if (createError) throw createError;
         if (data) {
-          setQuests((prev) => [data, ...prev]);
+          setQuests((prev) => {
+            const updated = [data, ...prev];
+            // Sort alphabetically by name
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
         }
         return data;
       } catch (err: any) {
@@ -90,7 +94,11 @@ export function useQuests() {
 
         if (updateError) throw updateError;
         if (data) {
-          setQuests((prev) => prev.map((q) => (q.id === id ? data : q)));
+          setQuests((prev) => {
+            const updated = prev.map((q) => (q.id === id ? data : q));
+            // Sort alphabetically by name
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
         }
         return data;
       } catch (err: any) {
