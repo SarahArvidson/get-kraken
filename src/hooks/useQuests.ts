@@ -140,7 +140,9 @@ export function useQuests() {
           await refreshOverrides();
           // Reload quests to get merged data
           await loadQuests();
-          return quests.find((q) => q.id === id);
+          // Return updated quest (will be merged with override)
+          const updatedQuest = quests.find((q) => q.id === id);
+          return updatedQuest || null;
         }
       } catch (err: any) {
         console.error("Error updating quest:", err);
@@ -227,24 +229,28 @@ export function useQuests() {
     []
   );
 
-  // Subscribe to real-time changes
+  // Subscribe to real-time changes and reload when overrides change
   useEffect(() => {
     loadQuests();
 
     const subscription = supabase.subscribe("quests", (payload: any) => {
       if (payload.eventType === "INSERT") {
-        setQuests((prev) => [payload.new, ...prev]);
+        loadQuests(); // Reload to merge with overrides
       } else if (payload.eventType === "UPDATE") {
-        setQuests((prev) =>
-          prev.map((q) => (q.id === payload.new.id ? payload.new : q))
-        );
+        loadQuests(); // Reload to merge with overrides
       } else if (payload.eventType === "DELETE") {
-        setQuests((prev) => prev.filter((q) => q.id !== payload.old.id));
+        loadQuests(); // Reload to filter hidden items
       }
     });
 
+    // Also reload periodically to catch override changes
+    const interval = setInterval(() => {
+      loadQuests(); // Periodically reload to catch override changes
+    }, 2000); // Check every 2 seconds
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(interval);
     };
   }, [loadQuests]);
 

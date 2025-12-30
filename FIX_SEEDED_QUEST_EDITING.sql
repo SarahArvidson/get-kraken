@@ -22,7 +22,11 @@ CREATE INDEX IF NOT EXISTS idx_user_hidden_quests_quest_id ON user_hidden_quests
 -- Step 4: Enable RLS on user_hidden_quests
 ALTER TABLE user_hidden_quests ENABLE ROW LEVEL SECURITY;
 
--- Step 5: Create RLS policies for user_hidden_quests
+-- Step 5: Create RLS policies for user_hidden_quests (drop if exists first)
+DROP POLICY IF EXISTS "Users can read their own hidden quests" ON user_hidden_quests;
+DROP POLICY IF EXISTS "Users can create their own hidden quests" ON user_hidden_quests;
+DROP POLICY IF EXISTS "Users can delete their own hidden quests" ON user_hidden_quests;
+
 CREATE POLICY "Users can read their own hidden quests"
   ON user_hidden_quests FOR SELECT
   TO authenticated
@@ -55,6 +59,11 @@ CREATE INDEX IF NOT EXISTS idx_user_hidden_shop_items_user_id ON user_hidden_sho
 CREATE INDEX IF NOT EXISTS idx_user_hidden_shop_items_item_id ON user_hidden_shop_items(shop_item_id);
 
 ALTER TABLE user_hidden_shop_items ENABLE ROW LEVEL SECURITY;
+
+-- Drop policies if they exist
+DROP POLICY IF EXISTS "Users can read their own hidden shop items" ON user_hidden_shop_items;
+DROP POLICY IF EXISTS "Users can create their own hidden shop items" ON user_hidden_shop_items;
+DROP POLICY IF EXISTS "Users can delete their own hidden shop items" ON user_hidden_shop_items;
 
 CREATE POLICY "Users can read their own hidden shop items"
   ON user_hidden_shop_items FOR SELECT

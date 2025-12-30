@@ -64,6 +64,7 @@ function App() {
     getQuestWithLogs,
     loadAllQuestLogs,
     deleteAllQuestLogs,
+    refresh: loadQuests,
   } = useQuests();
   const {
     shopItems,
@@ -75,6 +76,7 @@ function App() {
     getShopItemWithLogs,
     loadAllShopLogs,
     deleteAllShopLogs,
+    refresh: loadShopItems,
   } = useShopItems();
   const { getEffectiveReward, getEffectiveDollarAmount } = useQuestOverrides();
   const { getEffectivePrice, getEffectiveDollarAmount: getEffectiveShopDollarAmount } = useShopItemOverrides();
@@ -210,6 +212,8 @@ function App() {
     if (!editingQuest) return;
     try {
       await updateQuest(editingQuest.id, updates);
+      // Reload quests to show updated data
+      await loadQuests();
       setEditingQuest(null);
       showSuccess("Quest updated! ✅");
     } catch (err: unknown) {
@@ -228,6 +232,8 @@ function App() {
     if (!editingShopItem) return;
     try {
       await updateShopItem(editingShopItem.id, updates);
+      // Reload shop items to show updated data
+      await loadShopItems();
       setEditingShopItem(null);
       showSuccess("Shop item updated! ✅");
     } catch (err: unknown) {
