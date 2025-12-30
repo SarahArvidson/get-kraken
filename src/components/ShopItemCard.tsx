@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
+import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -42,7 +43,7 @@ export function ShopItemCard({
   };
 
   const handlePriceChange = async (delta: number) => {
-    const newPrice = Math.max(0, item.price + delta);
+    const newPrice = Math.max(0, item.price + delta * DEFAULT_REWARD_INCREMENT);
     if (newPrice !== item.price) {
       await onUpdatePrice(item.id, newPrice);
     }
@@ -50,7 +51,7 @@ export function ShopItemCard({
 
   const handleDollarAmountChange = async (delta: number) => {
     if (!onUpdateDollarAmount) return;
-    const newDollarAmount = Math.max(0, Math.round((item.dollar_amount || 0) + delta));
+    const newDollarAmount = Math.max(0, Math.round((item.dollar_amount || 0) + delta * DEFAULT_DOLLAR_INCREMENT));
     if (newDollarAmount !== Math.round(item.dollar_amount || 0)) {
       await onUpdateDollarAmount(item.id, newDollarAmount);
     }
@@ -70,7 +71,7 @@ export function ShopItemCard({
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
+                <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                   {item.price}
                 </span>

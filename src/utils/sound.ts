@@ -4,6 +4,8 @@
  * Plays water drop sound effect when quests are completed
  */
 
+import { WATER_DROP_SOUND_PATH, AUDIO_VOLUME } from "../constants";
+
 let audioElement: HTMLAudioElement | null = null;
 
 /**
@@ -12,15 +14,15 @@ let audioElement: HTMLAudioElement | null = null;
 function getAudioElement(): HTMLAudioElement {
   if (!audioElement) {
     // Use direct path to public folder to avoid import issues
-    audioElement = new Audio("/water-drop-85731.mp3");
-    audioElement.volume = 0.5; // Set volume to 50%
+    audioElement = new Audio(WATER_DROP_SOUND_PATH);
+    audioElement.volume = AUDIO_VOLUME;
     audioElement.preload = "auto";
     // Handle range request issues by loading the full file
     audioElement.addEventListener('error', (e) => {
       console.error("Audio error:", e);
       // Try reloading without range requests
-      audioElement = new Audio("/water-drop-85731.mp3");
-      audioElement.volume = 0.5;
+      audioElement = new Audio(WATER_DROP_SOUND_PATH);
+      audioElement.volume = AUDIO_VOLUME;
     });
   }
   return audioElement;

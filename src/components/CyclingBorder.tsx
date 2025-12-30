@@ -7,6 +7,7 @@ import type { Tag } from "../types";
 import { TAG_BORDER_CLASSES } from "../utils/tags";
 import type { ShopTag } from "../types";
 import { SHOP_TAG_BORDER_CLASSES } from "../utils/shopTags";
+import { TAG_CYCLE_INTERVAL_MS } from "../constants";
 
 interface CyclingBorderProps {
   tags: Tag[];
@@ -32,7 +33,7 @@ export function CyclingBorder({
 
     const interval = setInterval(() => {
       setCurrentTagIndex((prev) => (prev + 1) % tags.length);
-    }, 2000); // Cycle every 2 seconds
+    }, TAG_CYCLE_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [tags.length]);
@@ -79,7 +80,7 @@ export function CyclingShopBorder({
 
     const interval = setInterval(() => {
       setCurrentTagIndex((prev) => (prev + 1) % tags.length);
-    }, 2000); // Cycle every 2 seconds
+    }, TAG_CYCLE_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [tags.length]);

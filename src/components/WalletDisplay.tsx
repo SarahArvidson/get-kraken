@@ -5,6 +5,7 @@
  */
 
 import type { Wallet } from "../types";
+import { TREASURE_CHEST_LABEL, SEA_DOLLAR_ICON_PATH, CURRENCY_SYMBOL } from "../constants";
 
 interface WalletDisplayProps {
   wallet: Wallet | null;
@@ -21,7 +22,7 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
     <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-3xl p-6 shadow-xl">
       <div className="text-center">
         <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2 uppercase tracking-wide">
-          Treasure Chest
+          {TREASURE_CHEST_LABEL}
         </h2>
         {loading ? (
           <div className="text-4xl font-bold text-amber-900 dark:text-amber-100">
@@ -29,7 +30,7 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
           </div>
         ) : (
           <div className="flex items-center justify-center gap-3">
-            <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-12 h-12" />
+            <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-12 h-12" />
             <span
               className={`text-6xl font-bold ${
                 isNegative
@@ -42,7 +43,7 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
             {showDollarAmounts && (
               <>
                 <span className="text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
-                <span className="text-4xl">💵</span>
+                <span className="text-4xl">{CURRENCY_SYMBOL}</span>
                 <span
                   className={`text-6xl font-bold ${
                     dollarTotal < 0

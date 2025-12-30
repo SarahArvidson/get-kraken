@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button } from "@ffx/sdk";
 import type { Quest } from "../types";
 import { CyclingBorder } from "./CyclingBorder";
+import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
 
 interface QuestCardProps {
   quest: Quest;
@@ -42,7 +43,7 @@ export function QuestCard({
   };
 
   const handleRewardChange = async (delta: number) => {
-    const newReward = Math.max(0, quest.reward + delta);
+    const newReward = Math.max(0, quest.reward + delta * DEFAULT_REWARD_INCREMENT);
     if (newReward !== quest.reward) {
       await onUpdateReward(quest.id, newReward);
     }
@@ -50,7 +51,7 @@ export function QuestCard({
 
   const handleDollarAmountChange = async (delta: number) => {
     if (!onUpdateDollarAmount) return;
-    const newDollarAmount = Math.max(0, Math.round((quest.dollar_amount || 0) + delta));
+    const newDollarAmount = Math.max(0, Math.round((quest.dollar_amount || 0) + delta * DEFAULT_DOLLAR_INCREMENT));
     if (newDollarAmount !== Math.round(quest.dollar_amount || 0)) {
       await onUpdateDollarAmount(quest.id, newDollarAmount);
     }
@@ -68,7 +69,7 @@ export function QuestCard({
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-6 h-6" />
+                <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-6 h-6" />
                 <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                   {quest.reward}
                 </span>
