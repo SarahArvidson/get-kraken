@@ -136,8 +136,12 @@ function App() {
 
   const handleCompleteQuest = async (questId: string, reward: number) => {
     try {
+      // Find the quest to get dollar_amount
+      const quest = quests.find((q) => q.id === questId);
+      const dollarAmount = quest?.dollar_amount || 0;
+
       await completeQuest(questId, reward);
-      await updateWallet(reward);
+      await updateWallet(reward, dollarAmount);
       playCoinSound(); // Play coin sound on successful completion
       setToast({ message: `Earned ${reward} sea dollars! 🎉`, type: "success" });
     } catch (err: unknown) {
@@ -151,8 +155,12 @@ function App() {
 
   const handlePurchaseItem = async (itemId: string, price: number) => {
     try {
+      // Find the shop item to get dollar_amount
+      const item = shopItems.find((i) => i.id === itemId);
+      const dollarAmount = item?.dollar_amount || 0;
+
       await purchaseItem(itemId, price);
-      await updateWallet(-price);
+      await updateWallet(-price, -dollarAmount); // Negative for purchases
       setToast({
         message: `Purchased for ${price} sea dollars! 🛒`,
         type: "success",

@@ -90,11 +90,9 @@ export function useWallet() {
     }
   }, []);
 
-  // Update wallet total
+  // Update wallet total (sea dollars and optionally dollar total)
   const updateWallet = useCallback(
-    async (amount: number) => {
-      if (!wallet) return;
-
+    async (amount: number, dollarAmount: number = 0) => {
       try {
         // Get current user to ensure we're updating the right wallet
         const { data: { user } } = await supabase.supabase.auth.getUser();
@@ -102,11 +100,70 @@ export function useWallet() {
           throw new Error("User must be authenticated");
         }
 
+        // If wallet not loaded yet, load it first
+        if (!wallet) {
+          await loadWallet();
+          // Wait a bit for state to update, then try again
+          // Actually, let's just fetch it directly here
+          const { data: walletData, error: fetchError } = await supabase
+            .from("wallets")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (fetchError && fetchError.code !== "PGRST116") {
+            throw fetchError;
+          }
+
+          // If no wallet exists, create it
+          if (!walletData) {
+            const { data: newWallet, error: createError } = await supabase
+              .from("wallets")
+              .insert({
+                user_id: user.id,
+                total: amount,
+                dollar_total: dollarAmount,
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+
+            if (createError) throw createError;
+            if (newWallet) {
+              setWallet(newWallet);
+              return;
+            }
+          } else {
+            // Wallet exists, update it
+            const newTotal = walletData.total + amount;
+            const newDollarTotal = (walletData.dollar_total || 0) + dollarAmount;
+            const { data, error: updateError } = await supabase
+              .from("wallets")
+              .update({
+                total: newTotal,
+                dollar_total: newDollarTotal,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("user_id", user.id)
+              .select()
+              .single();
+
+            if (updateError) throw updateError;
+            if (data) {
+              setWallet(data);
+            }
+            return;
+          }
+        }
+
+        // Wallet exists, update it
         const newTotal = wallet.total + amount;
+        const newDollarTotal = (wallet.dollar_total || 0) + dollarAmount;
         const { data, error: updateError } = await supabase
           .from("wallets")
           .update({
             total: newTotal,
+            dollar_total: newDollarTotal,
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", user.id)
@@ -123,7 +180,7 @@ export function useWallet() {
         throw err;
       }
     },
-    [wallet]
+    [wallet, loadWallet]
   );
 
   // Subscribe to real-time changes
