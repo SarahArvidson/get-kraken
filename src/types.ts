@@ -35,8 +35,8 @@ export interface ShopItem {
 }
 
 export interface Wallet {
-  id: string;
-  user_id: string; // user who owns this wallet
+  id: string | null; // nullable for backwards compatibility, but not used as primary key
+  user_id: string; // user who owns this wallet (primary key)
   total: number; // sea dollars total (can be negative)
   dollar_total: number; // real dollars total (can be negative)
   updated_at: string;

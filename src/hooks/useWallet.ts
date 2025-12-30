@@ -43,6 +43,7 @@ export function useWallet() {
             .from("wallets")
             .insert({
               user_id: user.id,
+              id: null, // id is nullable, user_id is the primary key
               total: 0,
               dollar_total: 0,
               updated_at: new Date().toISOString(),
@@ -51,6 +52,18 @@ export function useWallet() {
             .single();
 
           if (createError) {
+            // If duplicate key error, wallet might have been created by another request - try to fetch it
+            if (createError.code === '23505') {
+              const { data: existingWallet } = await supabase
+                .from("wallets")
+                .select("*")
+                .eq("user_id", user.id)
+                .single();
+              if (existingWallet) {
+                setWallet(existingWallet);
+                return;
+              }
+            }
             throw createError;
           }
           if (newWallet) {
@@ -67,6 +80,7 @@ export function useWallet() {
           .from("wallets")
           .insert({
             user_id: user.id,
+            id: null, // id is nullable, user_id is the primary key
             total: 0,
             dollar_total: 0,
             updated_at: new Date().toISOString(),
@@ -75,6 +89,18 @@ export function useWallet() {
           .single();
 
         if (createError) {
+          // If duplicate key error, wallet might have been created by another request - try to fetch it
+          if (createError.code === '23505') {
+            const { data: existingWallet } = await supabase
+              .from("wallets")
+              .select("*")
+              .eq("user_id", user.id)
+              .single();
+            if (existingWallet) {
+              setWallet(existingWallet);
+              return;
+            }
+          }
           throw createError;
         }
         if (newWallet) {
@@ -121,6 +147,7 @@ export function useWallet() {
               .from("wallets")
               .insert({
                 user_id: user.id,
+                id: null, // id is nullable now, user_id is the primary key
                 total: amount,
                 dollar_total: dollarAmount,
                 updated_at: new Date().toISOString(),
@@ -128,7 +155,37 @@ export function useWallet() {
               .select()
               .single();
 
-            if (createError) throw createError;
+            if (createError) {
+              // If it's a unique constraint error, the wallet might have been created by another request
+              // Try to fetch it and update it instead
+              if (createError.code === '23505') {
+                const { data: existingWallet } = await supabase
+                  .from("wallets")
+                  .select("*")
+                  .eq("user_id", user.id)
+                  .single();
+                if (existingWallet) {
+                  const newTotal = existingWallet.total + amount;
+                  const newDollarTotal = (existingWallet.dollar_total || 0) + dollarAmount;
+                  const { data: updatedWallet, error: updateError } = await supabase
+                    .from("wallets")
+                    .update({
+                      total: newTotal,
+                      dollar_total: newDollarTotal,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq("user_id", user.id)
+                    .select()
+                    .single();
+                  if (updateError) throw updateError;
+                  if (updatedWallet) {
+                    setWallet(updatedWallet);
+                    return;
+                  }
+                }
+              }
+              throw createError;
+            }
             if (newWallet) {
               setWallet(newWallet);
               return;
