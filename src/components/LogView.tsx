@@ -109,34 +109,6 @@ export function LogView<T extends { id: string }>({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Navigation Buttons - Desktop */}
-        <div className="hidden sm:flex items-center justify-between absolute inset-0 pointer-events-none">
-          <button
-            onClick={handlePrevious}
-            disabled={swipeIndex === 0}
-            className={`pointer-events-auto px-4 py-2 rounded-lg transition-all ${
-              swipeIndex === 0
-                ? "opacity-30 cursor-not-allowed"
-                : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-            } text-gray-700 dark:text-gray-200 font-semibold touch-manipulation`}
-            aria-label="Previous log"
-          >
-            ← Previous
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={swipeIndex === logs.length - 1}
-            className={`pointer-events-auto px-4 py-2 rounded-lg transition-all ${
-              swipeIndex === logs.length - 1
-                ? "opacity-30 cursor-not-allowed"
-                : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-            } text-gray-700 dark:text-gray-200 font-semibold touch-manipulation`}
-            aria-label="Next log"
-          >
-            Next →
-          </button>
-        </div>
-
         {/* Swipeable Log Content */}
         <div className="text-center py-8">
           <div className="text-4xl mb-4">📅</div>
@@ -148,8 +120,53 @@ export function LogView<T extends { id: string }>({
           </div>
         </div>
 
-        {/* Swipe Indicators */}
-        <div className="flex justify-center gap-2 mt-4">
+        {/* Navigation Controls - Desktop buttons with pagination indicators */}
+        <div className="hidden sm:flex items-center justify-center gap-4 mt-4">
+          <button
+            onClick={handlePrevious}
+            disabled={swipeIndex === 0}
+            className={`px-4 py-2 rounded-lg transition-all ${
+              swipeIndex === 0
+                ? "opacity-30 cursor-not-allowed"
+                : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+            } text-gray-700 dark:text-gray-200 font-semibold touch-manipulation`}
+            aria-label="Previous log"
+          >
+            ← Previous
+          </button>
+          
+          {/* Swipe Indicators */}
+          <div className="flex justify-center gap-2">
+            {sortedLogs.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setSwipeIndex(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index === swipeIndex
+                    ? "w-8 bg-amber-500"
+                    : "w-2 bg-gray-300 dark:bg-gray-600"
+                }`}
+                aria-label={`Go to log ${index + 1}`}
+              />
+            ))}
+          </div>
+          
+          <button
+            onClick={handleNext}
+            disabled={swipeIndex === logs.length - 1}
+            className={`px-4 py-2 rounded-lg transition-all ${
+              swipeIndex === logs.length - 1
+                ? "opacity-30 cursor-not-allowed"
+                : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+            } text-gray-700 dark:text-gray-200 font-semibold touch-manipulation`}
+            aria-label="Next log"
+          >
+            Next →
+          </button>
+        </div>
+
+        {/* Swipe Indicators - Mobile only */}
+        <div className="flex sm:hidden justify-center gap-2 mt-4">
           {sortedLogs.map((_, index) => (
             <button
               key={index}
