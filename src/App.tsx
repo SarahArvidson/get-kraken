@@ -28,6 +28,7 @@ import { ProgressView } from "./components/views/ProgressView";
 import { playCoinSound, preloadAudio } from "./utils/sound";
 import type { Quest, ShopItem, QuestLog, ShopLog, Tag, ShopTag } from "./types";
 import { LOG_REFRESH_INTERVAL_MS, TOAST_DURATION_MS, CURRENCY_NAME } from "./constants";
+import { supabase } from "./lib/supabase";
 
 type View = "quests" | "shop" | "progress";
 
@@ -303,6 +304,18 @@ function App() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await supabase.supabase.auth.signOut();
+      // The AuthGate component will handle the redirect to login
+    } catch (err: unknown) {
+      console.error("Error logging out:", err);
+      showError(
+        err instanceof Error ? err.message : "Failed to log out"
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 relative" style={{ zIndex: 1 }}>
       <BubbleBackground />
@@ -310,6 +323,7 @@ function App() {
       <Header
         showDollarAmounts={preferences.showDollarAmounts}
         onToggleDollarAmounts={() => preferences.toggleDollarAmounts()}
+        onLogout={handleLogout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">

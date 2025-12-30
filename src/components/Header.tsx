@@ -9,9 +9,10 @@ import { KRAKEN_ICON_PATH, APP_NAME, APP_SUBTITLE } from "../constants";
 interface HeaderProps {
   showDollarAmounts: boolean;
   onToggleDollarAmounts: () => void;
+  onLogout: () => void;
 }
 
-export function Header({ showDollarAmounts, onToggleDollarAmounts }: HeaderProps) {
+export function Header({ showDollarAmounts, onToggleDollarAmounts, onLogout }: HeaderProps) {
   const toggleButtonClasses = showDollarAmounts
     ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300"
     : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300";
@@ -38,7 +39,14 @@ export function Header({ showDollarAmounts, onToggleDollarAmounts }: HeaderProps
                 </p>
               </div>
             </div>
-            <div className="flex-1 flex justify-end">
+            <div className="flex-1 flex justify-end items-center gap-2">
+              <button
+                onClick={onLogout}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors touch-manipulation bg-purple-100 dark:bg-purple-900 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
+                title="Log out"
+              >
+                🚪 Log Out
+              </button>
               <button
                 onClick={onToggleDollarAmounts}
                 className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors touch-manipulation ${toggleButtonClasses}`}
@@ -66,13 +74,22 @@ export function Header({ showDollarAmounts, onToggleDollarAmounts }: HeaderProps
                 <p className="text-xs text-gray-500 dark:text-gray-200 flex-shrink">
                   {APP_SUBTITLE}
                 </p>
-                <button
-                  onClick={onToggleDollarAmounts}
-                  className={`px-2 py-1 text-xs font-medium rounded-lg border-2 transition-colors touch-manipulation flex-shrink-0 ${toggleButtonClasses}`}
-                  title={showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
-                >
-                  💵 {showDollarAmounts ? "On" : "Off"}
-                </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={onLogout}
+                    className="px-2 py-1 text-xs font-medium rounded-lg border-2 transition-colors touch-manipulation bg-purple-100 dark:bg-purple-900 border-purple-500 dark:border-purple-400 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800"
+                    title="Log out"
+                  >
+                    🚪
+                  </button>
+                  <button
+                    onClick={onToggleDollarAmounts}
+                    className={`px-2 py-1 text-xs font-medium rounded-lg border-2 transition-colors touch-manipulation ${toggleButtonClasses}`}
+                    title={showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
+                  >
+                    💵 {showDollarAmounts ? "On" : "Off"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
