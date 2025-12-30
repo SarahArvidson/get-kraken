@@ -379,7 +379,7 @@ function App() {
                 <img
                   src="/kraken-icon.png"
                   alt="Kraken"
-                  className="h-32 object-contain flex-shrink-0"
+                  className="h-80 object-contain flex-shrink-0"
                 />
                 <div className="flex flex-col items-start">
                   <h1 className="text-6xl font-bold text-gray-900 header-text-color leading-tight">
