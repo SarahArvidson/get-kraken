@@ -151,6 +151,7 @@ export function useQuests() {
         }
 
         // If user created it, update the base quest
+        // Note: created_by can be null (seeded quests) or a different user's ID
         if (existingQuest.created_by === user.id) {
           const { data, error: updateError } = await supabase
             .from("quests")
@@ -160,15 +161,17 @@ export function useQuests() {
             })
             .eq("id", id)
             .select()
-            .single();
+            .maybeSingle();
 
           if (updateError) throw updateError;
-          if (data) {
-            setQuests((prev) => {
-              const updated = prev.map((q) => (q.id === id ? data : q));
-              return updated.sort((a, b) => a.name.localeCompare(b.name));
-            });
+          if (!data) {
+            // Update returned 0 rows - likely RLS blocked it or quest was deleted
+            throw new Error("Quest update was blocked or quest not found");
           }
+          setQuests((prev) => {
+            const updated = prev.map((q) => (q.id === id ? data : q));
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
           return data;
         } else {
           // Seeded quest - update user override instead

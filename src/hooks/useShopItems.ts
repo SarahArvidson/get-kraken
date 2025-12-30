@@ -153,6 +153,7 @@ export function useShopItems() {
         }
 
         // If user created it, update the base item
+        // Note: created_by can be null (seeded items) or a different user's ID
         if (existingItem.created_by === user.id) {
           const { data, error: updateError } = await supabase
             .from("shop_items")
@@ -162,15 +163,17 @@ export function useShopItems() {
             })
             .eq("id", id)
             .select()
-            .single();
+            .maybeSingle();
 
           if (updateError) throw updateError;
-          if (data) {
-            setShopItems((prev) => {
-              const updated = prev.map((item) => (item.id === id ? data : item));
-              return updated.sort((a, b) => a.name.localeCompare(b.name));
-            });
+          if (!data) {
+            // Update returned 0 rows - likely RLS blocked it or item was deleted
+            throw new Error("Shop item update was blocked or item not found");
           }
+          setShopItems((prev) => {
+            const updated = prev.map((item) => (item.id === id ? data : item));
+            return updated.sort((a, b) => a.name.localeCompare(b.name));
+          });
           return data;
         } else {
           // Seeded item - update user override instead
