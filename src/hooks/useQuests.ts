@@ -43,7 +43,7 @@ export function useQuests() {
     ) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -107,7 +107,7 @@ export function useQuests() {
     async (questId: string, reward: number) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -139,7 +139,7 @@ export function useQuests() {
     async (questId: string): Promise<QuestWithLogs | null> => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           return null;
         }

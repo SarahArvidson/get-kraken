@@ -43,7 +43,7 @@ export function useShopItems() {
     ) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -109,7 +109,7 @@ export function useShopItems() {
     async (itemId: string, price: number) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -141,7 +141,7 @@ export function useShopItems() {
     async (itemId: string): Promise<ShopItemWithLogs | null> => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) {
           return null;
         }
