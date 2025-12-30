@@ -218,6 +218,7 @@ function App() {
     name: string;
     tags: Tag[];
     reward: number;
+    dollar_amount?: number;
     completion_count: number;
   }) => {
     if (!editingQuest) return;
@@ -238,6 +239,7 @@ function App() {
     name: string;
     tags: ShopTag[];
     price: number;
+    dollar_amount?: number;
     purchase_count: number;
   }) => {
     if (!editingShopItem) return;
