@@ -78,10 +78,34 @@ export function useQuests() {
     []
   );
 
-  // Update a quest
+  // Update a quest (only if user created it)
   const updateQuest = useCallback(
     async (id: string, updates: Partial<Quest>) => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        // First, check if the quest exists and if the user created it
+        const { data: existingQuest, error: fetchError } = await supabase
+          .from("quests")
+          .select("created_by")
+          .eq("id", id)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (!existingQuest) {
+          throw new Error("Quest not found");
+        }
+
+        // Check ownership: user can only update quests they created
+        // Seeded quests (created_by IS NULL) cannot be updated by anyone
+        if (existingQuest.created_by !== user.id) {
+          throw new Error("You can only update quests that you created");
+        }
+
         const { data, error: updateError } = await supabase
           .from("quests")
           .update({

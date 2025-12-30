@@ -20,6 +20,7 @@ export interface Quest {
   reward: number; // sea dollars earned per completion
   dollar_amount: number; // real dollars saved per completion
   completion_count: number;
+  created_by?: string | null; // user ID who created this quest (null for seeded quests, optional for backwards compatibility)
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,7 @@ export interface ShopItem {
   price: number; // sea dollars cost
   dollar_amount: number; // real dollars spent per purchase
   purchase_count: number;
+  created_by?: string | null; // user ID who created this item (null for seeded items, optional for backwards compatibility)
   created_at: string;
   updated_at: string;
 }
@@ -46,12 +48,14 @@ export interface Wallet {
 export interface QuestLog {
   id: string;
   quest_id: string;
+  user_id: string; // user who completed this quest
   completed_at: string;
 }
 
 export interface ShopLog {
   id: string;
   shop_item_id: string;
+  user_id: string; // user who purchased this item
   purchased_at: string;
 }
 

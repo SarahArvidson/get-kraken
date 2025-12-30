@@ -11,6 +11,7 @@ import { useQuests } from "./hooks/useQuests";
 import { useShopItems } from "./hooks/useShopItems";
 import { usePreferences } from "./hooks/usePreferences";
 import { useToast } from "./hooks/useToast";
+import { useFilterState } from "./hooks/useFilterState";
 import { WalletDisplay } from "./components/WalletDisplay";
 import { Header } from "./components/Header";
 import { NavigationTabs } from "./components/NavigationTabs";
@@ -75,10 +76,18 @@ function App() {
 
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
-  const [questSearchQuery, setQuestSearchQuery] = useState("");
-  const [shopSearchQuery, setShopSearchQuery] = useState("");
-  const [selectedQuestTag, setSelectedQuestTag] = useState<Tag | null>(null);
-  const [selectedShopTag, setSelectedShopTag] = useState<ShopTag | null>(null);
+  
+  // Use per-user filter state
+  const {
+    questSearchQuery,
+    shopSearchQuery,
+    selectedQuestTag,
+    selectedShopTag,
+    setQuestSearchQuery,
+    setShopSearchQuery,
+    setSelectedQuestTag,
+    setSelectedShopTag,
+  } = useFilterState();
 
   // Load all logs for progress tracking
   useEffect(() => {

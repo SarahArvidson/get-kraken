@@ -78,10 +78,34 @@ export function useShopItems() {
     []
   );
 
-  // Update a shop item
+  // Update a shop item (only if user created it)
   const updateShopItem = useCallback(
     async (id: string, updates: Partial<ShopItem>) => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        // First, check if the shop item exists and if the user created it
+        const { data: existingItem, error: fetchError } = await supabase
+          .from("shop_items")
+          .select("created_by")
+          .eq("id", id)
+          .single();
+
+        if (fetchError) throw fetchError;
+        if (!existingItem) {
+          throw new Error("Shop item not found");
+        }
+
+        // Check ownership: user can only update items they created
+        // Seeded items (created_by IS NULL) cannot be updated by anyone
+        if (existingItem.created_by !== user.id) {
+          throw new Error("You can only update shop items that you created");
+        }
+
         const { data, error: updateError } = await supabase
           .from("shop_items")
           .update({

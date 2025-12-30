@@ -9,6 +9,7 @@ import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
 import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -32,6 +33,11 @@ export function ShopItemCard({
   showDollarAmounts = false,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const { userId } = useCurrentUser();
+  
+  // Check if user can edit this item (only if they created it)
+  // Seeded items (created_by is null/undefined) cannot be edited by anyone
+  const canEdit = userId !== null && item.created_by !== null && item.created_by !== undefined && item.created_by === userId;
 
   const handlePurchase = async () => {
     setIsPurchasing(true);
@@ -91,51 +97,53 @@ export function ShopItemCard({
             </div>
           </div>
 
-          {/* Price Controls */}
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-center gap-4">
-              <img src="/sea-dollar.svg" alt="Sea Dollar" className="w-5 h-5" />
-              <button
-                onClick={() => handlePriceChange(-1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                aria-label="Decrease price"
-              >
-                −
-              </button>
-              <span className="text-lg font-semibold min-w-[60px] text-center">
-                {item.price}
-              </span>
-              <button
-                onClick={() => handlePriceChange(1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                aria-label="Increase price"
-              >
-                +
-              </button>
-            </div>
-            {showDollarAmounts && onUpdateDollarAmount && (
+          {/* Price Controls - Only show if user can edit */}
+          {canEdit && (
+            <div className="space-y-3 mb-4">
               <div className="flex items-center justify-center gap-4">
-                <span className="text-lg">💵</span>
+                <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
                 <button
-                  onClick={() => handleDollarAmountChange(-1)}
+                  onClick={() => handlePriceChange(-1)}
                   className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Decrease dollar amount"
+                  aria-label="Decrease price"
                 >
                   −
                 </button>
-                <span className="text-lg font-semibold min-w-[80px] text-center">
-                  ${Math.round(item.dollar_amount || 0)}
+                <span className="text-lg font-semibold min-w-[60px] text-center">
+                  {item.price}
                 </span>
                 <button
-                  onClick={() => handleDollarAmountChange(1)}
+                  onClick={() => handlePriceChange(1)}
                   className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Increase dollar amount"
+                  aria-label="Increase price"
                 >
                   +
                 </button>
               </div>
-            )}
-          </div>
+              {showDollarAmounts && onUpdateDollarAmount && (
+                <div className="flex items-center justify-center gap-4">
+                  <span className="text-lg">💵</span>
+                  <button
+                    onClick={() => handleDollarAmountChange(-1)}
+                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                    aria-label="Decrease dollar amount"
+                  >
+                    −
+                  </button>
+                  <span className="text-lg font-semibold min-w-[80px] text-center">
+                    ${Math.round(item.dollar_amount || 0)}
+                  </span>
+                  <button
+                    onClick={() => handleDollarAmountChange(1)}
+                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+                    aria-label="Increase dollar amount"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -159,14 +167,16 @@ export function ShopItemCard({
             >
               Logs
             </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={() => onEdit(item)}
-              className="touch-manipulation"
-            >
-              Edit
-            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => onEdit(item)}
+                className="touch-manipulation"
+              >
+                Edit
+              </Button>
+            )}
           </div>
         </div>
       </div>
