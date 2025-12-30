@@ -125,7 +125,7 @@ export function useQuests() {
             // Need to remove log entries (remove oldest ones first)
             const logsToDelete = currentLogs?.slice(0, Math.abs(difference)) || [];
             if (logsToDelete.length > 0) {
-              const idsToDelete = logsToDelete.map((log) => log.id);
+              const idsToDelete = logsToDelete.map((log: { id: string }) => log.id);
               const { error: deleteError } = await supabase
                 .from("quest_logs")
                 .delete()
