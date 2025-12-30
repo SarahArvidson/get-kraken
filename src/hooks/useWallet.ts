@@ -157,6 +157,11 @@ export function useWallet() {
         }
 
         // Wallet exists, update it
+        if (!wallet) {
+          // This shouldn't happen, but TypeScript needs this check
+          throw new Error("Wallet not loaded");
+        }
+
         const newTotal = wallet.total + amount;
         const newDollarTotal = (wallet.dollar_total || 0) + dollarAmount;
         const { data, error: updateError } = await supabase
