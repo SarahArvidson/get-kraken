@@ -20,7 +20,7 @@ ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE SET
 ALTER TABLE shop_items 
 ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 
--- Step 4: Drop all existing policies
+-- Step 4: Drop all existing policies (including any with similar names)
 DROP POLICY IF EXISTS "Allow all for authenticated users on wallets" ON wallets;
 DROP POLICY IF EXISTS "Allow all for authenticated users on quests" ON quests;
 DROP POLICY IF EXISTS "Allow all for authenticated users on quest_logs" ON quest_logs;
@@ -29,6 +29,30 @@ DROP POLICY IF EXISTS "Allow all for authenticated users on shop_logs" ON shop_l
 DROP POLICY IF EXISTS "Allow all for authenticated users on goals" ON goals;
 DROP POLICY IF EXISTS "Allow anonymous inserts for seeding quests" ON quests;
 DROP POLICY IF EXISTS "Allow anonymous inserts for seeding shop" ON shop_items;
+DROP POLICY IF EXISTS "Everyone can read quests" ON quests;
+DROP POLICY IF EXISTS "Users can create their own quests" ON quests;
+DROP POLICY IF EXISTS "Users can update their own quests or seeded quests" ON quests;
+DROP POLICY IF EXISTS "Users can delete their own quests" ON quests;
+DROP POLICY IF EXISTS "Users can read their own quest logs" ON quest_logs;
+DROP POLICY IF EXISTS "Users can create their own quest logs" ON quest_logs;
+DROP POLICY IF EXISTS "Users can delete their own quest logs" ON quest_logs;
+DROP POLICY IF EXISTS "Everyone can read shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can create their own shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can update their own shop items or seeded items" ON shop_items;
+DROP POLICY IF EXISTS "Users can delete their own shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can read their own shop logs" ON shop_logs;
+DROP POLICY IF EXISTS "Users can create their own shop logs" ON shop_logs;
+DROP POLICY IF EXISTS "Users can delete their own shop logs" ON shop_logs;
+DROP POLICY IF EXISTS "Users can read their own goals" ON goals;
+DROP POLICY IF EXISTS "Users can create their own goals" ON goals;
+DROP POLICY IF EXISTS "Users can update their own goals" ON goals;
+DROP POLICY IF EXISTS "Users can delete their own goals" ON goals;
+DROP POLICY IF EXISTS "Everyone can read shared wallet" ON wallets;
+DROP POLICY IF EXISTS "Everyone can update shared wallet" ON wallets;
+DROP POLICY IF EXISTS "Users can read their own wallet" ON wallets;
+DROP POLICY IF EXISTS "Users can create their own wallet" ON wallets;
+DROP POLICY IF EXISTS "Users can update their own wallet" ON wallets;
+DROP POLICY IF EXISTS "Users can delete their own wallet" ON wallets;
 
 -- Step 5: Create new policies with proper user isolation
 

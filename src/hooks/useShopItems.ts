@@ -121,7 +121,12 @@ export function useShopItems() {
           purchased_at: new Date().toISOString(),
         });
 
-        if (logError) throw logError;
+        if (logError) {
+          console.error("Shop log insert error:", logError);
+          console.error("User ID:", user.id);
+          console.error("Item ID:", itemId);
+          throw new Error(`Failed to create shop log: ${logError.message || JSON.stringify(logError)}`);
+        }
 
         // Note: We don't update purchase_count anymore since it's shared
         // Per-user counts are calculated from logs

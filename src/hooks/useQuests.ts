@@ -119,7 +119,12 @@ export function useQuests() {
           completed_at: new Date().toISOString(),
         });
 
-        if (logError) throw logError;
+        if (logError) {
+          console.error("Quest log insert error:", logError);
+          console.error("User ID:", user.id);
+          console.error("Quest ID:", questId);
+          throw new Error(`Failed to create quest log: ${logError.message || JSON.stringify(logError)}`);
+        }
 
         // Note: We don't update completion_count anymore since it's shared
         // Per-user counts are calculated from logs
