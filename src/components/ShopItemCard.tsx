@@ -29,7 +29,7 @@ export function ShopItemCard({
   showDollarAmounts = false,
 }: ShopItemCardProps) {
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const { getEffectivePrice, getEffectiveDollarAmount, updateOverride } = useShopItemOverrides();
+  const { getEffectivePrice, getEffectiveDollarAmount, getEffectiveTags, getEffectiveName, updateOverride } = useShopItemOverrides();
   
   // Get effective values (user override or base)
   const effectivePrice = useMemo(
@@ -39,6 +39,14 @@ export function ShopItemCard({
   const effectiveDollarAmount = useMemo(
     () => getEffectiveDollarAmount(item.id, item.dollar_amount || 0),
     [getEffectiveDollarAmount, item.id, item.dollar_amount]
+  );
+  const effectiveTags = useMemo(
+    () => getEffectiveTags(item.id, item.tags || []),
+    [getEffectiveTags, item.id, item.tags]
+  );
+  const effectiveName = useMemo(
+    () => getEffectiveName(item.id, item.name),
+    [getEffectiveName, item.id, item.name]
   );
 
   const handlePurchase = async () => {
@@ -68,14 +76,14 @@ export function ShopItemCard({
   const canAfford = walletTotal >= effectivePrice;
 
   return (
-    <CyclingShopBorder tags={item.tags}>
+    <CyclingShopBorder tags={effectiveTags}>
       <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation backdrop-blur-sm">
         {/* Card Content */}
         <div className="p-4">
           {/* Item Info */}
           <div className="mb-4">
             <h3 className="text-xl font-bold text-gray-900 header-text-color mb-2">
-              {item.name}
+              {effectiveName}
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -170,7 +178,7 @@ export function ShopItemCard({
             <Button
               variant="ghost"
               size="lg"
-              onClick={() => onEdit(item)}
+              onClick={() => onEdit({ ...item, name: effectiveName, tags: effectiveTags, price: effectivePrice, dollar_amount: effectiveDollarAmount })}
               className="touch-manipulation"
             >
               Edit

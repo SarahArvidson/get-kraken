@@ -229,9 +229,12 @@ export function useQuests() {
     []
   );
 
-  // Subscribe to real-time changes
+  // Subscribe to real-time changes and reload when overrides are ready
   useEffect(() => {
-    loadQuests();
+    // Wait a bit for overrides to load, then load quests
+    const timer = setTimeout(() => {
+      loadQuests();
+    }, 100);
 
     const subscription = supabase.subscribe("quests", (payload: any) => {
       if (payload.eventType === "INSERT") {
@@ -244,6 +247,7 @@ export function useQuests() {
     });
 
     return () => {
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -26,10 +26,12 @@ export function useShopItems() {
 
       if (fetchError) throw fetchError;
       
+      // Wait for overrides to be loaded before merging
       // Merge with overrides and filter hidden items
       const mergedItems = (data || [])
         .filter((item: ShopItem) => !isItemHidden(item.id))
-        .map((item: ShopItem) => mergeItemWithOverrides(item));
+        .map((item: ShopItem) => mergeItemWithOverrides(item))
+        .sort((a: ShopItem, b: ShopItem) => a.name.localeCompare(b.name));
       
       setShopItems(mergedItems);
       setError(null);

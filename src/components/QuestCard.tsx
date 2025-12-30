@@ -29,7 +29,7 @@ export function QuestCard({
   userCompletionCount,
 }: QuestCardProps) {
   const [isCompleting, setIsCompleting] = useState(false);
-  const { getEffectiveReward, getEffectiveDollarAmount, updateOverride } = useQuestOverrides();
+  const { getEffectiveReward, getEffectiveDollarAmount, getEffectiveTags, getEffectiveName, updateOverride } = useQuestOverrides();
   
   // Get effective values (user override or base)
   const effectiveReward = useMemo(
@@ -39,6 +39,14 @@ export function QuestCard({
   const effectiveDollarAmount = useMemo(
     () => getEffectiveDollarAmount(quest.id, quest.dollar_amount || 0),
     [getEffectiveDollarAmount, quest.id, quest.dollar_amount]
+  );
+  const effectiveTags = useMemo(
+    () => getEffectiveTags(quest.id, quest.tags || []),
+    [getEffectiveTags, quest.id, quest.tags]
+  );
+  const effectiveName = useMemo(
+    () => getEffectiveName(quest.id, quest.name),
+    [getEffectiveName, quest.id, quest.name]
   );
 
   const handleComplete = async () => {
@@ -66,14 +74,14 @@ export function QuestCard({
   };
 
   return (
-    <CyclingBorder tags={quest.tags}>
+    <CyclingBorder tags={effectiveTags}>
       <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden touch-manipulation backdrop-blur-sm">
         {/* Card Content */}
         <div className="p-4">
           {/* Quest Info */}
           <div className="mb-4">
             <h3 className="text-xl font-bold text-gray-900 header-text-color mb-2">
-              {quest.name}
+              {effectiveName}
             </h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -165,7 +173,7 @@ export function QuestCard({
             <Button
               variant="ghost"
               size="lg"
-              onClick={() => onEdit(quest)}
+              onClick={() => onEdit({ ...quest, name: effectiveName, tags: effectiveTags, reward: effectiveReward, dollar_amount: effectiveDollarAmount })}
               className="touch-manipulation"
             >
               Edit
