@@ -52,7 +52,7 @@ export function useGoals() {
           throw new Error("User must be authenticated");
         }
 
-        // Build insert object, only including dollar_amount if it's provided
+        // Build insert object
         const insertData: any = {
           name: goal.name,
           target_amount: goal.target_amount,
@@ -63,19 +63,41 @@ export function useGoals() {
           updated_at: new Date().toISOString(),
         };
 
-        // Only include dollar_amount if it's not null/undefined
-        // This handles cases where the column might not exist in the database
-        if (goal.dollar_amount !== null && goal.dollar_amount !== undefined) {
+        // Try to include dollar_amount if provided
+        // If the column doesn't exist, we'll retry without it
+        if (goal.dollar_amount !== null && goal.dollar_amount !== undefined && goal.dollar_amount > 0) {
           insertData.dollar_amount = goal.dollar_amount;
         }
 
-        const { data, error: createError } = await supabase
+        let { data, error: createError } = await supabase
           .from("goals")
           .insert(insertData)
           .select()
           .single();
 
-        if (createError) throw createError;
+        // If error is due to missing dollar_amount column, retry without it
+        if (createError && insertData.dollar_amount !== undefined) {
+          const errorMessage = createError.message || "";
+          if (errorMessage.includes("dollar_amount") || errorMessage.includes("PGRST204")) {
+            console.warn("dollar_amount column not found in goals table, creating goal without it");
+            // Remove dollar_amount and retry
+            const { dollar_amount, ...retryData } = insertData;
+            const retryResult = await supabase
+              .from("goals")
+              .insert(retryData)
+              .select()
+              .single();
+            
+            if (retryResult.error) throw retryResult.error;
+            data = retryResult.data;
+            createError = null;
+          } else {
+            throw createError;
+          }
+        } else if (createError) {
+          throw createError;
+        }
+
         if (data) {
           setGoals((prev) => [data, ...prev]);
         }
