@@ -215,7 +215,7 @@ export function useQuests() {
   const loadAllQuestLogs = useCallback(async (): Promise<QuestLog[]> => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.supabase.auth.getUser();
       if (!user) {
         return [];
       }

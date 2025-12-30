@@ -219,7 +219,7 @@ export function useShopItems() {
   const loadAllShopLogs = useCallback(async (): Promise<ShopLog[]> => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.supabase.auth.getUser();
       if (!user) {
         return [];
       }
