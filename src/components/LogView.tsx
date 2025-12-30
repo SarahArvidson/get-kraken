@@ -121,11 +121,12 @@ export function LogView<T extends { id: string }>({
         </div>
 
         {/* Navigation Controls - Desktop buttons with pagination indicators */}
-        <div className="hidden sm:flex items-center justify-center gap-4 mt-4">
+        <div className="flex items-center justify-center gap-4 mt-4">
+          {/* Previous Button - Desktop only */}
           <button
             onClick={handlePrevious}
             disabled={swipeIndex === 0}
-            className={`px-4 py-2 rounded-lg transition-all ${
+            className={`hidden sm:block px-4 py-2 rounded-lg transition-all ${
               swipeIndex === 0
                 ? "opacity-30 cursor-not-allowed"
                 : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -135,7 +136,7 @@ export function LogView<T extends { id: string }>({
             ← Previous
           </button>
           
-          {/* Swipe Indicators */}
+          {/* Swipe Indicators - Single set for both desktop and mobile */}
           <div className="flex justify-center gap-2">
             {sortedLogs.map((_, index) => (
               <button
@@ -151,10 +152,11 @@ export function LogView<T extends { id: string }>({
             ))}
           </div>
           
+          {/* Next Button - Desktop only */}
           <button
             onClick={handleNext}
             disabled={swipeIndex === logs.length - 1}
-            className={`px-4 py-2 rounded-lg transition-all ${
+            className={`hidden sm:block px-4 py-2 rounded-lg transition-all ${
               swipeIndex === logs.length - 1
                 ? "opacity-30 cursor-not-allowed"
                 : "opacity-70 hover:opacity-100 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -163,22 +165,6 @@ export function LogView<T extends { id: string }>({
           >
             Next →
           </button>
-        </div>
-
-        {/* Swipe Indicators - Mobile only */}
-        <div className="flex sm:hidden justify-center gap-2 mt-4">
-          {sortedLogs.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setSwipeIndex(index)}
-              className={`h-2 rounded-full transition-all ${
-                index === swipeIndex
-                  ? "w-8 bg-amber-500"
-                  : "w-2 bg-gray-300 dark:bg-gray-600"
-              }`}
-              aria-label={`Go to log ${index + 1}`}
-            />
-          ))}
         </div>
 
         {/* Navigation Hints */}
