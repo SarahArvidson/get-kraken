@@ -112,10 +112,10 @@ export function GamificationPanel({
         </div>
 
         {goalsLoading ? (
-          <div className="text-center py-8 text-gray-500">Loading goals...</div>
+          <div className="text-center py-8 text-gray-500 dark:header-text-color">Loading goals...</div>
         ) : goals.length === 0 ? (
           <div className="bg-blue-50/80 dark:bg-gray-800 rounded-2xl p-8 text-center shadow-lg backdrop-blur-sm">
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 dark:header-text-color">
               No goals yet. Create your first goal to start tracking!
             </p>
           </div>

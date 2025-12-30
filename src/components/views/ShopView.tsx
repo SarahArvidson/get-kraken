@@ -68,7 +68,7 @@ export function ShopView({
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+        <h2 className="text-2xl font-bold text-gray-900 header-text-color">
           Shop
         </h2>
         <div className="w-full sm:w-64">
@@ -91,11 +91,11 @@ export function ShopView({
       />
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:header-text-color">
           Loading shop items...
         </div>
       ) : filteredShopItems.length === 0 && searchQuery ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-300">
+        <div className="text-center py-12 text-gray-500 dark:header-text-color">
           No items found matching "{searchQuery}"
         </div>
       ) : (

@@ -53,10 +53,10 @@ body::before {
     opacity: 0;
   }
   10% {
-    opacity: 0.4;
+    opacity: 0.52;
   }
   90% {
-    opacity: 0.4;
+    opacity: 0.52;
   }
   100% {
     transform: translateY(-100px) translateX(20px);
@@ -64,23 +64,23 @@ body::before {
   }
 }
 
-/* Light mode bubbles - light blue */
+/* Light mode bubbles - light blue (30% more visible) */
 .bubble {
   position: fixed;
   border-radius: 50%;
-  background: rgba(147, 197, 253, 0.3);
-  border: 1px solid rgba(96, 165, 250, 0.4);
+  background: rgba(147, 197, 253, 0.39);
+  border: 1px solid rgba(96, 165, 250, 0.52);
   pointer-events: none;
   animation: bubble-float linear infinite;
   z-index: 0;
-  box-shadow: 0 0 10px rgba(147, 197, 253, 0.2);
+  box-shadow: 0 0 10px rgba(147, 197, 253, 0.26);
 }
 
-/* Dark mode bubbles - white/light */
+/* Dark mode bubbles - white/light (30% more visible) */
 .dark .bubble {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.13);
 }
 
 .bubble:nth-child(1) { width: 20px; height: 20px; left: 10%; animation-duration: 8s; animation-delay: 0s; }

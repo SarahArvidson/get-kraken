@@ -41,6 +41,8 @@ export interface UserQuestOverride {
   id: string;
   user_id: string;
   quest_id: string;
+  name: string | null;
+  tags: Tag[] | null;
   reward: number | null;
   dollar_amount: number | null;
   created_at: string;
@@ -51,6 +53,8 @@ export interface UserShopItemOverride {
   id: string;
   user_id: string;
   shop_item_id: string;
+  name: string | null;
+  tags: ShopTag[] | null;
   price: number | null;
   dollar_amount: number | null;
   created_at: string;

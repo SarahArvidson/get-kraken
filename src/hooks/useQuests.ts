@@ -7,11 +7,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Quest, QuestWithLogs, QuestLog } from "../types";
+import { useQuestOverrides } from "./useQuestOverrides";
 
 export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { mergeQuestWithOverrides, isQuestHidden, updateOverride, hideQuest: hideQuestForUser, refresh: refreshOverrides } = useQuestOverrides();
 
   // Load all quests
   const loadQuests = useCallback(async () => {
@@ -23,7 +25,13 @@ export function useQuests() {
         .order("name", { ascending: true });
 
       if (fetchError) throw fetchError;
-      setQuests(data || []);
+      
+      // Merge with overrides and filter hidden quests
+      const mergedQuests = (data || [])
+        .filter((quest: Quest) => !isQuestHidden(quest.id))
+        .map((quest: Quest) => mergeQuestWithOverrides(quest));
+      
+      setQuests(mergedQuests);
       setError(null);
     } catch (err: any) {
       console.error("Error loading quests:", err);
@@ -78,7 +86,7 @@ export function useQuests() {
     []
   );
 
-  // Update a quest (only if user created it)
+  // Update a quest (user-created quests update base, seeded quests update overrides)
   const updateQuest = useCallback(
     async (id: string, updates: Partial<Quest>) => {
       try {
@@ -100,38 +108,47 @@ export function useQuests() {
           throw new Error("Quest not found");
         }
 
-        // Check ownership: user can only update quests they created
-        // Seeded quests (created_by IS NULL) cannot be updated by anyone
-        if (existingQuest.created_by !== user.id) {
-          throw new Error("You can only update quests that you created");
-        }
+        // If user created it, update the base quest
+        if (existingQuest.created_by === user.id) {
+          const { data, error: updateError } = await supabase
+            .from("quests")
+            .update({
+              ...updates,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", id)
+            .select()
+            .single();
 
-        const { data, error: updateError } = await supabase
-          .from("quests")
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", id)
-          .select()
-          .single();
+          if (updateError) throw updateError;
+          if (data) {
+            setQuests((prev) => {
+              const updated = prev.map((q) => (q.id === id ? data : q));
+              return updated.sort((a, b) => a.name.localeCompare(b.name));
+            });
+          }
+          return data;
+        } else {
+          // Seeded quest - update user override instead
+          const overrideUpdates: any = {};
+          if (updates.name !== undefined) overrideUpdates.name = updates.name;
+          if (updates.tags !== undefined) overrideUpdates.tags = updates.tags;
+          if (updates.reward !== undefined) overrideUpdates.reward = updates.reward;
+          if (updates.dollar_amount !== undefined) overrideUpdates.dollar_amount = updates.dollar_amount;
 
-        if (updateError) throw updateError;
-        if (data) {
-          setQuests((prev) => {
-            const updated = prev.map((q) => (q.id === id ? data : q));
-            // Sort alphabetically by name
-            return updated.sort((a, b) => a.name.localeCompare(b.name));
-          });
+          await updateOverride(id, overrideUpdates);
+          await refreshOverrides();
+          // Reload quests to get merged data
+          await loadQuests();
+          return quests.find((q) => q.id === id);
         }
-        return data;
       } catch (err: any) {
         console.error("Error updating quest:", err);
         setError(err.message || "Failed to update quest");
         throw err;
       }
     },
-    []
+    [updateOverride, refreshOverrides, loadQuests, quests]
   );
 
   // Complete a quest (adds to log with user_id)
@@ -231,22 +248,44 @@ export function useQuests() {
     };
   }, [loadQuests]);
 
-  // Delete a quest (but keep logs)
+  // Delete a quest (user-created quests delete base, seeded quests hide for user)
   const deleteQuest = useCallback(async (id: string) => {
     try {
-      const { error: deleteError } = await supabase
-        .from("quests")
-        .delete()
-        .eq("id", id);
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) throw new Error("User must be authenticated");
 
-      if (deleteError) throw deleteError;
-      setQuests((prev) => prev.filter((q) => q.id !== id));
+      // Fetch the existing quest to check ownership
+      const { data: existingQuest, error: fetchError } = await supabase
+        .from("quests")
+        .select("created_by")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!existingQuest) throw new Error("Quest not found.");
+
+      // If user created it, delete the base quest
+      if (existingQuest.created_by === user.id) {
+        const { error: deleteError } = await supabase
+          .from("quests")
+          .delete()
+          .eq("id", id);
+
+        if (deleteError) throw deleteError;
+        setQuests((prev) => prev.filter((q) => q.id !== id));
+      } else {
+        // Seeded quest - hide it for this user
+        await hideQuestForUser(id);
+        await refreshOverrides();
+        // Reload quests to filter out hidden quest
+        await loadQuests();
+      }
     } catch (err: any) {
       console.error("Error deleting quest:", err);
       setError(err.message || "Failed to delete quest");
       throw err;
     }
-  }, []);
+  }, [hideQuestForUser, refreshOverrides, loadQuests]);
 
   // Load all quest logs for current user
   const loadAllQuestLogs = useCallback(async (): Promise<QuestLog[]> => {

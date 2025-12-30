@@ -91,7 +91,7 @@ export function QuestCard({
                   </>
                 )}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-200">
+              <div className="text-sm text-gray-500 dark:header-text-color">
                 {userCompletionCount !== undefined ? userCompletionCount : quest.completion_count} completed
               </div>
             </div>

@@ -93,7 +93,7 @@ export function ShopItemCard({
                   </>
                 )}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-200">
+              <div className="text-sm text-gray-500 dark:header-text-color">
                 {item.purchase_count} purchased
               </div>
             </div>
