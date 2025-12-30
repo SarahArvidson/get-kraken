@@ -100,7 +100,7 @@ export function LogView<T extends { id: string }>({
         {/* Swipeable Log Content */}
         <div className="text-center py-8">
           <div className="text-4xl mb-4">📅</div>
-          <div className="text-2xl font-bold text-gray-900 dark:header-text-color mb-2">
+          <div className="text-2xl font-bold text-gray-900 mb-2 log-date-text">
             {formatDate(getDateKey(currentLog))}
           </div>
           <div className="text-sm text-gray-500 dark:header-text-color">

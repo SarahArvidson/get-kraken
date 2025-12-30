@@ -104,3 +104,8 @@ body::before {
 .dark .header-text-color {
   color: oklch(0.79 0.11 264.93);
 }
+
+/* Custom dark mode text color for log dates - must override text-gray-900 */
+.dark .log-date-text {
+  color: oklch(0.79 0.11 264.93) !important;
+}

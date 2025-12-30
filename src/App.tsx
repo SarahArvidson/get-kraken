@@ -333,12 +333,12 @@ function App() {
       return;
     }
     try {
-      await Promise.all([
-        deleteAllQuestLogs(),
-        deleteAllShopLogs(),
-        resetWallet(),
-      ]);
-      // Reload logs to reflect the changes
+      // Delete logs first
+      await deleteAllQuestLogs();
+      await deleteAllShopLogs();
+      // Reset wallet
+      await resetWallet();
+      // Reload logs to reflect the changes (should be empty now)
       const [questLogs, shopLogs] = await Promise.all([
         loadAllQuestLogs(),
         loadAllShopLogs(),
@@ -347,6 +347,7 @@ function App() {
       setAllShopLogs(shopLogs);
       setToast({ message: "All progress reset! ✅", type: "success" });
     } catch (err: unknown) {
+      console.error("Error resetting all progress:", err);
       setToast({
         message: err instanceof Error ? err.message : "Failed to reset all progress",
         type: "error",
