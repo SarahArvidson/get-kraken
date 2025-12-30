@@ -42,10 +42,17 @@ export function useQuests() {
       >
     ) => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
         const { data, error: createError } = await supabase
           .from("quests")
           .insert({
             ...quest,
+            created_by: user.id,
             completion_count: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -95,25 +102,27 @@ export function useQuests() {
     []
   );
 
-  // Complete a quest (adds to log and increments count)
+  // Complete a quest (adds to log with user_id)
   const completeQuest = useCallback(
     async (questId: string, reward: number) => {
       try {
-        // Create log entry
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        // Create log entry with user_id
         const { error: logError } = await supabase.from("quest_logs").insert({
           quest_id: questId,
+          user_id: user.id,
           completed_at: new Date().toISOString(),
         });
 
         if (logError) throw logError;
 
-        // Update quest completion count
-        const quest = quests.find((q) => q.id === questId);
-        if (quest) {
-          await updateQuest(questId, {
-            completion_count: quest.completion_count + 1,
-          });
-        }
+        // Note: We don't update completion_count anymore since it's shared
+        // Per-user counts are calculated from logs
 
         return reward;
       } catch (err: any) {
@@ -122,13 +131,19 @@ export function useQuests() {
         throw err;
       }
     },
-    [quests, updateQuest]
+    []
   );
 
-  // Get quest with logs
+  // Get quest with logs for current user
   const getQuestWithLogs = useCallback(
     async (questId: string): Promise<QuestWithLogs | null> => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          return null;
+        }
+
         const { data: quest, error: questError } = await supabase
           .from("quests")
           .select("*")
@@ -141,6 +156,7 @@ export function useQuests() {
           .from("quest_logs")
           .select("*")
           .eq("quest_id", questId)
+          .eq("user_id", user.id)
           .order("completed_at", { ascending: false });
 
         if (logsError) throw logsError;
@@ -195,12 +211,19 @@ export function useQuests() {
     }
   }, []);
 
-  // Load all quest logs
+  // Load all quest logs for current user
   const loadAllQuestLogs = useCallback(async (): Promise<QuestLog[]> => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return [];
+      }
+
       const { data, error: fetchError } = await supabase
         .from("quest_logs")
         .select("*")
+        .eq("user_id", user.id)
         .order("completed_at", { ascending: false });
 
       if (fetchError) throw fetchError;

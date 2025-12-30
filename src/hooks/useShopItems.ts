@@ -42,10 +42,17 @@ export function useShopItems() {
       >
     ) => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
         const { data, error: createError } = await supabase
           .from("shop_items")
           .insert({
             ...item,
+            created_by: user.id,
             purchase_count: 0,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -97,25 +104,27 @@ export function useShopItems() {
     []
   );
 
-  // Purchase a shop item (adds to log and increments count)
+  // Purchase a shop item (adds to log with user_id)
   const purchaseItem = useCallback(
     async (itemId: string, price: number) => {
       try {
-        // Create log entry
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        // Create log entry with user_id
         const { error: logError } = await supabase.from("shop_logs").insert({
           shop_item_id: itemId,
+          user_id: user.id,
           purchased_at: new Date().toISOString(),
         });
 
         if (logError) throw logError;
 
-        // Update item purchase count
-        const item = shopItems.find((i) => i.id === itemId);
-        if (item) {
-          await updateShopItem(itemId, {
-            purchase_count: item.purchase_count + 1,
-          });
-        }
+        // Note: We don't update purchase_count anymore since it's shared
+        // Per-user counts are calculated from logs
 
         return -price; // Return negative for wallet update
       } catch (err: any) {
@@ -124,13 +133,19 @@ export function useShopItems() {
         throw err;
       }
     },
-    [shopItems, updateShopItem]
+    []
   );
 
-  // Get shop item with logs
+  // Get shop item with logs for current user
   const getShopItemWithLogs = useCallback(
     async (itemId: string): Promise<ShopItemWithLogs | null> => {
       try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          return null;
+        }
+
         const { data: item, error: itemError } = await supabase
           .from("shop_items")
           .select("*")
@@ -143,6 +158,7 @@ export function useShopItems() {
           .from("shop_logs")
           .select("*")
           .eq("shop_item_id", itemId)
+          .eq("user_id", user.id)
           .order("purchased_at", { ascending: false });
 
         if (logsError) throw logsError;
@@ -199,12 +215,19 @@ export function useShopItems() {
     }
   }, []);
 
-  // Load all shop logs
+  // Load all shop logs for current user
   const loadAllShopLogs = useCallback(async (): Promise<ShopLog[]> => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return [];
+      }
+
       const { data, error: fetchError } = await supabase
         .from("shop_logs")
         .select("*")
+        .eq("user_id", user.id)
         .order("purchased_at", { ascending: false });
 
       if (fetchError) throw fetchError;
