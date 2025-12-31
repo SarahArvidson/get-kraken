@@ -87,22 +87,24 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label htmlFor="add-quest-reward-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Sea Dollars
             </label>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setReward(Math.max(0, reward - 1))}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Decrease sea dollars"
               >
                 −
               </button>
-              <span className="text-2xl font-semibold min-w-[60px] text-center">
+              <span id="add-quest-reward-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Sea dollars reward: ${reward}`}>
                 {reward}
               </span>
               <button
                 onClick={() => setReward(reward + 1)}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Increase sea dollars"
               >
                 +
               </button>

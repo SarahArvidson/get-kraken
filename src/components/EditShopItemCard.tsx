@@ -111,17 +111,19 @@ export function EditShopItemCard({
         <div className="grid grid-cols-2 gap-4">
           {/* Price */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label htmlFor="shop-item-price-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Sea Dollars
             </label>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPrice(Math.max(0, price - 1))}
                 className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Decrease price"
               >
                 −
               </button>
               <input
+                id="shop-item-price-input"
                 type="number"
                 value={price}
                 onChange={(e) => {
@@ -130,6 +132,7 @@ export function EditShopItemCard({
                 }}
                 className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
                 min="0"
+                aria-label="Shop item price in sea dollars"
               />
               <button
                 onClick={() => setPrice(price + 1)}
@@ -142,17 +145,19 @@ export function EditShopItemCard({
 
           {/* Dollar Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label htmlFor="shop-item-dollar-amount-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               💵 Dollars <span className="text-xs text-gray-500">(Optional)</span>
             </label>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDollarAmount(Math.max(0, dollarAmount - 1))}
                 className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Decrease dollar amount"
               >
                 −
               </button>
               <input
+                id="shop-item-dollar-amount-input"
                 type="number"
                 value={dollarAmount}
                 onChange={(e) => {
@@ -161,6 +166,7 @@ export function EditShopItemCard({
                 }}
                 className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
                 min="0"
+                aria-label="Shop item dollar amount"
               />
               <button
                 onClick={() => setDollarAmount(dollarAmount + 1)}

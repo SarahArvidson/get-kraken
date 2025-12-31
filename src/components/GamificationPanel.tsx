@@ -212,17 +212,19 @@ export function GamificationPanel({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label htmlFor="goal-amount-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Target Amount (Sea Dollars)
             </label>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setGoalAmount(Math.max(0, goalAmount - 10))}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Decrease goal amount"
               >
                 −
               </button>
               <input
+                id="goal-amount-input"
                 type="number"
                 value={goalAmount}
                 onChange={(e) => {
@@ -231,6 +233,7 @@ export function GamificationPanel({
                 }}
                 className="w-32 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2"
                 min="0"
+                aria-label="Goal target amount in sea dollars"
               />
               <button
                 onClick={() => setGoalAmount(goalAmount + 10)}
@@ -242,17 +245,19 @@ export function GamificationPanel({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <label htmlFor="goal-dollar-amount-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Target Amount (Dollars) <span className="text-xs text-gray-500">(Optional)</span>
             </label>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setGoalDollarAmount(Math.max(0, goalDollarAmount - 10))}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Decrease goal dollar amount"
               >
                 −
               </button>
               <input
+                id="goal-dollar-amount-input"
                 type="number"
                 value={goalDollarAmount}
                 onChange={(e) => {
@@ -261,6 +266,7 @@ export function GamificationPanel({
                 }}
                 className="w-32 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2"
                 min="0"
+                aria-label="Goal target dollar amount"
               />
               <button
                 onClick={() => setGoalDollarAmount(goalDollarAmount + 10)}
