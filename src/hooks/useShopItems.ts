@@ -29,9 +29,6 @@ export function useShopItems() {
         throw new Error("User must be authenticated");
       }
 
-      // Log for debugging (remove in production)
-      console.log(`[useShopItems] Loading shop items for user: ${user.id}`);
-
       // Only load seeded shop items (created_by IS NULL) or items created by current user
       let { data, error: fetchError } = await supabase
         .from("shop_items")
@@ -59,10 +56,6 @@ export function useShopItems() {
         );
       }
 
-      console.log(
-        `[useShopItems] Loaded ${data?.length || 0} items (${data?.filter((i: ShopItem) => i.created_by === null).length || 0} seeded, ${data?.filter((i: ShopItem) => i.created_by === user.id).length || 0} own)`
-      );
-      
       // Wait for overrides to be loaded before merging
       // Merge with overrides and filter hidden items
       const mergedItems = (data || [])

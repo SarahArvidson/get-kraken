@@ -29,9 +29,6 @@ export function useQuests() {
         throw new Error("User must be authenticated");
       }
 
-      // Log for debugging (remove in production)
-      console.log(`[useQuests] Loading quests for user: ${user.id}`);
-
       // Only load seeded quests (created_by IS NULL) or quests created by current user
       let { data, error: fetchError } = await supabase
         .from("quests")
@@ -59,10 +56,6 @@ export function useQuests() {
         );
       }
 
-      console.log(
-        `[useQuests] Loaded ${data?.length || 0} quests (${data?.filter((q: Quest) => q.created_by === null).length || 0} seeded, ${data?.filter((q: Quest) => q.created_by === user.id).length || 0} own)`
-      );
-      
       // Merge with overrides and filter hidden quests
       const mergedQuests = (data || [])
         .filter((quest: Quest) => !isQuestHidden(quest.id))

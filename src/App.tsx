@@ -4,7 +4,7 @@
  * A habit tracker for sea monsters
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Toast } from "@ffx/sdk";
 import { useWallet } from "./hooks/useWallet";
 import { useQuests } from "./hooks/useQuests";
@@ -133,7 +133,7 @@ function App() {
     };
   }, []);
 
-  const handleCompleteQuest = async (questId: string, _reward: number) => {
+  const handleCompleteQuest = useCallback(async (questId: string, _reward: number) => {
     try {
       const quest = quests.find((q) => q.id === questId);
       if (!quest) throw new Error("Quest not found");
@@ -158,9 +158,9 @@ function App() {
         err instanceof Error ? err.message : "Failed to complete quest"
       );
     }
-  };
+  }, [quests, getEffectiveReward, getEffectiveDollarAmount, completeQuest, updateWallet, loadAllQuestLogs, showSuccess, showError]);
 
-  const handlePurchaseItem = async (itemId: string, _price: number) => {
+  const handlePurchaseItem = useCallback(async (itemId: string, _price: number) => {
     try {
       const item = shopItems.find((i) => i.id === itemId);
       if (!item) throw new Error("Shop item not found");
@@ -194,9 +194,9 @@ function App() {
     } catch (err: unknown) {
       showError(err instanceof Error ? err.message : "Failed to purchase item");
     }
-  };
+  }, [shopItems, getEffectivePrice, getEffectiveShopDollarAmount, wallet, preferences.showDollarAmounts, purchaseItem, updateWallet, showSuccess, showError]);
 
-  const handleViewQuestLogs = async (questId: string) => {
+  const handleViewQuestLogs = useCallback(async (questId: string) => {
     const quest = quests.find((q) => q.id === questId);
     if (!quest) return;
 
@@ -207,9 +207,9 @@ function App() {
         logs: questWithLogs.logs,
       });
     }
-  };
+  }, [quests, getQuestWithLogs]);
 
-  const handleViewShopLogs = async (itemId: string) => {
+  const handleViewShopLogs = useCallback(async (itemId: string) => {
     const item = shopItems.find((i) => i.id === itemId);
     if (!item) return;
 
@@ -220,17 +220,17 @@ function App() {
         logs: itemWithLogs.logs,
       });
     }
-  };
+  }, [shopItems, getShopItemWithLogs]);
 
-  const handleEditQuest = (quest: Quest) => {
+  const handleEditQuest = useCallback((quest: Quest) => {
     setEditingQuest(quest);
-  };
+  }, []);
 
-  const handleEditShopItem = (item: ShopItem) => {
+  const handleEditShopItem = useCallback((item: ShopItem) => {
     setEditingShopItem(item);
-  };
+  }, []);
 
-  const handleSaveQuestEdit = async (updates: {
+  const handleSaveQuestEdit = useCallback(async (updates: {
     name: string;
     tags: Tag[];
     reward: number;
@@ -249,9 +249,9 @@ function App() {
     } catch (err: unknown) {
       showError(err instanceof Error ? err.message : "Failed to update quest");
     }
-  };
+  }, [editingQuest, updateQuest, loadAllQuestLogs, showSuccess, showError]);
 
-  const handleSaveShopItemEdit = async (updates: {
+  const handleSaveShopItemEdit = useCallback(async (updates: {
     name: string;
     tags: ShopTag[];
     price: number;
@@ -272,9 +272,9 @@ function App() {
         err instanceof Error ? err.message : "Failed to update shop item"
       );
     }
-  };
+  }, [editingShopItem, updateShopItem, loadAllShopLogs, showSuccess, showError]);
 
-  const handleDeleteQuest = async (questId: string) => {
+  const handleDeleteQuest = useCallback(async (questId: string) => {
     try {
       await deleteQuest(questId);
       showSuccess("Quest deleted! ✅");
@@ -283,9 +283,9 @@ function App() {
     } catch (err: unknown) {
       showError(err instanceof Error ? err.message : "Failed to delete quest");
     }
-  };
+  }, [deleteQuest, loadAllQuestLogs, showSuccess, showError]);
 
-  const handleDeleteShopItem = async (itemId: string) => {
+  const handleDeleteShopItem = useCallback(async (itemId: string) => {
     try {
       await deleteShopItem(itemId);
       showSuccess("Shop item deleted! ✅");
@@ -296,9 +296,9 @@ function App() {
         err instanceof Error ? err.message : "Failed to delete shop item"
       );
     }
-  };
+  }, [deleteShopItem, loadAllShopLogs, showSuccess, showError]);
 
-  const handleResetProgress = async () => {
+  const handleResetProgress = useCallback(async () => {
     if (!confirm("Reset wallet to zero? This cannot be undone.")) {
       return;
     }
@@ -308,9 +308,9 @@ function App() {
     } catch (err: unknown) {
       showError(err instanceof Error ? err.message : "Failed to reset wallet");
     }
-  };
+  }, [resetWallet, showSuccess, showError]);
 
-  const handleResetAllProgress = async () => {
+  const handleResetAllProgress = useCallback(async () => {
     if (
       !confirm(
         "Reset all progress? This will delete all quest and shop logs and reset your wallet. This cannot be undone."
@@ -335,9 +335,9 @@ function App() {
         err instanceof Error ? err.message : "Failed to reset all progress"
       );
     }
-  };
+  }, [deleteAllQuestLogs, deleteAllShopLogs, resetWallet, loadAllQuestLogs, loadAllShopLogs, showSuccess, showError]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await supabase.supabase.auth.signOut();
       // The AuthGate component will handle the redirect to login
@@ -345,7 +345,7 @@ function App() {
       console.error("Error logging out:", err);
       showError(err instanceof Error ? err.message : "Failed to log out");
     }
-  };
+  }, [showError]);
 
   return (
     <div
