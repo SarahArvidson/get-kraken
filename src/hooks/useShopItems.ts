@@ -20,19 +20,48 @@ export function useShopItems() {
     try {
       setLoading(true);
       // Get current user to filter shop items
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.supabase.auth.getUser();
+      if (userError) {
+        console.error("Error getting user:", userError);
+        throw new Error("Failed to get user session");
+      }
       if (!user) {
         throw new Error("User must be authenticated");
       }
 
+      // Log for debugging (remove in production)
+      console.log(`[useShopItems] Loading shop items for user: ${user.id}`);
+
       // Only load seeded shop items (created_by IS NULL) or items created by current user
-      const { data, error: fetchError } = await supabase
+      let { data, error: fetchError } = await supabase
         .from("shop_items")
         .select("*")
         .or(`created_by.is.null,created_by.eq.${user.id}`)
         .order("name", { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("[useShopItems] Error fetching shop items:", fetchError);
+        throw fetchError;
+      }
+
+      // Verify all returned items are either seeded or owned by current user
+      const invalidItems = data?.filter(
+        (item) => item.created_by !== null && item.created_by !== user.id
+      );
+      if (invalidItems && invalidItems.length > 0) {
+        console.error(
+          `[useShopItems] SECURITY WARNING: Found ${invalidItems.length} items from other users!`,
+          invalidItems
+        );
+        // Filter them out as a safeguard
+        data = data.filter(
+          (item) => item.created_by === null || item.created_by === user.id
+        );
+      }
+
+      console.log(
+        `[useShopItems] Loaded ${data?.length || 0} items (${data?.filter((i) => i.created_by === null).length || 0} seeded, ${data?.filter((i) => i.created_by === user.id).length || 0} own)`
+      );
       
       // Wait for overrides to be loaded before merging
       // Merge with overrides and filter hidden items

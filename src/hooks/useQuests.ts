@@ -20,19 +20,48 @@ export function useQuests() {
     try {
       setLoading(true);
       // Get current user to filter quests
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.supabase.auth.getUser();
+      if (userError) {
+        console.error("Error getting user:", userError);
+        throw new Error("Failed to get user session");
+      }
       if (!user) {
         throw new Error("User must be authenticated");
       }
 
+      // Log for debugging (remove in production)
+      console.log(`[useQuests] Loading quests for user: ${user.id}`);
+
       // Only load seeded quests (created_by IS NULL) or quests created by current user
-      const { data, error: fetchError } = await supabase
+      let { data, error: fetchError } = await supabase
         .from("quests")
         .select("*")
         .or(`created_by.is.null,created_by.eq.${user.id}`)
         .order("name", { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("[useQuests] Error fetching quests:", fetchError);
+        throw fetchError;
+      }
+
+      // Verify all returned quests are either seeded or owned by current user
+      const invalidQuests = data?.filter(
+        (quest) => quest.created_by !== null && quest.created_by !== user.id
+      );
+      if (invalidQuests && invalidQuests.length > 0) {
+        console.error(
+          `[useQuests] SECURITY WARNING: Found ${invalidQuests.length} quests from other users!`,
+          invalidQuests
+        );
+        // Filter them out as a safeguard
+        data = data?.filter(
+          (quest) => quest.created_by === null || quest.created_by === user.id
+        );
+      }
+
+      console.log(
+        `[useQuests] Loaded ${data?.length || 0} quests (${data?.filter((q) => q.created_by === null).length || 0} seeded, ${data?.filter((q) => q.created_by === user.id).length || 0} own)`
+      );
       
       // Merge with overrides and filter hidden quests
       const mergedQuests = (data || [])
