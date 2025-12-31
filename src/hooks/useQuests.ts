@@ -337,8 +337,10 @@ export function useQuests() {
     });
 
     // Subscribe to user_hidden_quests changes so we reload when quests are hidden/unhidden
-    const hiddenQuestsSubscription = supabase.subscribe("user_hidden_quests", () => {
-      loadQuests(); // loadQuests already waits for overrides
+    // When this fires (e.g., from another device/tab), we must refresh overrides first
+    const hiddenQuestsSubscription = supabase.subscribe("user_hidden_quests", async () => {
+      await refreshOverrides(); // Refresh overrides to get latest hidden quests
+      loadQuests(); // Then load quests with fresh overrides
     });
 
     return () => {

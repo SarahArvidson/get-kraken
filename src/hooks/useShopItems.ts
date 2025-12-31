@@ -337,8 +337,10 @@ export function useShopItems() {
     });
 
     // Subscribe to user_hidden_shop_items changes so we reload when items are hidden/unhidden
-    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", () => {
-      loadShopItems(); // loadShopItems already waits for overrides
+    // When this fires (e.g., from another device/tab), we must refresh overrides first
+    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", async () => {
+      await refreshOverrides(); // Refresh overrides to get latest hidden items
+      loadShopItems(); // Then load items with fresh overrides
     });
 
     return () => {
