@@ -68,6 +68,8 @@ export function useShopItems() {
 
       // Progressive render: merge with overrides when ready, filter hidden
       // If overrides still loading, show base data; overrides will merge via effect
+      // Note: isItemHidden and mergeItemWithOverrides are used but not dependencies
+      // to allow immediate shop items loading without waiting for overrides to resolve
       const mergedItems = (data || [])
         .filter((item: ShopItem) => !isItemHidden(item.id))
         .map((item: ShopItem) => mergeItemWithOverrides(item))
@@ -81,7 +83,8 @@ export function useShopItems() {
     } finally {
       setLoading(false);
     }
-  }, [isItemHidden, mergeItemWithOverrides]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // No dependencies - load immediately, overrides merge when ready
 
   // Create a new shop item
   const createShopItem = useCallback(
@@ -390,11 +393,24 @@ export function useShopItems() {
     []
   );
 
+  // Load shop items immediately on mount - no dependencies to prevent blocking
+  useEffect(() => {
+    loadShopItems();
+  }, [loadShopItems]);
+
+  // Re-merge shop items when overrides become available (non-blocking enrichment)
+  // This effect only runs when override functions change (when overrides load)
+  // It re-applies filtering and merging to existing items without reloading from DB
+  useEffect(() => {
+    setShopItems((prev) =>
+      prev
+        .filter((item) => !isItemHidden(item.id))
+        .map((item) => mergeItemWithOverrides(item))
+    );
+  }, [mergeItemWithOverrides, isItemHidden]); // Only when override functions change (overrides loaded)
+
   // Subscribe to real-time changes - use state patches, not full reloads
   useEffect(() => {
-    // Load immediately - progressive render (overrides merge when ready)
-    loadShopItems();
-
     // Get current user for subscription filters
     const setupSubscriptions = async () => {
       const {
@@ -530,7 +546,7 @@ export function useShopItems() {
       if (subscriptions?.all) subscriptions.all.unsubscribe();
       if (subscriptions?.hidden) subscriptions.hidden.unsubscribe();
     };
-  }, [loadShopItems, mergeItemWithOverrides, isItemHidden]); // Full dependency array - no stale closures
+  }, [mergeItemWithOverrides, isItemHidden]); // Subscriptions need current overrides functions
 
   // Delete a shop item (user-created items delete base, seeded items hide for user)
   const deleteShopItem = useCallback(
