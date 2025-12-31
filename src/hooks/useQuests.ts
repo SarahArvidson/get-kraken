@@ -13,7 +13,7 @@ export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mergeQuestWithOverrides, isQuestHidden, updateOverride, hideQuest: hideQuestForUser, refresh: refreshOverrides } = useQuestOverrides();
+  const { mergeQuestWithOverrides, isQuestHidden, updateOverride, hideQuest: hideQuestForUser, refresh: refreshOverrides, loading: overridesLoading } = useQuestOverrides();
 
   // Load all quests
   const loadQuests = useCallback(async () => {
@@ -27,6 +27,14 @@ export function useQuests() {
       }
       if (!user) {
         throw new Error("User must be authenticated");
+      }
+
+      // Wait for overrides to be loaded before filtering (to ensure hidden quests are properly filtered)
+      // Retry up to 10 times with 100ms delay if overrides are still loading
+      let retries = 0;
+      while (overridesLoading && retries < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
       }
 
       // Only load seeded quests (created_by IS NULL) or quests created by current user
@@ -69,7 +77,7 @@ export function useQuests() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isQuestHidden, mergeQuestWithOverrides, overridesLoading]);
 
   // Create a new quest
   const createQuest = useCallback(
@@ -306,10 +314,20 @@ export function useQuests() {
 
   // Subscribe to real-time changes and reload when overrides are ready
   useEffect(() => {
-    // Wait a bit for overrides to load, then load quests
-    const timer = setTimeout(() => {
+    // Wait for overrides to load before loading quests (ensures hidden quests are properly filtered)
+    const loadWhenReady = async () => {
+      // Wait for overrides to finish loading
+      let retries = 0;
+      while (overridesLoading && retries < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      // Small additional delay to ensure hidden quests set is populated
+      await new Promise(resolve => setTimeout(resolve, 50));
       loadQuests();
-    }, 100);
+    };
+
+    loadWhenReady();
 
     const subscription = supabase.subscribe("quests", (payload: any) => {
       if (payload.eventType === "INSERT") {
@@ -322,11 +340,10 @@ export function useQuests() {
     });
 
     return () => {
-      clearTimeout(timer);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [overridesLoading]); // Reload when overrides finish loading
 
   // Delete a quest (user-created quests delete base, seeded quests hide for user)
   const deleteQuest = useCallback(async (id: string) => {

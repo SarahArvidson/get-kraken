@@ -13,7 +13,7 @@ export function useShopItems() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mergeItemWithOverrides, isItemHidden, updateOverride, hideItem: hideItemForUser, refresh: refreshOverrides } = useShopItemOverrides();
+  const { mergeItemWithOverrides, isItemHidden, updateOverride, hideItem: hideItemForUser, refresh: refreshOverrides, loading: overridesLoading } = useShopItemOverrides();
 
   // Load all shop items
   const loadShopItems = useCallback(async () => {
@@ -27,6 +27,14 @@ export function useShopItems() {
       }
       if (!user) {
         throw new Error("User must be authenticated");
+      }
+
+      // Wait for overrides to be loaded before filtering (to ensure hidden items are properly filtered)
+      // Retry up to 10 times with 100ms delay if overrides are still loading
+      let retries = 0;
+      while (overridesLoading && retries < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
       }
 
       // Only load seeded shop items (created_by IS NULL) or items created by current user
@@ -56,7 +64,6 @@ export function useShopItems() {
         );
       }
 
-      // Wait for overrides to be loaded before merging
       // Merge with overrides and filter hidden items
       const mergedItems = (data || [])
         .filter((item: ShopItem) => !isItemHidden(item.id))
@@ -71,7 +78,7 @@ export function useShopItems() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isItemHidden, mergeItemWithOverrides, overridesLoading]);
 
   // Create a new shop item
   const createShopItem = useCallback(
@@ -305,9 +312,22 @@ export function useShopItems() {
     []
   );
 
-  // Subscribe to real-time changes
+  // Subscribe to real-time changes and reload when overrides are ready
   useEffect(() => {
-    loadShopItems();
+    // Wait for overrides to load before loading shop items (ensures hidden items are properly filtered)
+    const loadWhenReady = async () => {
+      // Wait for overrides to finish loading
+      let retries = 0;
+      while (overridesLoading && retries < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      // Small additional delay to ensure hidden items set is populated
+      await new Promise(resolve => setTimeout(resolve, 50));
+      loadShopItems();
+    };
+
+    loadWhenReady();
 
     const subscription = supabase.subscribe("shop_items", (payload: any) => {
       if (payload.eventType === "INSERT") {
@@ -323,7 +343,7 @@ export function useShopItems() {
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [overridesLoading]); // Reload when overrides finish loading
 
   // Delete a shop item (user-created items delete base, seeded items hide for user)
   const deleteShopItem = useCallback(async (id: string) => {

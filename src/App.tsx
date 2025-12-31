@@ -39,7 +39,20 @@ import { supabase } from "./lib/supabase";
 type View = "quests" | "shop" | "progress";
 
 function App() {
-  const [currentView, setCurrentView] = useState<View>("quests");
+  // Persist current view in localStorage
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const saved = localStorage.getItem("get-kraken-current-view");
+    if (saved && (saved === "quests" || saved === "shop" || saved === "progress")) {
+      return saved as View;
+    }
+    return "quests";
+  });
+
+  // Update localStorage when view changes
+  const handleViewChange = useCallback((view: View) => {
+    setCurrentView(view);
+    localStorage.setItem("get-kraken-current-view", view);
+  }, []);
   const preferences = usePreferences();
   const { toast, showToast, showSuccess, showError, dismissToast } = useToast();
 
@@ -371,7 +384,7 @@ function App() {
 
         <NavigationTabs
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={handleViewChange}
         />
 
         {currentView === "quests" && (
