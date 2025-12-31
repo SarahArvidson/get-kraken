@@ -19,9 +19,17 @@ export function useShopItems() {
   const loadShopItems = useCallback(async () => {
     try {
       setLoading(true);
+      // Get current user to filter shop items
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      // Only load seeded shop items (created_by IS NULL) or items created by current user
       const { data, error: fetchError } = await supabase
         .from("shop_items")
         .select("*")
+        .or(`created_by.is.null,created_by.eq.${user.id}`)
         .order("name", { ascending: true });
 
       if (fetchError) throw fetchError;
