@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { ShopItem, ShopItemWithLogs, ShopLog } from "../types";
 import { useShopItemOverrides } from "./useShopItemOverrides";
+import { registerPendingWalletMutation } from "../utils/mutationGuard";
 
 export function useShopItems() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
@@ -295,6 +296,9 @@ export function useShopItems() {
         const newDollarTotal = Math.round(
           currentDollarTotal - Math.round(dollarAmount)
         );
+
+        // Mutation guard: register pending wallet mutation to prevent double-application
+        registerPendingWalletMutation(newTotal, newDollarTotal);
 
         // Atomically: insert log entry AND update wallet in sequence
         // First, insert log entry

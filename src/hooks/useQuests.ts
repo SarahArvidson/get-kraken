@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Quest, QuestWithLogs, QuestLog } from "../types";
 import { useQuestOverrides } from "./useQuestOverrides";
+import { registerPendingWalletMutation } from "../utils/mutationGuard";
 
 export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -294,6 +295,9 @@ export function useQuests() {
         const newDollarTotal = Math.round(
           currentDollarTotal + Math.round(dollarAmount)
         );
+
+        // Mutation guard: register pending wallet mutation to prevent double-application
+        registerPendingWalletMutation(newTotal, newDollarTotal);
 
         // Atomically: insert log entry AND update wallet in sequence
         // First, insert log entry

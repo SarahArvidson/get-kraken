@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import type { Wallet } from "../types";
+import { isEchoOfLastWalletMutation } from "../utils/mutationGuard";
 
 export function useWallet() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -260,6 +261,17 @@ export function useWallet() {
         "wallets",
         (payload: any) => {
           if (payload.new?.user_id === user.id) {
+            // Mutation guard: ignore realtime echoes of our own mutations
+            const newTotal = payload.new.total ?? 0;
+            const newDollarTotal = payload.new.dollar_total ?? 0;
+            
+            if (isEchoOfLastWalletMutation(newTotal, newDollarTotal)) {
+              // This is an echo of our own mutation - ignore it
+              console.log("[useWallet] Ignoring realtime echo of local mutation");
+              return;
+            }
+            
+            // This is a genuine update (from another device or external source) - apply it
             setWallet(payload.new);
           }
         },
