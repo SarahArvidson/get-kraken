@@ -3,6 +3,22 @@
 -- This prevents users from seeing or modifying each other's data
 
 -- Step 1: Drop ALL existing policies (comprehensive cleanup)
+-- First, explicitly drop known problematic policies by name
+DROP POLICY IF EXISTS "Allow all on quests" ON quests;
+DROP POLICY IF EXISTS "Allow all for authenticated users on quests" ON quests;
+DROP POLICY IF EXISTS "Everyone can read quests" ON quests;
+DROP POLICY IF EXISTS "Users can read all quests" ON quests;
+DROP POLICY IF EXISTS "Users can read seeded and own quests" ON quests;
+DROP POLICY IF EXISTS "Users can update their own quests or seeded quests" ON quests;
+
+DROP POLICY IF EXISTS "Allow all on shop_items" ON shop_items;
+DROP POLICY IF EXISTS "Allow all for authenticated users on shop_items" ON shop_items;
+DROP POLICY IF EXISTS "Everyone can read shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can read all shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can read seeded and own shop items" ON shop_items;
+DROP POLICY IF EXISTS "Users can update their own shop items or seeded items" ON shop_items;
+
+-- Then use a DO block to catch any remaining policies
 DO $$ 
 DECLARE
   r RECORD;
