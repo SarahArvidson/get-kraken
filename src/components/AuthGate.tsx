@@ -8,6 +8,7 @@
 import { useState, useEffect } from "react";
 import { Button, InputField } from "@ffx/sdk";
 import { supabase } from "../lib/supabase";
+import { KRAKEN_ICON_PATH } from "../constants";
 
 interface AuthGateProps {
   children: React.ReactNode;
@@ -130,7 +131,11 @@ export function AuthGate({ children }: AuthGateProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="text-2xl mb-4">🌊</div>
+          <img 
+            src={KRAKEN_ICON_PATH} 
+            alt="Kraken" 
+            className="w-20 h-20 mx-auto mb-4 animate-pulse"
+          />
           <div className="text-gray-600 dark:text-gray-400">Loading...</div>
         </div>
       </div>

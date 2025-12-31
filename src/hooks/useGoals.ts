@@ -193,20 +193,39 @@ export function useGoals() {
   useEffect(() => {
     loadGoals();
 
-    const subscription = supabase.subscribe("goals", (payload: any) => {
-      if (payload.eventType === "INSERT") {
-        setGoals((prev) => [payload.new, ...prev]);
-      } else if (payload.eventType === "UPDATE") {
-        setGoals((prev) =>
-          prev.map((g) => (g.id === payload.new.id ? payload.new : g))
-        );
-      } else if (payload.eventType === "DELETE") {
-        setGoals((prev) => prev.filter((g) => g.id !== payload.old.id));
-      }
-    });
+    let subscription: any = null;
+
+    // Get current user for subscription filter
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) return;
+
+      subscription = supabase.subscribe(
+        "goals",
+        (payload: any) => {
+          // Only process events for current user's goals
+          if (payload.new?.user_id === user.id || payload.old?.user_id === user.id) {
+            if (payload.eventType === "INSERT") {
+              setGoals((prev) => [payload.new, ...prev]);
+            } else if (payload.eventType === "UPDATE") {
+              setGoals((prev) =>
+                prev.map((g) => (g.id === payload.new.id ? payload.new : g))
+              );
+            } else if (payload.eventType === "DELETE") {
+              setGoals((prev) => prev.filter((g) => g.id !== payload.old.id));
+            }
+          }
+        },
+        `user_id=eq.${user.id}`
+      );
+    };
+
+    setupSubscription();
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [loadGoals]);
 

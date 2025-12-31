@@ -4,7 +4,7 @@
  * Displays streaks, weekly recap, milestones, and customizable goals
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useGamification } from "../hooks/useGamification";
 import { useGoals } from "../hooks/useGoals";
 import { Button, InputField, Modal } from "@ffx/sdk";
@@ -58,7 +58,7 @@ export function GamificationPanel({
     checkGoalCompletion(walletTotal, walletDollarTotal);
   }, [walletTotal, walletDollarTotal, checkGoalCompletion]);
 
-  const handleCreateGoal = async () => {
+  const handleCreateGoal = useCallback(async () => {
     if (!goalName.trim()) {
       alert("Please enter a goal name");
       return;
@@ -81,9 +81,9 @@ export function GamificationPanel({
     } finally {
       setIsCreating(false);
     }
-  };
+  }, [goalName, goalAmount, goalDollarAmount, createGoal]);
 
-  const handleDeleteGoal = async (goalId: string) => {
+  const handleDeleteGoal = useCallback(async (goalId: string) => {
     if (!confirm("Delete this goal?")) return;
     try {
       await deleteGoal(goalId);
@@ -91,7 +91,7 @@ export function GamificationPanel({
       console.error("Error deleting goal:", err);
       alert("Failed to delete goal. Please try again.");
     }
-  };
+  }, [deleteGoal]);
 
 
   return (
