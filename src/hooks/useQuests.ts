@@ -330,38 +330,15 @@ export function useQuests() {
     loadWhenReady();
 
     // Subscribe to quests changes
-    const questsSubscription = supabase.subscribe("quests", async (payload: any) => {
-      // Wait for overrides to be loaded before reloading (ensures hidden quests are properly filtered)
-      let retries = 0;
-      while (overridesLoading && retries < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      // Small additional delay to ensure hidden quests set is populated
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (payload.eventType === "INSERT") {
-        loadQuests(); // Reload to merge with overrides
-      } else if (payload.eventType === "UPDATE") {
-        loadQuests(); // Reload to merge with overrides
-      } else if (payload.eventType === "DELETE") {
-        loadQuests(); // Reload to filter hidden items
+    const questsSubscription = supabase.subscribe("quests", (payload: any) => {
+      if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
+        loadQuests(); // loadQuests already waits for overrides
       }
     });
 
-    // Also subscribe to user_hidden_quests changes so we reload when quests are hidden/unhidden
-    const hiddenQuestsSubscription = supabase.subscribe("user_hidden_quests", async () => {
-      // Wait for overrides to be loaded before reloading
-      let retries = 0;
-      while (overridesLoading && retries < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      // Small additional delay to ensure hidden quests set is populated
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Reload quests when hidden quests change
-      loadQuests();
+    // Subscribe to user_hidden_quests changes so we reload when quests are hidden/unhidden
+    const hiddenQuestsSubscription = supabase.subscribe("user_hidden_quests", () => {
+      loadQuests(); // loadQuests already waits for overrides
     });
 
     return () => {
@@ -399,13 +376,12 @@ export function useQuests() {
       } else {
         // Seeded quest - hide it for this user
         await hideQuestForUser(id);
-        // Refresh overrides to ensure hidden quests are loaded
+        // Refresh overrides to update hidden quests set (must complete before subscription fires)
         await refreshOverrides();
-        // Wait a bit for the hidden quests set to be updated
-        await new Promise(resolve => setTimeout(resolve, 100));
-        // Reload quests to filter out hidden quest
-        await loadQuests();
-        // Update state to remove the quest immediately
+        // Small delay to ensure state is updated before subscription callback runs
+        await new Promise(resolve => setTimeout(resolve, 50));
+        // Subscription will trigger reload via user_hidden_quests subscription
+        // Update UI immediately for better UX
         setQuests((prev) => prev.filter((q) => q.id !== id));
       }
     } catch (err: any) {

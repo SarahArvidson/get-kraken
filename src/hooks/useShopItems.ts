@@ -330,38 +330,15 @@ export function useShopItems() {
     loadWhenReady();
 
     // Subscribe to shop_items changes
-    const shopItemsSubscription = supabase.subscribe("shop_items", async (payload: any) => {
-      // Wait for overrides to be loaded before reloading (ensures hidden items are properly filtered)
-      let retries = 0;
-      while (overridesLoading && retries < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      // Small additional delay to ensure hidden items set is populated
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (payload.eventType === "INSERT") {
-        loadShopItems(); // Reload to merge with overrides
-      } else if (payload.eventType === "UPDATE") {
-        loadShopItems(); // Reload to merge with overrides
-      } else if (payload.eventType === "DELETE") {
-        loadShopItems(); // Reload to filter hidden items
+    const shopItemsSubscription = supabase.subscribe("shop_items", (payload: any) => {
+      if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
+        loadShopItems(); // loadShopItems already waits for overrides
       }
     });
 
-    // Also subscribe to user_hidden_shop_items changes so we reload when items are hidden/unhidden
-    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", async () => {
-      // Wait for overrides to be loaded before reloading
-      let retries = 0;
-      while (overridesLoading && retries < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      // Small additional delay to ensure hidden items set is populated
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Reload shop items when hidden items change
-      loadShopItems();
+    // Subscribe to user_hidden_shop_items changes so we reload when items are hidden/unhidden
+    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", () => {
+      loadShopItems(); // loadShopItems already waits for overrides
     });
 
     return () => {
@@ -399,13 +376,12 @@ export function useShopItems() {
       } else {
         // Seeded item - hide it for this user
         await hideItemForUser(id);
-        // Refresh overrides to ensure hidden items are loaded
+        // Refresh overrides to update hidden items set (must complete before subscription fires)
         await refreshOverrides();
-        // Wait a bit for the hidden items set to be updated
-        await new Promise(resolve => setTimeout(resolve, 100));
-        // Reload shop items to filter out hidden item
-        await loadShopItems();
-        // Update state to remove the item immediately
+        // Small delay to ensure state is updated before subscription callback runs
+        await new Promise(resolve => setTimeout(resolve, 50));
+        // Subscription will trigger reload via user_hidden_shop_items subscription
+        // Update UI immediately for better UX
         setShopItems((prev) => prev.filter((item) => item.id !== id));
       }
     } catch (err: any) {
