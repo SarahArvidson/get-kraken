@@ -46,7 +46,7 @@ export function useShopItems() {
 
       // Verify all returned items are either seeded or owned by current user
       const invalidItems = data?.filter(
-        (item) => item.created_by !== null && item.created_by !== user.id
+        (item: ShopItem) => item.created_by !== null && item.created_by !== user.id
       );
       if (invalidItems && invalidItems.length > 0) {
         console.error(
@@ -55,12 +55,12 @@ export function useShopItems() {
         );
         // Filter them out as a safeguard
         data = data.filter(
-          (item) => item.created_by === null || item.created_by === user.id
+          (item: ShopItem) => item.created_by === null || item.created_by === user.id
         );
       }
 
       console.log(
-        `[useShopItems] Loaded ${data?.length || 0} items (${data?.filter((i) => i.created_by === null).length || 0} seeded, ${data?.filter((i) => i.created_by === user.id).length || 0} own)`
+        `[useShopItems] Loaded ${data?.length || 0} items (${data?.filter((i: ShopItem) => i.created_by === null).length || 0} seeded, ${data?.filter((i: ShopItem) => i.created_by === user.id).length || 0} own)`
       );
       
       // Wait for overrides to be loaded before merging

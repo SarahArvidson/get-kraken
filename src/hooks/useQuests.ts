@@ -46,7 +46,7 @@ export function useQuests() {
 
       // Verify all returned quests are either seeded or owned by current user
       const invalidQuests = data?.filter(
-        (quest) => quest.created_by !== null && quest.created_by !== user.id
+        (quest: Quest) => quest.created_by !== null && quest.created_by !== user.id
       );
       if (invalidQuests && invalidQuests.length > 0) {
         console.error(
@@ -55,12 +55,12 @@ export function useQuests() {
         );
         // Filter them out as a safeguard
         data = data?.filter(
-          (quest) => quest.created_by === null || quest.created_by === user.id
+          (quest: Quest) => quest.created_by === null || quest.created_by === user.id
         );
       }
 
       console.log(
-        `[useQuests] Loaded ${data?.length || 0} quests (${data?.filter((q) => q.created_by === null).length || 0} seeded, ${data?.filter((q) => q.created_by === user.id).length || 0} own)`
+        `[useQuests] Loaded ${data?.length || 0} quests (${data?.filter((q: Quest) => q.created_by === null).length || 0} seeded, ${data?.filter((q: Quest) => q.created_by === user.id).length || 0} own)`
       );
       
       // Merge with overrides and filter hidden quests
