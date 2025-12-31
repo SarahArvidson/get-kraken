@@ -174,6 +174,21 @@ export function useShopItemOverrides() {
         const userId = await getUserId();
         if (!userId) throw new Error("User must be authenticated");
 
+        // Check if already hidden
+        const { data: existing } = await supabase
+          .from("user_hidden_shop_items")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("shop_item_id", itemId)
+          .maybeSingle();
+
+        // If already hidden, no need to insert again
+        if (existing) {
+          setHiddenItemIds((prev) => new Set([...prev, itemId]));
+          return;
+        }
+
+        // Insert if not already hidden
         const { error } = await supabase
           .from("user_hidden_shop_items")
           .insert({
@@ -182,7 +197,14 @@ export function useShopItemOverrides() {
             created_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
+        if (error) {
+          // If it's a unique constraint violation, the item is already hidden - that's fine
+          if (error.code === "23505") {
+            setHiddenItemIds((prev) => new Set([...prev, itemId]));
+            return;
+          }
+          throw error;
+        }
         setHiddenItemIds((prev) => new Set([...prev, itemId]));
       } catch (err) {
         console.error("Error hiding shop item:", err);

@@ -174,6 +174,21 @@ export function useQuestOverrides() {
         const userId = await getUserId();
         if (!userId) throw new Error("User must be authenticated");
 
+        // Check if already hidden
+        const { data: existing } = await supabase
+          .from("user_hidden_quests")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("quest_id", questId)
+          .maybeSingle();
+
+        // If already hidden, no need to insert again
+        if (existing) {
+          setHiddenQuestIds((prev) => new Set([...prev, questId]));
+          return;
+        }
+
+        // Insert if not already hidden
         const { error } = await supabase
           .from("user_hidden_quests")
           .insert({
@@ -182,7 +197,14 @@ export function useQuestOverrides() {
             created_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
+        if (error) {
+          // If it's a unique constraint violation, the quest is already hidden - that's fine
+          if (error.code === "23505") {
+            setHiddenQuestIds((prev) => new Set([...prev, questId]));
+            return;
+          }
+          throw error;
+        }
         setHiddenQuestIds((prev) => new Set([...prev, questId]));
       } catch (err) {
         console.error("Error hiding quest:", err);
