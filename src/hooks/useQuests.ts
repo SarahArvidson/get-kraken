@@ -64,9 +64,17 @@ export function useQuests() {
         );
       }
 
+      // Fetch current hidden quests directly (don't rely on closure)
+      const { data: { user: currentUser } } = await supabase.supabase.auth.getUser();
+      const { data: hiddenData } = await supabase
+        .from("user_hidden_quests")
+        .select("quest_id")
+        .eq("user_id", currentUser?.id || "");
+      const hiddenQuestIdsSet = new Set((hiddenData || []).map((h: { quest_id: string }) => h.quest_id));
+
       // Merge with overrides and filter hidden quests
       const mergedQuests = (data || [])
-        .filter((quest: Quest) => !isQuestHidden(quest.id))
+        .filter((quest: Quest) => !hiddenQuestIdsSet.has(quest.id))
         .map((quest: Quest) => mergeQuestWithOverrides(quest));
       
       setQuests(mergedQuests);
@@ -339,8 +347,11 @@ export function useQuests() {
     // Subscribe to user_hidden_quests changes so we reload when quests are hidden/unhidden
     // When this fires (e.g., from another device/tab), we must refresh overrides first
     const hiddenQuestsSubscription = supabase.subscribe("user_hidden_quests", async () => {
-      await refreshOverrides(); // Refresh overrides to get latest hidden quests
-      loadQuests(); // Then load quests with fresh overrides
+      // Refresh overrides to get latest hidden quests
+      await refreshOverrides();
+      // Wait for React state to propagate (refreshOverrides updates state asynchronously)
+      await new Promise(resolve => setTimeout(resolve, 150));
+      loadQuests();
     });
 
     return () => {

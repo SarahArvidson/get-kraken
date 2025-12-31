@@ -64,9 +64,17 @@ export function useShopItems() {
         );
       }
 
+      // Fetch current hidden items directly (don't rely on closure)
+      const { data: { user: currentUser } } = await supabase.supabase.auth.getUser();
+      const { data: hiddenData } = await supabase
+        .from("user_hidden_shop_items")
+        .select("shop_item_id")
+        .eq("user_id", currentUser?.id || "");
+      const hiddenItemIdsSet = new Set((hiddenData || []).map((h: { shop_item_id: string }) => h.shop_item_id));
+
       // Merge with overrides and filter hidden items
       const mergedItems = (data || [])
-        .filter((item: ShopItem) => !isItemHidden(item.id))
+        .filter((item: ShopItem) => !hiddenItemIdsSet.has(item.id))
         .map((item: ShopItem) => mergeItemWithOverrides(item))
         .sort((a: ShopItem, b: ShopItem) => a.name.localeCompare(b.name));
       
@@ -329,23 +337,43 @@ export function useShopItems() {
 
     loadWhenReady();
 
-    // Subscribe to shop_items changes
-    const shopItemsSubscription = supabase.subscribe("shop_items", (payload: any) => {
-      if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
-        loadShopItems(); // loadShopItems already waits for overrides
-      }
-    });
+    // Get current user for subscription filter
+    const setupSubscriptions = async () => {
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) return { shopItems: null, hiddenItems: null };
 
-    // Subscribe to user_hidden_shop_items changes so we reload when items are hidden/unhidden
-    // When this fires (e.g., from another device/tab), we must refresh overrides first
-    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", async () => {
-      await refreshOverrides(); // Refresh overrides to get latest hidden items
-      loadShopItems(); // Then load items with fresh overrides
+      // Subscribe to shop_items changes
+      const shopItemsSubscription = supabase.subscribe("shop_items", (payload: any) => {
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
+          loadShopItems(); // loadShopItems already waits for overrides
+        }
+      });
+
+      // Subscribe to user_hidden_shop_items changes (filtered to current user)
+      // When this fires (e.g., from another device/tab), we must refresh overrides first
+      const hiddenItemsSubscription = supabase.subscribe(
+        "user_hidden_shop_items",
+        async () => {
+          // Refresh overrides to get latest hidden items
+          await refreshOverrides();
+          // Wait for React state to propagate (refreshOverrides updates state asynchronously)
+          await new Promise(resolve => setTimeout(resolve, 150));
+          loadShopItems();
+        },
+        `user_id=eq.${user.id}` // Only listen to changes for current user
+      );
+
+      return { shopItems: shopItemsSubscription, hiddenItems: hiddenItemsSubscription };
+    };
+
+    let subscriptions: { shopItems: any; hiddenItems: any } | null = null;
+    setupSubscriptions().then((subs) => {
+      subscriptions = subs;
     });
 
     return () => {
-      shopItemsSubscription.unsubscribe();
-      hiddenItemsSubscription.unsubscribe();
+      if (subscriptions?.shopItems) subscriptions.shopItems.unsubscribe();
+      if (subscriptions?.hiddenItems) subscriptions.hiddenItems.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overridesLoading]); // Reload when overrides finish loading
