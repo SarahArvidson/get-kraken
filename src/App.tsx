@@ -387,7 +387,8 @@ function App() {
           onViewChange={handleViewChange}
         />
 
-        {currentView === "quests" && (
+        {/* Always mount all views - use CSS visibility to show/hide */}
+        <div className={currentView === "quests" ? "" : "hidden"}>
           <QuestsView
             quests={quests}
             allQuestLogs={allQuestLogs}
@@ -403,9 +404,9 @@ function App() {
             onEdit={handleEditQuest}
             onShowToast={showToast}
           />
-        )}
+        </div>
 
-        {currentView === "shop" && (
+        <div className={currentView === "shop" ? "" : "hidden"}>
           <ShopView
             shopItems={shopItems}
             allShopLogs={allShopLogs}
@@ -423,9 +424,9 @@ function App() {
             onEdit={handleEditShopItem}
             onShowToast={showToast}
           />
-        )}
+        </div>
 
-        {currentView === "progress" && (
+        <div className={currentView === "progress" ? "" : "hidden"}>
           <ProgressView
             walletTotal={wallet?.total ?? 0}
             walletDollarTotal={wallet?.dollar_total ?? 0}
@@ -436,7 +437,7 @@ function App() {
             onResetProgress={handleResetProgress}
             onResetAllProgress={handleResetAllProgress}
           />
-        )}
+        </div>
       </main>
 
       {selectedQuestLogs && (
