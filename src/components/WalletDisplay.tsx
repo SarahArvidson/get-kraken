@@ -24,39 +24,34 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
         <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-2 uppercase tracking-wide">
           {TREASURE_CHEST_LABEL}
         </h2>
-        {loading ? (
-          <div className="text-4xl font-bold text-amber-900 dark:text-amber-100">
-            ...
-          </div>
-        ) : (
-          <div className="flex items-center justify-center gap-3">
-            <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-12 h-12" />
-            <span
-              className={`text-6xl font-bold ${
-                isNegative
-                  ? "text-red-600 dark:text-red-400"
-                  : "text-amber-900 dark:text-amber-100"
-              }`}
-            >
-              {total}
-            </span>
-            {showDollarAmounts && (
-              <>
-                <span className="text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
-                <span className="text-4xl">{CURRENCY_SYMBOL}</span>
-                <span
-                  className={`text-6xl font-bold ${
-                    dollarTotal < 0
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-amber-900 dark:text-amber-100"
-                  }`}
-                >
-                  {Math.round(dollarTotal)}
-                </span>
-              </>
-            )}
-          </div>
-        )}
+        {/* Render wallet immediately - show 0 if loading, actual total when available */}
+        <div className="flex items-center justify-center gap-3">
+          <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-12 h-12" />
+          <span
+            className={`text-6xl font-bold ${
+              isNegative
+                ? "text-red-600 dark:text-red-400"
+                : "text-amber-900 dark:text-amber-100"
+            } ${loading ? "opacity-50" : ""}`}
+          >
+            {loading ? "0" : total}
+          </span>
+          {showDollarAmounts && (
+            <>
+              <span className="text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
+              <span className="text-4xl">{CURRENCY_SYMBOL}</span>
+              <span
+                className={`text-6xl font-bold ${
+                  dollarTotal < 0
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-amber-900 dark:text-amber-100"
+                } ${loading ? "opacity-50" : ""}`}
+              >
+                {loading ? "0" : Math.round(dollarTotal)}
+              </span>
+            </>
+          )}
+        </div>
         {!loading && isNegative && (
           <p className="text-sm text-amber-900 dark:text-amber-100 mt-2 opacity-75">
             Negative balance allowed

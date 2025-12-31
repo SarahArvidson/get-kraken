@@ -87,13 +87,14 @@ export function QuestsView({
         getButtonClasses={(tag) => TAG_BUTTON_CLASSES[tag]}
       />
 
-      {loading ? (
-        <div className="text-center py-12 text-gray-500">
-          Loading quests...
-        </div>
-      ) : filteredQuests.length === 0 && searchQuery ? (
+      {/* Render quests immediately when available - don't block on loading state */}
+      {filteredQuests.length === 0 && !loading && searchQuery ? (
         <div className="text-center py-12 text-gray-500 dark:text-gray-300">
           No quests found matching "{searchQuery}"
+        </div>
+      ) : filteredQuests.length === 0 && loading ? (
+        <div className="text-center py-12 text-gray-500">
+          Loading quests...
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

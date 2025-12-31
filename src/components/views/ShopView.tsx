@@ -100,13 +100,14 @@ export function ShopView({
         getButtonClasses={(tag) => SHOP_TAG_BUTTON_CLASSES[tag]}
       />
 
-      {loading ? (
-        <div className="text-center py-12 text-gray-500 dark:header-text-color">
-          Loading shop items...
-        </div>
-      ) : filteredShopItems.length === 0 && searchQuery ? (
+      {/* Render shop items immediately when available - don't block on loading state */}
+      {filteredShopItems.length === 0 && !loading && searchQuery ? (
         <div className="text-center py-12 text-gray-500 dark:header-text-color">
           No items found matching "{searchQuery}"
+        </div>
+      ) : filteredShopItems.length === 0 && loading ? (
+        <div className="text-center py-12 text-gray-500 dark:header-text-color">
+          Loading shop items...
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
