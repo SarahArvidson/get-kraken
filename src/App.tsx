@@ -70,7 +70,6 @@ function App() {
   const {
     wallet,
     loading: walletLoading,
-    updateWallet,
     resetWallet,
   } = useWallet();
   const {
@@ -116,7 +115,7 @@ function App() {
     setSelectedShopTag,
   } = useFilterState();
 
-  // Load all logs for progress tracking
+  // Load all logs for progress tracking - independent of quests/shopItems to prevent waterfall
   useEffect(() => {
     const loadLogs = async () => {
       const [questLogs, shopLogs] = await Promise.all([
@@ -129,7 +128,7 @@ function App() {
     loadLogs();
     const interval = setInterval(loadLogs, LOG_REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [loadAllQuestLogs, loadAllShopLogs, quests.length, shopItems.length]);
+  }, [loadAllQuestLogs, loadAllShopLogs]); // Removed quests.length and shopItems.length - logs load independently
 
   // Preload audio on first user interaction
   useEffect(() => {
@@ -158,8 +157,9 @@ function App() {
         quest.dollar_amount || 0
       );
 
-      await completeQuest(questId, effectiveReward);
-      await updateWallet(effectiveReward, effectiveDollarAmount);
+      // completeQuest now atomically updates wallet - no separate updateWallet call needed
+      // Real-time subscription will update wallet state automatically
+      await completeQuest(questId, effectiveReward, effectiveDollarAmount);
 
       const questLogs = await loadAllQuestLogs();
       setAllQuestLogs(questLogs);
@@ -171,7 +171,7 @@ function App() {
         err instanceof Error ? err.message : "Failed to complete quest"
       );
     }
-  }, [quests, getEffectiveReward, getEffectiveDollarAmount, completeQuest, updateWallet, loadAllQuestLogs, showSuccess, showError]);
+  }, [quests, getEffectiveReward, getEffectiveDollarAmount, completeQuest, loadAllQuestLogs, showSuccess, showError]);
 
   const handlePurchaseItem = useCallback(async (itemId: string, _price: number) => {
     try {
@@ -201,13 +201,15 @@ function App() {
         }
       }
 
-      await purchaseItem(itemId, effectivePrice);
-      await updateWallet(-effectivePrice, -effectiveDollarAmount);
+      // purchaseItem now atomically updates wallet - no separate updateWallet call needed
+      // Real-time subscription will update wallet state automatically
+      await purchaseItem(itemId, effectivePrice, effectiveDollarAmount);
+
       showSuccess(`Purchased for ${effectivePrice} ${CURRENCY_NAME}! 🛒`);
     } catch (err: unknown) {
       showError(err instanceof Error ? err.message : "Failed to purchase item");
     }
-  }, [shopItems, getEffectivePrice, getEffectiveShopDollarAmount, wallet, preferences.showDollarAmounts, purchaseItem, updateWallet, showSuccess, showError]);
+  }, [shopItems, getEffectivePrice, getEffectiveShopDollarAmount, wallet, preferences.showDollarAmounts, purchaseItem, showSuccess, showError]);
 
   const handleViewQuestLogs = useCallback(async (questId: string) => {
     const quest = quests.find((q) => q.id === questId);

@@ -68,6 +68,8 @@ export function useQuests() {
 
       // Progressive render: merge with overrides when ready, filter hidden
       // If overrides still loading, show base data; overrides will merge via effect
+      // Note: isQuestHidden and mergeQuestWithOverrides are used but not dependencies
+      // to allow immediate quest loading without waiting for overrides to resolve
       const mergedQuests = (data || [])
         .filter((quest: Quest) => !isQuestHidden(quest.id))
         .map((quest: Quest) => mergeQuestWithOverrides(quest));
@@ -80,7 +82,8 @@ export function useQuests() {
     } finally {
       setLoading(false);
     }
-  }, [isQuestHidden, mergeQuestWithOverrides]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // No dependencies - load immediately, overrides merge when ready
 
   // Create a new quest
   const createQuest = useCallback(
@@ -261,45 +264,92 @@ export function useQuests() {
     [updateOverride, mergeQuestWithOverrides, quests]
   );
 
-  // Complete a quest (adds to log with user_id)
-  const completeQuest = useCallback(async (questId: string, reward: number) => {
-    try {
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User must be authenticated");
-      }
+  // Complete a quest (adds to log with user_id and atomically updates wallet)
+  const completeQuest = useCallback(
+    async (questId: string, reward: number, dollarAmount: number = 0) => {
+      try {
+        // Get current user
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
 
-      // Create log entry with user_id
-      const { error: logError } = await supabase.from("quest_logs").insert({
-        quest_id: questId,
-        user_id: user.id,
-        completed_at: new Date().toISOString(),
-      });
+        // Load current wallet to get current total
+        const { data: walletData, error: walletFetchError } = await supabase
+          .from("wallets")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (logError) {
-        console.error("Quest log insert error:", logError);
-        console.error("User ID:", user.id);
-        console.error("Quest ID:", questId);
-        throw new Error(
-          `Failed to create quest log: ${
-            logError.message || JSON.stringify(logError)
-          }`
+        if (walletFetchError && walletFetchError.code !== "PGRST116") {
+          throw walletFetchError;
+        }
+
+        // Calculate new wallet totals
+        const currentTotal = walletData?.total ?? 0;
+        const currentDollarTotal = walletData?.dollar_total ?? 0;
+        const newTotal = currentTotal + reward;
+        const newDollarTotal = Math.round(
+          currentDollarTotal + Math.round(dollarAmount)
         );
+
+        // Atomically: insert log entry AND update wallet in sequence
+        // First, insert log entry
+        const { error: logError } = await supabase.from("quest_logs").insert({
+          quest_id: questId,
+          user_id: user.id,
+          completed_at: new Date().toISOString(),
+        });
+
+        if (logError) {
+          console.error("Quest log insert error:", logError);
+          console.error("User ID:", user.id);
+          console.error("Quest ID:", questId);
+          throw new Error(
+            `Failed to create quest log: ${
+              logError.message || JSON.stringify(logError)
+            }`
+          );
+        }
+
+        // Then, update wallet atomically
+        if (!walletData) {
+          // Create wallet if it doesn't exist
+          const { error: createError } = await supabase.from("wallets").insert({
+            user_id: user.id,
+            id: null,
+            total: newTotal,
+            dollar_total: newDollarTotal,
+            updated_at: new Date().toISOString(),
+          });
+          if (createError) throw createError;
+        } else {
+          // Update existing wallet
+          const { error: updateError } = await supabase
+            .from("wallets")
+            .update({
+              total: newTotal,
+              dollar_total: newDollarTotal,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", user.id);
+          if (updateError) throw updateError;
+        }
+
+        // Note: We don't update completion_count anymore since it's shared
+        // Per-user counts are calculated from logs
+
+        return reward;
+      } catch (err: any) {
+        console.error("Error completing quest:", err);
+        setError(err.message || "Failed to complete quest");
+        throw err;
       }
-
-      // Note: We don't update completion_count anymore since it's shared
-      // Per-user counts are calculated from logs
-
-      return reward;
-    } catch (err: any) {
-      console.error("Error completing quest:", err);
-      setError(err.message || "Failed to complete quest");
-      throw err;
-    }
-  }, []);
+    },
+    []
+  );
 
   // Get quest with logs for current user
   const getQuestWithLogs = useCallback(
@@ -342,11 +392,24 @@ export function useQuests() {
     []
   );
 
+  // Load quests immediately on mount - no dependencies to prevent blocking
+  useEffect(() => {
+    loadQuests();
+  }, [loadQuests]);
+
+  // Re-merge quests when overrides become available (non-blocking enrichment)
+  // This effect only runs when override functions change (when overrides load)
+  // It re-applies filtering and merging to existing quests without reloading from DB
+  useEffect(() => {
+    setQuests((prev) =>
+      prev
+        .filter((quest) => !isQuestHidden(quest.id))
+        .map((quest) => mergeQuestWithOverrides(quest))
+    );
+  }, [mergeQuestWithOverrides, isQuestHidden]); // Only when override functions change (overrides loaded)
+
   // Subscribe to real-time changes - use state patches, not full reloads
   useEffect(() => {
-    // Load immediately - progressive render (overrides merge when ready)
-    loadQuests();
-
     // Get current user for subscription filters
     const setupSubscriptions = async () => {
       const {
@@ -479,7 +542,7 @@ export function useQuests() {
       if (subscriptions?.all) subscriptions.all.unsubscribe();
       if (subscriptions?.hidden) subscriptions.hidden.unsubscribe();
     };
-  }, [loadQuests, mergeQuestWithOverrides, isQuestHidden]); // Full dependency array - no stale closures
+  }, [mergeQuestWithOverrides, isQuestHidden]); // Subscriptions need current overrides functions
 
   // Delete a quest (user-created quests delete base, seeded quests hide for user)
   const deleteQuest = useCallback(

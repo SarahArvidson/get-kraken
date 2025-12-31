@@ -262,45 +262,92 @@ export function useShopItems() {
     [updateOverride, mergeItemWithOverrides, shopItems]
   );
 
-  // Purchase a shop item (adds to log with user_id)
-  const purchaseItem = useCallback(async (itemId: string, price: number) => {
-    try {
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User must be authenticated");
-      }
+  // Purchase a shop item (adds to log with user_id and atomically updates wallet)
+  const purchaseItem = useCallback(
+    async (itemId: string, price: number, dollarAmount: number = 0) => {
+      try {
+        // Get current user
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
 
-      // Create log entry with user_id
-      const { error: logError } = await supabase.from("shop_logs").insert({
-        shop_item_id: itemId,
-        user_id: user.id,
-        purchased_at: new Date().toISOString(),
-      });
+        // Load current wallet to get current total
+        const { data: walletData, error: walletFetchError } = await supabase
+          .from("wallets")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      if (logError) {
-        console.error("Shop log insert error:", logError);
-        console.error("User ID:", user.id);
-        console.error("Item ID:", itemId);
-        throw new Error(
-          `Failed to create shop log: ${
-            logError.message || JSON.stringify(logError)
-          }`
+        if (walletFetchError && walletFetchError.code !== "PGRST116") {
+          throw walletFetchError;
+        }
+
+        // Calculate new wallet totals
+        const currentTotal = walletData?.total ?? 0;
+        const currentDollarTotal = walletData?.dollar_total ?? 0;
+        const newTotal = currentTotal - price;
+        const newDollarTotal = Math.round(
+          currentDollarTotal - Math.round(dollarAmount)
         );
+
+        // Atomically: insert log entry AND update wallet in sequence
+        // First, insert log entry
+        const { error: logError } = await supabase.from("shop_logs").insert({
+          shop_item_id: itemId,
+          user_id: user.id,
+          purchased_at: new Date().toISOString(),
+        });
+
+        if (logError) {
+          console.error("Shop log insert error:", logError);
+          console.error("User ID:", user.id);
+          console.error("Item ID:", itemId);
+          throw new Error(
+            `Failed to create shop log: ${
+              logError.message || JSON.stringify(logError)
+            }`
+          );
+        }
+
+        // Then, update wallet atomically
+        if (!walletData) {
+          // Create wallet if it doesn't exist
+          const { error: createError } = await supabase.from("wallets").insert({
+            user_id: user.id,
+            id: null,
+            total: newTotal,
+            dollar_total: newDollarTotal,
+            updated_at: new Date().toISOString(),
+          });
+          if (createError) throw createError;
+        } else {
+          // Update existing wallet
+          const { error: updateError } = await supabase
+            .from("wallets")
+            .update({
+              total: newTotal,
+              dollar_total: newDollarTotal,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", user.id);
+          if (updateError) throw updateError;
+        }
+
+        // Note: We don't update purchase_count anymore since it's shared
+        // Per-user counts are calculated from logs
+
+        return -price; // Return negative for consistency
+      } catch (err: any) {
+        console.error("Error purchasing item:", err);
+        setError(err.message || "Failed to purchase item");
+        throw err;
       }
-
-      // Note: We don't update purchase_count anymore since it's shared
-      // Per-user counts are calculated from logs
-
-      return -price; // Return negative for wallet update
-    } catch (err: any) {
-      console.error("Error purchasing item:", err);
-      setError(err.message || "Failed to purchase item");
-      throw err;
-    }
-  }, []);
+    },
+    []
+  );
 
   // Get shop item with logs for current user
   const getShopItemWithLogs = useCallback(
