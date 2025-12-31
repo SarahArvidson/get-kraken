@@ -18,7 +18,9 @@ export function useGoals() {
     try {
       setLoading(true);
       // Get current user
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
       if (!user) {
         setGoals([]);
         setLoading(false);
@@ -44,10 +46,22 @@ export function useGoals() {
 
   // Create a new goal
   const createGoal = useCallback(
-    async (goal: Omit<Goal, "id" | "user_id" | "created_at" | "updated_at" | "is_completed" | "completed_at">) => {
+    async (
+      goal: Omit<
+        Goal,
+        | "id"
+        | "user_id"
+        | "created_at"
+        | "updated_at"
+        | "is_completed"
+        | "completed_at"
+      >
+    ) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -65,7 +79,11 @@ export function useGoals() {
 
         // Try to include dollar_amount if provided
         // If the column doesn't exist, we'll retry without it
-        if (goal.dollar_amount !== null && goal.dollar_amount !== undefined && goal.dollar_amount > 0) {
+        if (
+          goal.dollar_amount !== null &&
+          goal.dollar_amount !== undefined &&
+          goal.dollar_amount > 0
+        ) {
           insertData.dollar_amount = goal.dollar_amount;
         }
 
@@ -78,8 +96,13 @@ export function useGoals() {
         // If error is due to missing dollar_amount column, retry without it
         if (createError && insertData.dollar_amount !== undefined) {
           const errorMessage = createError.message || "";
-          if (errorMessage.includes("dollar_amount") || errorMessage.includes("PGRST204")) {
-            console.warn("dollar_amount column not found in goals table, creating goal without it");
+          if (
+            errorMessage.includes("dollar_amount") ||
+            errorMessage.includes("PGRST204")
+          ) {
+            console.warn(
+              "dollar_amount column not found in goals table, creating goal without it"
+            );
             // Remove dollar_amount and retry
             const { dollar_amount, ...retryData } = insertData;
             const retryResult = await supabase
@@ -87,7 +110,7 @@ export function useGoals() {
               .insert(retryData)
               .select()
               .single();
-            
+
             if (retryResult.error) throw retryResult.error;
             data = retryResult.data;
             createError = null;
@@ -112,32 +135,29 @@ export function useGoals() {
   );
 
   // Update a goal
-  const updateGoal = useCallback(
-    async (id: string, updates: Partial<Goal>) => {
-      try {
-        const { data, error: updateError } = await supabase
-          .from("goals")
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", id)
-          .select()
-          .single();
+  const updateGoal = useCallback(async (id: string, updates: Partial<Goal>) => {
+    try {
+      const { data, error: updateError } = await supabase
+        .from("goals")
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
 
-        if (updateError) throw updateError;
-        if (data) {
-          setGoals((prev) => prev.map((g) => (g.id === id ? data : g)));
-        }
-        return data;
-      } catch (err: any) {
-        console.error("Error updating goal:", err);
-        setError(err.message || "Failed to update goal");
-        throw err;
+      if (updateError) throw updateError;
+      if (data) {
+        setGoals((prev) => prev.map((g) => (g.id === id ? data : g)));
       }
-    },
-    []
-  );
+      return data;
+    } catch (err: any) {
+      console.error("Error updating goal:", err);
+      setError(err.message || "Failed to update goal");
+      throw err;
+    }
+  }, []);
 
   // Delete a goal
   const deleteGoal = useCallback(async (id: string) => {
@@ -157,36 +177,30 @@ export function useGoals() {
   }, []);
 
   // Check and update goal completion based on wallet total and dollar total
+  // Uses cached goals state - non-blocking
   const checkGoalCompletion = useCallback(
     async (walletTotal: number, walletDollarTotal: number = 0) => {
-      // Get current user
-      const { data: { user } } = await supabase.supabase.auth.getUser();
-      if (!user) return;
-
-      // Get fresh goals list for current user
-      const { data: freshGoals } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_completed", false);
-      
-      if (!freshGoals) return;
-      
-      // Check both sea dollar and dollar targets
-      const incompleteGoals = freshGoals.filter((g: Goal) => {
+      // Use cached goals state instead of fetching from DB
+      const incompleteGoals = goals.filter((g) => {
+        if (g.is_completed) return false;
         const seaDollarMet = walletTotal >= g.target_amount;
-        const dollarMet = g.dollar_amount ? walletDollarTotal >= g.dollar_amount : true;
+        const dollarMet = g.dollar_amount
+          ? walletDollarTotal >= g.dollar_amount
+          : true;
         return seaDollarMet && dollarMet;
       });
-      
-      for (const goal of incompleteGoals) {
-        await updateGoal(goal.id, {
-          is_completed: true,
-          completed_at: new Date().toISOString(),
-        });
-      }
+
+      // Batch update all completed goals in parallel
+      await Promise.all(
+        incompleteGoals.map((goal) =>
+          updateGoal(goal.id, {
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          })
+        )
+      );
     },
-    [updateGoal]
+    [updateGoal, goals]
   );
 
   // Subscribe to real-time changes
@@ -197,14 +211,19 @@ export function useGoals() {
 
     // Get current user for subscription filter
     const setupSubscription = async () => {
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
       if (!user) return;
 
       subscription = supabase.subscribe(
         "goals",
         (payload: any) => {
           // Only process events for current user's goals
-          if (payload.new?.user_id === user.id || payload.old?.user_id === user.id) {
+          if (
+            payload.new?.user_id === user.id ||
+            payload.old?.user_id === user.id
+          ) {
             if (payload.eventType === "INSERT") {
               setGoals((prev) => [payload.new, ...prev]);
             } else if (payload.eventType === "UPDATE") {
@@ -240,4 +259,3 @@ export function useGoals() {
     refresh: loadGoals,
   };
 }
-

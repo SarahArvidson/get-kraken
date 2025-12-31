@@ -13,14 +13,22 @@ export function useShopItems() {
   const [shopItems, setShopItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { mergeItemWithOverrides, isItemHidden, updateOverride, hideItem: hideItemForUser, refresh: refreshOverrides, loading: overridesLoading } = useShopItemOverrides();
+  const {
+    mergeItemWithOverrides,
+    isItemHidden,
+    updateOverride,
+    hideItem: hideItemForUser,
+  } = useShopItemOverrides();
 
   // Load all shop items
   const loadShopItems = useCallback(async () => {
     try {
       setLoading(true);
       // Get current user to filter shop items
-      const { data: { user }, error: userError } = await supabase.supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.supabase.auth.getUser();
       if (userError) {
         console.error("Error getting user:", userError);
         throw new Error("Failed to get user session");
@@ -29,15 +37,7 @@ export function useShopItems() {
         throw new Error("User must be authenticated");
       }
 
-      // Wait for overrides to be loaded before filtering (to ensure hidden items are properly filtered)
-      // Retry up to 10 times with 100ms delay if overrides are still loading
-      let retries = 0;
-      while (overridesLoading && retries < 10) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-
-      // Only load seeded shop items (created_by IS NULL) or items created by current user
+      // Load base shop items immediately - progressive render
       let { data, error: fetchError } = await supabase
         .from("shop_items")
         .select("*")
@@ -51,7 +51,8 @@ export function useShopItems() {
 
       // Verify all returned items are either seeded or owned by current user
       const invalidItems = data?.filter(
-        (item: ShopItem) => item.created_by !== null && item.created_by !== user.id
+        (item: ShopItem) =>
+          item.created_by !== null && item.created_by !== user.id
       );
       if (invalidItems && invalidItems.length > 0) {
         console.error(
@@ -60,24 +61,18 @@ export function useShopItems() {
         );
         // Filter them out as a safeguard
         data = data.filter(
-          (item: ShopItem) => item.created_by === null || item.created_by === user.id
+          (item: ShopItem) =>
+            item.created_by === null || item.created_by === user.id
         );
       }
 
-      // Fetch current hidden items directly (don't rely on closure)
-      const { data: { user: currentUser } } = await supabase.supabase.auth.getUser();
-      const { data: hiddenData } = await supabase
-        .from("user_hidden_shop_items")
-        .select("shop_item_id")
-        .eq("user_id", currentUser?.id || "");
-      const hiddenItemIdsSet = new Set((hiddenData || []).map((h: { shop_item_id: string }) => h.shop_item_id));
-
-      // Merge with overrides and filter hidden items
+      // Progressive render: merge with overrides when ready, filter hidden
+      // If overrides still loading, show base data; overrides will merge via effect
       const mergedItems = (data || [])
-        .filter((item: ShopItem) => !hiddenItemIdsSet.has(item.id))
+        .filter((item: ShopItem) => !isItemHidden(item.id))
         .map((item: ShopItem) => mergeItemWithOverrides(item))
         .sort((a: ShopItem, b: ShopItem) => a.name.localeCompare(b.name));
-      
+
       setShopItems(mergedItems);
       setError(null);
     } catch (err: any) {
@@ -86,7 +81,7 @@ export function useShopItems() {
     } finally {
       setLoading(false);
     }
-  }, [isItemHidden, mergeItemWithOverrides, overridesLoading]);
+  }, [isItemHidden, mergeItemWithOverrides]);
 
   // Create a new shop item
   const createShopItem = useCallback(
@@ -98,7 +93,9 @@ export function useShopItems() {
     ) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
@@ -138,27 +135,28 @@ export function useShopItems() {
     async (id: string, updates: Partial<ShopItem>) => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) {
           throw new Error("User must be authenticated");
         }
 
-        // Handle purchase_count separately - it's calculated from logs, so we need to adjust logs
+        // Handle purchase_count - single mutation: set count directly via log adjustment
         if (updates.purchase_count !== undefined) {
-          // Get current purchase count from logs, sorted by date (oldest first for deletion)
-          const { data: currentLogs } = await supabase
-            .from("shop_logs")
-            .select("id")
-            .eq("shop_item_id", id)
-            .eq("user_id", user.id)
-            .order("purchased_at", { ascending: true });
-
-          const currentCount = currentLogs?.length || 0;
           const targetCount = updates.purchase_count;
-          const difference = targetCount - currentCount;
+
+          // Get current count
+          const { count: currentCount } = await supabase
+            .from("shop_logs")
+            .select("*", { count: "exact", head: true })
+            .eq("shop_item_id", id)
+            .eq("user_id", user.id);
+
+          const difference = targetCount - (currentCount || 0);
 
           if (difference > 0) {
-            // Need to add log entries
+            // Add log entries
             const newLogs = Array.from({ length: difference }, () => ({
               shop_item_id: id,
               user_id: user.id,
@@ -169,10 +167,19 @@ export function useShopItems() {
               .insert(newLogs);
             if (logError) throw logError;
           } else if (difference < 0) {
-            // Need to remove log entries (remove oldest ones first)
-            const logsToDelete = currentLogs?.slice(0, Math.abs(difference)) || [];
-            if (logsToDelete.length > 0) {
-              const idsToDelete = logsToDelete.map((log: { id: string }) => log.id);
+            // Remove oldest log entries
+            const { data: logsToDelete } = await supabase
+              .from("shop_logs")
+              .select("id")
+              .eq("shop_item_id", id)
+              .eq("user_id", user.id)
+              .order("purchased_at", { ascending: true })
+              .limit(Math.abs(difference));
+
+            if (logsToDelete && logsToDelete.length > 0) {
+              const idsToDelete = logsToDelete.map(
+                (log: { id: string }) => log.id
+              );
               const { error: deleteError } = await supabase
                 .from("shop_logs")
                 .delete()
@@ -221,19 +228,30 @@ export function useShopItems() {
           });
           return data;
         } else {
-          // Seeded item - update user override instead
+          // Seeded item - update user override and patch local state
           const overrideUpdates: any = {};
           if (updates.name !== undefined) overrideUpdates.name = updates.name;
           if (updates.tags !== undefined) overrideUpdates.tags = updates.tags;
-          if (updates.price !== undefined) overrideUpdates.price = updates.price;
-          if (updates.dollar_amount !== undefined) overrideUpdates.dollar_amount = updates.dollar_amount;
+          if (updates.price !== undefined)
+            overrideUpdates.price = updates.price;
+          if (updates.dollar_amount !== undefined)
+            overrideUpdates.dollar_amount = updates.dollar_amount;
 
           await updateOverride(id, overrideUpdates);
-          await refreshOverrides();
-          // Reload shop items to get merged data
-          await loadShopItems();
-          // Return null - will be refreshed by loadShopItems
-          return null;
+          // Update local state optimistically - merge override with base item
+          setShopItems((prev) => {
+            const existing = prev.find((i) => i.id === id);
+            if (!existing) return prev;
+            const merged = mergeItemWithOverrides({ ...existing, ...updates });
+            return prev
+              .map((i) => (i.id === id ? merged : i))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          });
+          // Return the updated item from state
+          const updated = shopItems.find((i) => i.id === id);
+          return updated
+            ? mergeItemWithOverrides({ ...updated, ...updates })
+            : null;
         }
       } catch (err: any) {
         console.error("Error updating shop item:", err);
@@ -241,52 +259,57 @@ export function useShopItems() {
         throw err;
       }
     },
-    [updateOverride, refreshOverrides, loadShopItems, shopItems]
+    [updateOverride, mergeItemWithOverrides, shopItems]
   );
 
   // Purchase a shop item (adds to log with user_id)
-  const purchaseItem = useCallback(
-    async (itemId: string, price: number) => {
-      try {
-        // Get current user
-        const { data: { user } } = await supabase.supabase.auth.getUser();
-        if (!user) {
-          throw new Error("User must be authenticated");
-        }
-
-        // Create log entry with user_id
-        const { error: logError } = await supabase.from("shop_logs").insert({
-          shop_item_id: itemId,
-          user_id: user.id,
-          purchased_at: new Date().toISOString(),
-        });
-
-        if (logError) {
-          console.error("Shop log insert error:", logError);
-          console.error("User ID:", user.id);
-          console.error("Item ID:", itemId);
-          throw new Error(`Failed to create shop log: ${logError.message || JSON.stringify(logError)}`);
-        }
-
-        // Note: We don't update purchase_count anymore since it's shared
-        // Per-user counts are calculated from logs
-
-        return -price; // Return negative for wallet update
-      } catch (err: any) {
-        console.error("Error purchasing item:", err);
-        setError(err.message || "Failed to purchase item");
-        throw err;
+  const purchaseItem = useCallback(async (itemId: string, price: number) => {
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
       }
-    },
-    []
-  );
+
+      // Create log entry with user_id
+      const { error: logError } = await supabase.from("shop_logs").insert({
+        shop_item_id: itemId,
+        user_id: user.id,
+        purchased_at: new Date().toISOString(),
+      });
+
+      if (logError) {
+        console.error("Shop log insert error:", logError);
+        console.error("User ID:", user.id);
+        console.error("Item ID:", itemId);
+        throw new Error(
+          `Failed to create shop log: ${
+            logError.message || JSON.stringify(logError)
+          }`
+        );
+      }
+
+      // Note: We don't update purchase_count anymore since it's shared
+      // Per-user counts are calculated from logs
+
+      return -price; // Return negative for wallet update
+    } catch (err: any) {
+      console.error("Error purchasing item:", err);
+      setError(err.message || "Failed to purchase item");
+      throw err;
+    }
+  }, []);
 
   // Get shop item with logs for current user
   const getShopItemWithLogs = useCallback(
     async (itemId: string): Promise<ShopItemWithLogs | null> => {
       try {
         // Get current user
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) {
           return null;
         }
@@ -320,112 +343,197 @@ export function useShopItems() {
     []
   );
 
-  // Subscribe to real-time changes and reload when overrides are ready
+  // Subscribe to real-time changes - use state patches, not full reloads
   useEffect(() => {
-    // Wait for overrides to load before loading shop items (ensures hidden items are properly filtered)
-    const loadWhenReady = async () => {
-      // Wait for overrides to finish loading
-      let retries = 0;
-      while (overridesLoading && retries < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-      // Small additional delay to ensure hidden items set is populated
-      await new Promise(resolve => setTimeout(resolve, 50));
-      loadShopItems();
-    };
+    // Load immediately - progressive render (overrides merge when ready)
+    loadShopItems();
 
-    loadWhenReady();
-
-    // Get current user for subscription filter
+    // Get current user for subscription filters
     const setupSubscriptions = async () => {
-      const { data: { user } } = await supabase.supabase.auth.getUser();
-      if (!user) return { shopItems: null, hiddenItems: null };
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
+      if (!user) return { user: null, all: null, hidden: null };
 
-      // Subscribe to shop_items changes
-      const shopItemsSubscription = supabase.subscribe("shop_items", (payload: any) => {
-        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
-          loadShopItems(); // loadShopItems already waits for overrides
+      // Handler for user-created shop items - receives only user's items via channel filter
+      const handleUserShopItemChange = (payload: any) => {
+        if (payload.eventType === "INSERT") {
+          // Only add if not already present and not hidden
+          setShopItems((prev) => {
+            if (prev.some((i) => i.id === payload.new.id)) return prev;
+            if (isItemHidden(payload.new.id)) return prev;
+            const merged = mergeItemWithOverrides(payload.new);
+            return [...prev, merged].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            );
+          });
+        } else if (payload.eventType === "UPDATE") {
+          // Patch the updated item
+          setShopItems((prev) => {
+            const existing = prev.find((i) => i.id === payload.new.id);
+            if (!existing) return prev;
+            const merged = mergeItemWithOverrides(payload.new);
+            return prev
+              .map((i) => (i.id === payload.new.id ? merged : i))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          });
+        } else if (payload.eventType === "DELETE") {
+          // Remove deleted item
+          setShopItems((prev) => prev.filter((i) => i.id !== payload.old.id));
         }
-      });
+      };
 
-      // Subscribe to user_hidden_shop_items changes (filtered to current user)
-      // When this fires (e.g., from another device/tab), we must refresh overrides first
-      const hiddenItemsSubscription = supabase.subscribe(
-        "user_hidden_shop_items",
-        async () => {
-          // Refresh overrides to get latest hidden items
-          await refreshOverrides();
-          // Wait for React state to propagate (refreshOverrides updates state asynchronously)
-          await new Promise(resolve => setTimeout(resolve, 150));
-          loadShopItems();
-        },
-        `user_id=eq.${user.id}` // Only listen to changes for current user
+      // Handler for all shop items - client-side filter for seeded items only
+      const handleAllShopItemChange = (payload: any) => {
+        // Only process seeded items (created_by === null), ignore others
+        const item = payload.new || payload.old;
+        if (item && item.created_by !== null) {
+          return; // Ignore non-seeded items (user-created or other users)
+        }
+
+        if (payload.eventType === "INSERT") {
+          // Only add if not already present and not hidden
+          setShopItems((prev) => {
+            if (prev.some((i) => i.id === payload.new.id)) return prev;
+            if (isItemHidden(payload.new.id)) return prev;
+            const merged = mergeItemWithOverrides(payload.new);
+            return [...prev, merged].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            );
+          });
+        } else if (payload.eventType === "UPDATE") {
+          // Patch the updated item
+          setShopItems((prev) => {
+            const existing = prev.find((i) => i.id === payload.new.id);
+            if (!existing) return prev;
+            const merged = mergeItemWithOverrides(payload.new);
+            return prev
+              .map((i) => (i.id === payload.new.id ? merged : i))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          });
+        } else if (payload.eventType === "DELETE") {
+          // Remove deleted item
+          setShopItems((prev) => prev.filter((i) => i.id !== payload.old.id));
+        }
+      };
+
+      // Subscribe to user's shop items (created_by = user.id) - channel filter
+      const userSubscription = supabase.subscribe(
+        "shop_items",
+        handleUserShopItemChange,
+        `created_by=eq.${user.id}`
       );
 
-      return { shopItems: shopItemsSubscription, hiddenItems: hiddenItemsSubscription };
+      // Subscribe to all shop items - client-side filter for seeded items only
+      const allItemsSubscription = supabase.subscribe(
+        "shop_items",
+        handleAllShopItemChange
+      );
+
+      // Patch state on hidden items changes - only patch the changed ID
+      const hiddenItemsSubscription = supabase.subscribe(
+        "user_hidden_shop_items",
+        (payload: any) => {
+          if (payload.eventType === "INSERT") {
+            // Item was hidden - remove from state
+            setShopItems((prev) =>
+              prev.filter((i) => i.id !== payload.new.shop_item_id)
+            );
+          } else if (payload.eventType === "DELETE") {
+            // Item was unhidden - need to reload it (can't know base data from payload)
+            // But only reload this one item, not the entire list
+            const unhiddenItemId = payload.old.shop_item_id;
+            supabase
+              .from("shop_items")
+              .select("*")
+              .eq("id", unhiddenItemId)
+              .single()
+              .then(
+                ({ data, error }: { data: ShopItem | null; error: any }) => {
+                  if (!error && data) {
+                    setShopItems((prev) => {
+                      if (prev.some((i) => i.id === data.id)) return prev;
+                      const merged = mergeItemWithOverrides(data);
+                      return [...prev, merged].sort((a, b) =>
+                        a.name.localeCompare(b.name)
+                      );
+                    });
+                  }
+                }
+              );
+          }
+        },
+        `user_id=eq.${user.id}`
+      );
+
+      return {
+        user: userSubscription,
+        all: allItemsSubscription,
+        hidden: hiddenItemsSubscription,
+      };
     };
 
-    let subscriptions: { shopItems: any; hiddenItems: any } | null = null;
+    let subscriptions: { user: any; all: any; hidden: any } | null = null;
     setupSubscriptions().then((subs) => {
       subscriptions = subs;
     });
 
     return () => {
-      if (subscriptions?.shopItems) subscriptions.shopItems.unsubscribe();
-      if (subscriptions?.hiddenItems) subscriptions.hiddenItems.unsubscribe();
+      if (subscriptions?.user) subscriptions.user.unsubscribe();
+      if (subscriptions?.all) subscriptions.all.unsubscribe();
+      if (subscriptions?.hidden) subscriptions.hidden.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overridesLoading]); // Reload when overrides finish loading
+  }, [loadShopItems, mergeItemWithOverrides, isItemHidden]); // Full dependency array - no stale closures
 
   // Delete a shop item (user-created items delete base, seeded items hide for user)
-  const deleteShopItem = useCallback(async (id: string) => {
-    try {
-      const { data: { user } } = await supabase.supabase.auth.getUser();
-      if (!user) throw new Error("User must be authenticated");
+  const deleteShopItem = useCallback(
+    async (id: string) => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
+        if (!user) throw new Error("User must be authenticated");
 
-      // Fetch the existing item to check ownership
-      const { data: existingItem, error: fetchError } = await supabase
-        .from("shop_items")
-        .select("created_by")
-        .eq("id", id)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!existingItem) throw new Error("Shop item not found.");
-
-      // If user created it, delete the base item
-      if (existingItem.created_by === user.id) {
-        const { error: deleteError } = await supabase
+        // Fetch the existing item to check ownership
+        const { data: existingItem, error: fetchError } = await supabase
           .from("shop_items")
-          .delete()
-          .eq("id", id);
+          .select("created_by")
+          .eq("id", id)
+          .single();
 
-        if (deleteError) throw deleteError;
-        setShopItems((prev) => prev.filter((item) => item.id !== id));
-      } else {
-        // Seeded item - hide it for this user
-        await hideItemForUser(id);
-        // Refresh overrides to update hidden items set (must complete before subscription fires)
-        await refreshOverrides();
-        // Small delay to ensure state is updated before subscription callback runs
-        await new Promise(resolve => setTimeout(resolve, 50));
-        // Subscription will trigger reload via user_hidden_shop_items subscription
-        // Update UI immediately for better UX
-        setShopItems((prev) => prev.filter((item) => item.id !== id));
+        if (fetchError) throw fetchError;
+        if (!existingItem) throw new Error("Shop item not found.");
+
+        // If user created it, delete the base item
+        if (existingItem.created_by === user.id) {
+          const { error: deleteError } = await supabase
+            .from("shop_items")
+            .delete()
+            .eq("id", id);
+
+          if (deleteError) throw deleteError;
+          setShopItems((prev) => prev.filter((item) => item.id !== id));
+        } else {
+          // Seeded item - hide it for this user and update state immediately
+          await hideItemForUser(id);
+          setShopItems((prev) => prev.filter((item) => item.id !== id));
+        }
+      } catch (err: any) {
+        console.error("Error deleting shop item:", err);
+        setError(err.message || "Failed to delete shop item");
+        throw err;
       }
-    } catch (err: any) {
-      console.error("Error deleting shop item:", err);
-      setError(err.message || "Failed to delete shop item");
-      throw err;
-    }
-  }, [hideItemForUser, refreshOverrides, loadShopItems]);
+    },
+    [hideItemForUser]
+  );
 
   // Load all shop logs for current user
   const loadAllShopLogs = useCallback(async (): Promise<ShopLog[]> => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
       if (!user) {
         return [];
       }
@@ -448,7 +556,9 @@ export function useShopItems() {
   const deleteAllShopLogs = useCallback(async () => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
       if (!user) {
         throw new Error("User must be authenticated");
       }
@@ -469,14 +579,13 @@ export function useShopItems() {
 
       if (updateError) throw updateError;
 
-      // Refresh shop items to reflect the reset counts
-      await loadShopItems();
+      // Update local state - reset purchase counts are reflected in logs, no reload needed
     } catch (err: any) {
       console.error("Error deleting all shop logs:", err);
       setError(err.message || "Failed to delete shop logs");
       throw err;
     }
-  }, [loadShopItems]);
+  }, []);
 
   return {
     shopItems,
