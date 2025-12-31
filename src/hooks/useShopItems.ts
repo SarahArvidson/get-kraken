@@ -329,7 +329,17 @@ export function useShopItems() {
 
     loadWhenReady();
 
-    const subscription = supabase.subscribe("shop_items", (payload: any) => {
+    // Subscribe to shop_items changes
+    const shopItemsSubscription = supabase.subscribe("shop_items", async (payload: any) => {
+      // Wait for overrides to be loaded before reloading (ensures hidden items are properly filtered)
+      let retries = 0;
+      while (overridesLoading && retries < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      // Small additional delay to ensure hidden items set is populated
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       if (payload.eventType === "INSERT") {
         loadShopItems(); // Reload to merge with overrides
       } else if (payload.eventType === "UPDATE") {
@@ -339,8 +349,24 @@ export function useShopItems() {
       }
     });
 
+    // Also subscribe to user_hidden_shop_items changes so we reload when items are hidden/unhidden
+    const hiddenItemsSubscription = supabase.subscribe("user_hidden_shop_items", async () => {
+      // Wait for overrides to be loaded before reloading
+      let retries = 0;
+      while (overridesLoading && retries < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      // Small additional delay to ensure hidden items set is populated
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Reload shop items when hidden items change
+      loadShopItems();
+    });
+
     return () => {
-      subscription.unsubscribe();
+      shopItemsSubscription.unsubscribe();
+      hiddenItemsSubscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overridesLoading]); // Reload when overrides finish loading
@@ -373,7 +399,10 @@ export function useShopItems() {
       } else {
         // Seeded item - hide it for this user
         await hideItemForUser(id);
+        // Refresh overrides to ensure hidden items are loaded
         await refreshOverrides();
+        // Wait a bit for the hidden items set to be updated
+        await new Promise(resolve => setTimeout(resolve, 100));
         // Reload shop items to filter out hidden item
         await loadShopItems();
         // Update state to remove the item immediately
