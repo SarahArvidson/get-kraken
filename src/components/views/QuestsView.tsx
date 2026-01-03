@@ -4,7 +4,7 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useState, useEffect, useMemo, useDeferredValue, useTransition } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { InputField } from "@ffx/sdk";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
@@ -50,27 +50,17 @@ export function QuestsView({
     [allQuestLogs]
   );
 
-  // Use transition to move expensive filtering off urgent render path
-  const [, startTransition] = useTransition();
+  // Defer filtering computation to keep input responsive while typing
   const deferredSearch = useDeferredValue(searchQuery ?? "");
-  const [filteredQuests, setFilteredQuests] = useState<Quest[]>(quests);
 
-  // Update filtered items in transition when search or items change
-  useEffect(() => {
-    startTransition(() => {
-      const q = deferredSearch.trim();
-      if (!q) {
-        setFilteredQuests(quests);
-      } else {
-        setFilteredQuests(
-          filterItems<Quest, Tag>({
-            items: quests,
-            searchQuery: q,
-            selectedTag,
-            tagLabels: TAG_LABELS,
-          })
-        );
-      }
+  const filteredQuests = useMemo(() => {
+    const q = deferredSearch.trim();
+    if (!q) return quests;
+    return filterItems<Quest, Tag>({
+      items: quests,
+      searchQuery: q,
+      selectedTag,
+      tagLabels: TAG_LABELS,
     });
   }, [quests, deferredSearch, selectedTag]);
 

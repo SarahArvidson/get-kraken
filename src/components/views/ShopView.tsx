@@ -4,7 +4,7 @@
  * Displays the shop view with search, filters, and shop item cards
  */
 
-import { useState, useEffect, useMemo, useDeferredValue, useTransition } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { InputField } from "@ffx/sdk";
 import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
@@ -63,27 +63,17 @@ export function ShopView({
     [allShopLogs]
   );
 
-  // Use transition to move expensive filtering off urgent render path
-  const [, startTransition] = useTransition();
+  // Defer filtering computation to keep input responsive while typing
   const deferredSearch = useDeferredValue(searchQuery ?? "");
-  const [filteredShopItems, setFilteredShopItems] = useState<ShopItem[]>(shopItems);
 
-  // Update filtered items in transition when search or items change
-  useEffect(() => {
-    startTransition(() => {
-      const q = deferredSearch.trim();
-      if (!q) {
-        setFilteredShopItems(shopItems);
-      } else {
-        setFilteredShopItems(
-          filterItems<ShopItem, ShopTag>({
-            items: shopItems,
-            searchQuery: q,
-            selectedTag,
-            tagLabels: SHOP_TAG_LABELS,
-          })
-        );
-      }
+  const filteredShopItems = useMemo(() => {
+    const q = deferredSearch.trim();
+    if (!q) return shopItems;
+    return filterItems<ShopItem, ShopTag>({
+      items: shopItems,
+      searchQuery: q,
+      selectedTag,
+      tagLabels: SHOP_TAG_LABELS,
     });
   }, [shopItems, deferredSearch, selectedTag]);
 
