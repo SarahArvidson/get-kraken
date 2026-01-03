@@ -118,7 +118,12 @@ export function useQuests() {
         if (createError) throw createError;
         if (data) {
           setQuests((prev) => {
-            const updated = [data, ...prev];
+            // Merge with overrides and filter hidden, just like loadQuests does
+            const merged = mergeQuestWithOverrides(data);
+            if (isQuestHidden(merged.id)) {
+              return prev; // Don't add if hidden
+            }
+            const updated = [merged, ...prev];
             // Sort alphabetically by name
             return updated.sort((a, b) => a.name.localeCompare(b.name));
           });

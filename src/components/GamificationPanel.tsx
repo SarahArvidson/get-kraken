@@ -32,6 +32,7 @@ export function GamificationPanel({
   shopItems,
   onResetProgress,
   onResetAllProgress,
+  showDollarAmounts = false,
 }: GamificationPanelProps) {
   const {
     weeklyRecap,
@@ -366,28 +367,31 @@ export function GamificationPanel({
         </h3>
         {weeklyRecap ? (
           <div className="space-y-4">
+            {/* Header row */}
+            <div className="grid grid-cols-3 gap-4 text-center font-semibold text-sm text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
+              <div>Earned</div>
+              <div>Spent</div>
+              <div>Net</div>
+            </div>
+            {/* Sand dollars row */}
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   +{weeklyRecap.earned}
                 </div>
-                <div className="text-xs text-gray-500 header-text-color">Earned (Sea $)</div>
-                {weeklyRecap.earnedDollars > 0 && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    💵 +{weeklyRecap.earnedDollars}
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 header-text-color">
+                  <img src="/sea-dollar.svg" alt="Sand Dollar" className="w-4 h-4 inline mr-1" />
+                  sand dollars
+                </div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   -{weeklyRecap.spent}
                 </div>
-                <div className="text-xs text-gray-500 header-text-color">Spent (Sea $)</div>
-                {weeklyRecap.spentDollars > 0 && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    💵 -{weeklyRecap.spentDollars}
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 header-text-color">
+                  <img src="/sea-dollar.svg" alt="Sand Dollar" className="w-4 h-4 inline mr-1" />
+                  sand dollars
+                </div>
               </div>
               <div>
                 <div
@@ -400,18 +404,41 @@ export function GamificationPanel({
                   {weeklyRecap.net >= 0 ? "+" : ""}
                   {weeklyRecap.net}
                 </div>
-                <div className="text-xs text-gray-500 header-text-color">Net (Sea $)</div>
-                {(weeklyRecap.netDollars !== 0) && (
-                  <div className={`text-sm mt-1 ${
-                    weeklyRecap.netDollars >= 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}>
-                    💵 {weeklyRecap.netDollars >= 0 ? "+" : ""}{weeklyRecap.netDollars}
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 header-text-color">
+                  <img src="/sea-dollar.svg" alt="Sand Dollar" className="w-4 h-4 inline mr-1" />
+                  sand dollars
+                </div>
               </div>
             </div>
+            {/* Dollars row - only show if showDollarAmounts is true */}
+            {showDollarAmounts && (
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                    💵 +{weeklyRecap.earnedDollars}
+                  </div>
+                  <div className="text-xs text-gray-500 header-text-color">dollars</div>
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                    💵 -{weeklyRecap.spentDollars}
+                  </div>
+                  <div className="text-xs text-gray-500 header-text-color">dollars</div>
+                </div>
+                <div>
+                  <div
+                    className={`text-xl font-bold ${
+                      weeklyRecap.netDollars >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    💵 {weeklyRecap.netDollars >= 0 ? "+" : ""}{weeklyRecap.netDollars}
+                  </div>
+                  <div className="text-xs text-gray-500 header-text-color">dollars</div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-sm text-gray-500 header-text-color text-center">

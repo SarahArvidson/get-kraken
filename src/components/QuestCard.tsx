@@ -10,7 +10,7 @@ import type { Quest } from "../types";
 import { CyclingBorder } from "./CyclingBorder";
 import { SEA_DOLLAR_ICON_PATH } from "../constants";
 import { useQuestOverrides } from "../hooks/useQuestOverrides";
-import { EditableNumericInput } from "./EditableNumericInput";
+import { UnifiedNumericInput } from "./UnifiedNumericInput";
 
 interface QuestCardProps {
   quest: Quest;
@@ -109,7 +109,7 @@ export function QuestCard({
           <div className="space-y-3 mb-4">
               <div className="flex items-center justify-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
-                <EditableNumericInput
+                <UnifiedNumericInput
                   value={effectiveReward}
                   onSave={handleRewardSave}
                   min={0}
@@ -120,12 +120,10 @@ export function QuestCard({
               {showDollarAmounts && (
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">💵</span>
-                  <EditableNumericInput
+                  <UnifiedNumericInput
                     value={Math.round(effectiveDollarAmount)}
                     onSave={handleDollarAmountSave}
                     min={0}
-                    prefix="$"
-                    showPrefix={true}
                     className="text-amber-600 dark:text-amber-400"
                     ariaLabel="Quest dollar amount"
                   />

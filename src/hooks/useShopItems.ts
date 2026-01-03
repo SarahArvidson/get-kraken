@@ -119,7 +119,12 @@ export function useShopItems() {
         if (createError) throw createError;
         if (data) {
           setShopItems((prev) => {
-            const updated = [data, ...prev];
+            // Merge with overrides and filter hidden, just like loadShopItems does
+            const merged = mergeItemWithOverrides(data);
+            if (isItemHidden(merged.id)) {
+              return prev; // Don't add if hidden
+            }
+            const updated = [merged, ...prev];
             // Sort alphabetically by name
             return updated.sort((a, b) => a.name.localeCompare(b.name));
           });

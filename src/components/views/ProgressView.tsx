@@ -17,6 +17,7 @@ interface ProgressViewProps {
   shopItems: ShopItem[];
   onResetProgress: () => Promise<void>;
   onResetAllProgress: () => Promise<void>;
+  showDollarAmounts?: boolean;
 }
 
 function ProgressView({
@@ -28,6 +29,7 @@ function ProgressView({
   shopItems,
   onResetProgress,
   onResetAllProgress,
+  showDollarAmounts = false,
 }: ProgressViewProps) {
   // Memoize expensive computations to prevent recalculation on every render
   const questNames = useMemo(
@@ -64,6 +66,7 @@ function ProgressView({
         shopItems={shopItemsData}
         onResetProgress={onResetProgress}
         onResetAllProgress={onResetAllProgress}
+        showDollarAmounts={showDollarAmounts}
       />
     </div>
   );

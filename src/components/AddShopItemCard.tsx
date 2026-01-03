@@ -12,6 +12,7 @@ import {
   SHOP_TAG_LABELS,
   SHOP_TAG_BUTTON_CLASSES,
 } from "../utils/shopTags";
+import { UnifiedNumericInput } from "./UnifiedNumericInput";
 
 interface AddShopItemCardProps {
   onCreate: (item: {
@@ -98,48 +99,24 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Sand Dollars
             </label>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setPrice(Math.max(0, price - 1))}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-              >
-                −
-              </button>
-              <span className="text-2xl font-semibold min-w-[60px] text-center">
-                {price}
-              </span>
-              <button
-                onClick={() => setPrice(price + 1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-              >
-                +
-              </button>
-            </div>
+            <UnifiedNumericInput
+              value={price}
+              onSave={async (val) => setPrice(val)}
+              min={0}
+              ariaLabel="Shop item price in sand dollars"
+            />
           </div>
 
           <div>
             <label htmlFor="add-shop-item-dollar-amount-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               💵 Dollars <span className="text-xs text-gray-500">(Optional)</span>
             </label>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setDollarAmount(Math.max(0, dollarAmount - 1))}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Decrease dollar amount"
-              >
-                −
-              </button>
-              <span id="add-shop-item-dollar-amount-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Dollar amount: ${dollarAmount}`}>
-                {dollarAmount}
-              </span>
-              <button
-                onClick={() => setDollarAmount(dollarAmount + 1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Increase dollar amount"
-              >
-                +
-              </button>
-            </div>
+            <UnifiedNumericInput
+              value={dollarAmount}
+              onSave={async (val) => setDollarAmount(val)}
+              min={0}
+              ariaLabel="Dollar amount"
+            />
           </div>
 
           {/* Tag Selection */}

@@ -1,6 +1,7 @@
 /**
  * Debounce hook for delaying function execution
  * Cancels pending calls on unmount
+ * Returns both the debounced function and a cancel function
  */
 
 import { useEffect, useRef, useCallback } from "react";
@@ -8,7 +9,7 @@ import { useEffect, useRef, useCallback } from "react";
 export function useDebounce<T extends (...args: any[]) => void>(
   callback: T,
   delay: number
-): T {
+): [T, () => void] {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callbackRef = useRef(callback);
 
@@ -26,6 +27,13 @@ export function useDebounce<T extends (...args: any[]) => void>(
     };
   }, []);
 
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
   const debouncedCallback = useCallback(
     ((...args: Parameters<T>) => {
       if (timeoutRef.current) {
@@ -33,11 +41,12 @@ export function useDebounce<T extends (...args: any[]) => void>(
       }
       timeoutRef.current = setTimeout(() => {
         callbackRef.current(...args);
+        timeoutRef.current = null;
       }, delay);
     }) as T,
     [delay]
   );
 
-  return debouncedCallback;
+  return [debouncedCallback, cancel];
 }
 

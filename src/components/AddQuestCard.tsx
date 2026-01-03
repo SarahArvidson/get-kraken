@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button, InputField, Modal } from "@ffx/sdk";
 import type { Tag } from "../types";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../utils/tags";
+import { UnifiedNumericInput } from "./UnifiedNumericInput";
 
 interface AddQuestCardProps {
   onCreate: (quest: {
@@ -94,50 +95,24 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
             <label htmlFor="add-quest-reward-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Sand Dollars
             </label>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setReward(Math.max(0, reward - 1))}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Decrease sand dollars"
-              >
-                −
-              </button>
-              <span id="add-quest-reward-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Sand dollars reward: ${reward}`}>
-                {reward}
-              </span>
-              <button
-                onClick={() => setReward(reward + 1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Increase sand dollars"
-              >
-                +
-              </button>
-            </div>
+            <UnifiedNumericInput
+              value={reward}
+              onSave={async (val) => setReward(val)}
+              min={0}
+              ariaLabel="Sand dollars reward"
+            />
           </div>
 
           <div>
             <label htmlFor="add-quest-dollar-amount-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               💵 Dollars <span className="text-xs text-gray-500">(Optional)</span>
             </label>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setDollarAmount(Math.max(0, dollarAmount - 1))}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Decrease dollar amount"
-              >
-                −
-              </button>
-              <span id="add-quest-dollar-amount-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Dollar amount: ${dollarAmount}`}>
-                {dollarAmount}
-              </span>
-              <button
-                onClick={() => setDollarAmount(dollarAmount + 1)}
-                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Increase dollar amount"
-              >
-                +
-              </button>
-            </div>
+            <UnifiedNumericInput
+              value={dollarAmount}
+              onSave={async (val) => setDollarAmount(val)}
+              min={0}
+              ariaLabel="Dollar amount"
+            />
           </div>
 
           {/* Tag Selection */}

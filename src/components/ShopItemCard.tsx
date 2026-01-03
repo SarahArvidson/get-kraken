@@ -10,7 +10,7 @@ import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
 import { SEA_DOLLAR_ICON_PATH } from "../constants";
 import { useShopItemOverrides } from "../hooks/useShopItemOverrides";
-import { EditableNumericInput } from "./EditableNumericInput";
+import { UnifiedNumericInput } from "./UnifiedNumericInput";
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -118,7 +118,7 @@ export function ShopItemCard({
           <div className="space-y-3 mb-4">
               <div className="flex items-center justify-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
-                <EditableNumericInput
+                <UnifiedNumericInput
                   value={effectivePrice}
                   onSave={handlePriceSave}
                   min={0}
@@ -129,12 +129,10 @@ export function ShopItemCard({
               {showDollarAmounts && (
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">💵</span>
-                  <EditableNumericInput
+                  <UnifiedNumericInput
                     value={Math.round(effectiveDollarAmount)}
                     onSave={handleDollarAmountSave}
                     min={0}
-                    prefix="$"
-                    showPrefix={true}
                     className="text-amber-600 dark:text-amber-400"
                     ariaLabel="Shop item dollar amount"
                   />

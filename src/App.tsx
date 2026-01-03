@@ -464,6 +464,7 @@ function App() {
             shopItems={shopItems}
             onResetProgress={handleResetProgress}
             onResetAllProgress={handleResetAllProgress}
+            showDollarAmounts={preferences.showDollarAmounts}
           />
         </div>
       </main>

@@ -34,7 +34,7 @@ export function filterItems<T extends Quest | ShopItem, U extends Tag | ShopTag>
     const query = searchQuery.toLowerCase().trim();
     filtered = filtered.filter((item) => {
       const nameMatch = item.name.toLowerCase().includes(query);
-      const tagMatch = item.tags.some((tag) => {
+      const tagMatch = item.tags && item.tags.some((tag) => {
         const tagLabel = tagLabels[tag as U];
         return tagLabel ? tagLabel.toLowerCase().includes(query) : false;
       });
