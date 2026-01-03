@@ -14,13 +14,22 @@ export const getFeatureUpdatesContent = () => (
     <p className="font-semibold text-lg">What's New:</p>
     <ul className="list-disc list-inside space-y-2 ml-2">
       <li>
-        Front-side editing: Type amounts directly on quest and shop item cards
+        Improved card fronts: you can enter dollar amounts on the front now,
+        too.
       </li>
+      <li>Use sand dollars and/or regular dollars when creating new items.</li>
+      <li>Improved mobile experience: Better layout on very small screens</li>
+      <li>The search bar was garbage. It's better now.</li>
+    </ul>
+    <p className="font-semibold text-lg">Next in Development:</p>
+    <ul className="list-disc list-inside space-y-2 ml-2">
+      <li>+ A settings tab to adjust your preferences.</li>
+      <li>+ A drop-down menu</li>
+      <li>+ The ability to save your goals and export them as a CSV file.</li>
+      <li>+ You'll be able to "Star" items.</li>
       <li>
-        Create with both currencies: Set sand dollars and dollars when creating
-        items
+        + TBD: should you be able to add friends and share goals with them?
       </li>
-      <li>Improved mobile experience: Better layout on small screens</li>
     </ul>
   </div>
 );
@@ -33,12 +42,33 @@ export const getAboutContent = () => (
       stuff done.
     </p>
     <p>
-      Complete quests to earn sand dollars, then spend them in the shop on
-      rewards you've set for yourself.
+      <ul>
+        <li>
+          Create and complete quests to earn currency that you can spend in your
+          own reward shop.
+        </li>
+        <li>
+          If a quest doesn't actually save you any money, give it value in sand
+          dollars.
+        </li>
+        <li>
+          If a quest really helps you save money, like skipping a latte, give it
+          a reasonable dollar value.
+        </li>
+        <li>
+          Later on, you can spend the money you saved on things that cost real
+          money.
+        </li>
+
+        <li>
+          If a quest really helps you save money, like skipping a latte, give it
+          a reasonable dollar value. Later on, you can spend the money you saved
+          on things that cost real money.
+        </li>
+      </ul>
     </p>
     <p className="text-sm text-gray-500 dark:text-gray-400">
-      Track your progress, set goals, and build better habits one quest at a
-      time.
+      Use it however you want to; it's yours.
     </p>
   </div>
 );

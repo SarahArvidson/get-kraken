@@ -4,10 +4,12 @@
  * Displays the shop view with search, filters, and shop item cards
  */
 
-import { useMemo } from "react";
+import { useMemo, useDeferredValue } from "react";
+import { InputField } from "@ffx/sdk";
 import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
 import { TagFilterButtons } from "../TagFilterButtons";
+import { filterItems } from "../../utils/filtering";
 import { calculateUserPurchaseCounts } from "../../utils/purchaseCount";
 import {
   SHOP_TAGS,
@@ -45,8 +47,8 @@ export function ShopView({
   walletTotal,
   walletDollarTotal = 0,
   loading,
-  searchQuery: _searchQuery,
-  onSearchChange: _onSearchChange,
+  searchQuery,
+  onSearchChange,
   selectedTag,
   onTagSelect,
   showDollarAmounts,
@@ -61,8 +63,21 @@ export function ShopView({
     [allShopLogs]
   );
 
-  // Render full shop items list unconditionally
-  const filteredShopItems = shopItems;
+  // Defer filtering computation to keep input responsive during fast typing
+  const deferredSearch = useDeferredValue(searchQuery ?? "");
+
+  // Compute filtered items as pure derived value
+  const filteredShopItems = useMemo(() => {
+    if (!deferredSearch.trim()) {
+      return shopItems;
+    }
+    return filterItems<ShopItem, ShopTag>({
+      items: shopItems,
+      searchQuery: deferredSearch,
+      selectedTag,
+      tagLabels: SHOP_TAG_LABELS,
+    });
+  }, [shopItems, deferredSearch, selectedTag]);
 
   return (
     <div>
@@ -70,6 +85,15 @@ export function ShopView({
         <h2 className="text-2xl font-bold text-gray-900 header-text-color">
           Shop
         </h2>
+        <div className="w-full sm:w-64">
+          <InputField
+            type="search"
+            placeholder="Search shop items..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <TagFilterButtons

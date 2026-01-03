@@ -4,10 +4,12 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useMemo } from "react";
+import { useMemo, useDeferredValue } from "react";
+import { InputField } from "@ffx/sdk";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
 import { TagFilterButtons } from "../TagFilterButtons";
+import { filterItems } from "../../utils/filtering";
 import { calculateUserCompletionCounts } from "../../utils/completionCount";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../../utils/tags";
 import type { Quest, QuestLog, Tag } from "../../types";
@@ -32,8 +34,8 @@ export function QuestsView({
   quests,
   allQuestLogs,
   loading,
-  searchQuery: _searchQuery,
-  onSearchChange: _onSearchChange,
+  searchQuery,
+  onSearchChange,
   selectedTag,
   onTagSelect,
   showDollarAmounts,
@@ -48,8 +50,21 @@ export function QuestsView({
     [allQuestLogs]
   );
 
-  // Render full quest list unconditionally
-  const filteredQuests = quests;
+  // Defer filtering computation to keep input responsive during fast typing
+  const deferredSearch = useDeferredValue(searchQuery ?? "");
+
+  // Compute filtered items as pure derived value
+  const filteredQuests = useMemo(() => {
+    if (!deferredSearch.trim()) {
+      return quests;
+    }
+    return filterItems<Quest, Tag>({
+      items: quests,
+      searchQuery: deferredSearch,
+      selectedTag,
+      tagLabels: TAG_LABELS,
+    });
+  }, [quests, deferredSearch, selectedTag]);
 
   return (
     <div>
@@ -57,6 +72,15 @@ export function QuestsView({
         <h2 className="text-2xl font-bold text-gray-900 header-text-color">
           Quests
         </h2>
+        <div className="w-full sm:w-64">
+          <InputField
+            type="search"
+            placeholder="Search quests..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full"
+          />
+        </div>
       </div>
 
       <TagFilterButtons
