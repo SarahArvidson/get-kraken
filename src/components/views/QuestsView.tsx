@@ -13,7 +13,6 @@ import { filterItems } from "../../utils/filtering";
 import { calculateUserCompletionCounts } from "../../utils/completionCount";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../../utils/tags";
 import type { Quest, QuestLog, Tag } from "../../types";
-import { DEFAULT_DOLLAR_AMOUNT } from "../../constants";
 
 interface QuestsViewProps {
   quests: Quest[];
@@ -102,7 +101,7 @@ export function QuestsView({
             onCreate={async (questData) => {
               await onCreateQuest({
                 ...questData,
-                dollar_amount: questData.dollar_amount,
+                dollar_amount: questData.dollar_amount ?? 0,
               });
               onShowToast("Quest created! 🎯", "success");
             }}

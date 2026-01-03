@@ -51,7 +51,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
         name: name.trim(),
         tags,
         price,
-        dollar_amount: dollarAmount > 0 ? dollarAmount : undefined,
+        dollar_amount: dollarAmount,
       });
       // Reset form
       setName("");

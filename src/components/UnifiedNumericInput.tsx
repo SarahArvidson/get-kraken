@@ -127,7 +127,7 @@ export function UnifiedNumericInput({
     if (newValue !== value) {
       // Cancel any pending debounce
       cancelDebounce();
-      // Save immediately for button clicks
+      // Save immediately for button clicks - always pass a number, never undefined
       await onSave(newValue);
       lastSavedValueRef.current = newValue;
     }

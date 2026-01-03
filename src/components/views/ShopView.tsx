@@ -17,7 +17,6 @@ import {
   SHOP_TAG_BUTTON_CLASSES,
 } from "../../utils/shopTags";
 import type { ShopItem, ShopTag, ShopLog } from "../../types";
-import { DEFAULT_DOLLAR_AMOUNT } from "../../constants";
 
 interface ShopViewProps {
   shopItems: ShopItem[];
@@ -115,7 +114,7 @@ export function ShopView({
             onCreate={async (itemData) => {
               await onCreateShopItem({
                 ...itemData,
-                dollar_amount: itemData.dollar_amount,
+                dollar_amount: itemData.dollar_amount ?? 0,
               });
               onShowToast("Shop item created! 🛍️", "success");
             }}

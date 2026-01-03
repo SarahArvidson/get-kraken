@@ -47,7 +47,7 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
         name: name.trim(),
         tags,
         reward,
-        dollar_amount: dollarAmount > 0 ? dollarAmount : undefined,
+        dollar_amount: dollarAmount,
       });
       // Reset form
       setName("");

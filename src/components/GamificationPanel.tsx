@@ -16,10 +16,11 @@ interface GamificationPanelProps {
   questLogs: QuestLog[];
   shopLogs: ShopLog[];
   questNames: Map<string, string>;
-  quests: Array<{ id: string; reward: number }>;
-  shopItems: Array<{ id: string; price: number }>;
+  quests: Array<{ id: string; reward: number; dollar_amount?: number }>;
+  shopItems: Array<{ id: string; price: number; dollar_amount?: number }>;
   onResetProgress?: () => void;
   onResetAllProgress?: () => void;
+  showDollarAmounts?: boolean;
 }
 
 export function GamificationPanel({
