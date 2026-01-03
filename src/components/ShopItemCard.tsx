@@ -71,53 +71,67 @@ export function ShopItemCard({
     }
   };
 
-  const handlePriceSave = async (newPrice: number) => {
-    if (newPrice !== effectivePrice) {
-      // If override exists, updateOverride will UPDATE (safe to call multiple times)
-      if (priceOverrideExists) {
-        await updateOverride(item.id, { price: newPrice });
-      } else {
-        // No override exists - serialize CREATE operations to prevent 409 conflicts
-        if (priceCreateLockRef.current) {
-          // Wait for pending CREATE to complete
-          await priceCreateLockRef.current;
-        }
-        // Initiate CREATE and store promise
-        const createPromise = updateOverride(item.id, { price: newPrice });
-        priceCreateLockRef.current = createPromise;
-        try {
-          await createPromise;
-        } finally {
-          // Clear lock after completion (override now exists, future calls will UPDATE)
-          priceCreateLockRef.current = null;
-        }
-      }
+  // Separate handlers for create vs update to prevent 409 conflicts
+  const onCreatePriceOverride = async (newPrice: number) => {
+    // Serialize CREATE operations to prevent 409 conflicts
+    if (priceCreateLockRef.current) {
+      await priceCreateLockRef.current;
     }
+    const createPromise = updateOverride(item.id, { price: newPrice });
+    priceCreateLockRef.current = createPromise;
+    try {
+      await createPromise;
+    } finally {
+      priceCreateLockRef.current = null;
+    }
+  };
+
+  const onUpdatePriceOverride = async (newPrice: number) => {
+    // Override exists, safe to UPDATE multiple times
+    await updateOverride(item.id, { price: newPrice });
+  };
+
+  const handlePriceSave = async (newPrice: number) => {
+    if (newPrice === effectivePrice) return;
+    // Choose handler based on override existence
+    if (priceOverrideExists) {
+      await onUpdatePriceOverride(newPrice);
+    } else {
+      await onCreatePriceOverride(newPrice);
+    }
+  };
+
+  // Separate handlers for create vs update to prevent 409 conflicts
+  const onCreateDollarAmountOverride = async (newDollarAmount: number) => {
+    const roundedAmount = Math.round(newDollarAmount);
+    // Serialize CREATE operations to prevent 409 conflicts
+    if (dollarAmountCreateLockRef.current) {
+      await dollarAmountCreateLockRef.current;
+    }
+    const createPromise = updateOverride(item.id, { dollar_amount: roundedAmount });
+    dollarAmountCreateLockRef.current = createPromise;
+    try {
+      await createPromise;
+    } finally {
+      dollarAmountCreateLockRef.current = null;
+    }
+  };
+
+  const onUpdateDollarAmountOverride = async (newDollarAmount: number) => {
+    const roundedAmount = Math.round(newDollarAmount);
+    // Override exists, safe to UPDATE multiple times
+    await updateOverride(item.id, { dollar_amount: roundedAmount });
   };
 
   const handleDollarAmountSave = async (newDollarAmount: number) => {
     if (!showDollarAmounts) return;
     const roundedAmount = Math.round(newDollarAmount);
-    if (roundedAmount !== Math.round(effectiveDollarAmount)) {
-      // If override exists, updateOverride will UPDATE (safe to call multiple times)
-      if (dollarAmountOverrideExists) {
-        await updateOverride(item.id, { dollar_amount: roundedAmount });
-      } else {
-        // No override exists - serialize CREATE operations to prevent 409 conflicts
-        if (dollarAmountCreateLockRef.current) {
-          // Wait for pending CREATE to complete
-          await dollarAmountCreateLockRef.current;
-        }
-        // Initiate CREATE and store promise
-        const createPromise = updateOverride(item.id, { dollar_amount: roundedAmount });
-        dollarAmountCreateLockRef.current = createPromise;
-        try {
-          await createPromise;
-        } finally {
-          // Clear lock after completion (override now exists, future calls will UPDATE)
-          dollarAmountCreateLockRef.current = null;
-        }
-      }
+    if (roundedAmount === Math.round(effectiveDollarAmount)) return;
+    // Choose handler based on override existence
+    if (dollarAmountOverrideExists) {
+      await onUpdateDollarAmountOverride(newDollarAmount);
+    } else {
+      await onCreateDollarAmountOverride(newDollarAmount);
     }
   };
 
