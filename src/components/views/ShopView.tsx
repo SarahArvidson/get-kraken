@@ -4,7 +4,7 @@
  * Displays the shop view with search, filters, and shop item cards
  */
 
-import { useMemo } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { InputField } from "@ffx/sdk";
 import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
@@ -63,15 +63,19 @@ export function ShopView({
     [allShopLogs]
   );
 
+  // Defer filtering computation to keep input responsive while typing
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredSelectedTag = useDeferredValue(selectedTag);
+
   const filteredShopItems = useMemo(
     () =>
       filterItems<ShopItem, ShopTag>({
         items: shopItems,
-        searchQuery,
-        selectedTag,
+        searchQuery: deferredSearchQuery,
+        selectedTag: deferredSelectedTag,
         tagLabels: SHOP_TAG_LABELS,
       }),
-    [shopItems, searchQuery, selectedTag]
+    [shopItems, deferredSearchQuery, deferredSelectedTag]
   );
 
   return (

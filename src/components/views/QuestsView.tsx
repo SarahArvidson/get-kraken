@@ -4,7 +4,7 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useMemo } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { InputField } from "@ffx/sdk";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
@@ -50,15 +50,19 @@ export function QuestsView({
     [allQuestLogs]
   );
 
+  // Defer filtering computation to keep input responsive while typing
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredSelectedTag = useDeferredValue(selectedTag);
+
   const filteredQuests = useMemo(
     () =>
       filterItems<Quest, Tag>({
         items: quests,
-        searchQuery,
-        selectedTag,
+        searchQuery: deferredSearchQuery,
+        selectedTag: deferredSelectedTag,
         tagLabels: TAG_LABELS,
       }),
-    [quests, searchQuery, selectedTag]
+    [quests, deferredSearchQuery, deferredSelectedTag]
   );
 
   return (

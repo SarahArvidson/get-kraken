@@ -110,12 +110,8 @@ body::before {
   color: oklch(0.79 0.11 264.93) !important;
 }
 
-/* iPhone 12 Mini specific optimizations */
-/* 1080×2340 pixels at 476ppi - 375×812 CSS pixels */
-/* Also targets iPhone X, Xs, 11 Pro, 13 Mini (same dimensions) */
-@media only screen 
-    and (width: 375px) 
-    and (-webkit-device-pixel-ratio: 3) {
+/* Very small screens (max-width 375px) - iPhone SE, older small phones, etc. */
+@media only screen and (max-width: 375px) {
   
   /* Ensure adequate padding for small screen */
   body {
@@ -128,27 +124,38 @@ body::before {
     padding-right: 1rem;
   }
   
-  /* Optimize header for iPhone 12 mini - reduce height to ~45-50% */
+  /* Optimize header for very small screens - reduce height to ~45-50% */
   header {
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }
-  
+
   header .max-w-7xl {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
   }
-  
+
   /* Reduce header logo size on very small screens */
   header img[alt="Kraken"] {
-    height: 2.5rem !important;
+    height: 2rem !important;
+    width: auto !important;
   }
-  
+
+  /* Mobile header specific adjustments */
+  header .sm\\:hidden img[alt="Kraken"] {
+    height: 2rem !important;
+  }
+
   header h1 {
-    font-size: 1.25rem !important;
-    line-height: 1.2 !important;
+    font-size: 1rem !important;
+    line-height: 1.1 !important;
   }
-  
+
+  header .sm\\:hidden h1 {
+    font-size: 1rem !important;
+    line-height: 1.1 !important;
+  }
+
   header p {
     font-size: 0.625rem !important;
   }
@@ -232,16 +239,47 @@ body::before {
     padding: 0.75rem 1rem;
   }
   
-  /* Ensure buttons in cards are properly sized */
+  /* Ensure buttons in cards are properly sized and can wrap */
   .card button,
   [class*="Card"] button:not([class*="w-"]):not([class*="h-"]) {
     min-height: 44px;
-    padding: 0.625rem 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  /* Allow card action buttons to wrap on very small screens */
+  [class*="Card"] .flex.gap-2 {
+    flex-wrap: wrap;
+  }
+
+  [class*="Card"] .flex.gap-2 > button {
+    flex: 1 1 auto;
+    min-width: calc(33.333% - 0.5rem);
   }
   
-  /* Optimize wallet display */
+  /* Optimize wallet display - ensure content fits */
   [class*="Wallet"] {
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+
+  [class*="Wallet"] .text-6xl {
+    font-size: 2.5rem !important;
+    line-height: 1;
+  }
+
+  [class*="Wallet"] .text-4xl {
+    font-size: 1.5rem !important;
+  }
+
+  [class*="Wallet"] .w-12 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  /* Allow treasure chest content to wrap if needed */
+  [class*="Wallet"] .flex.items-center {
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   /* Ensure search inputs are accessible */
