@@ -8,8 +8,9 @@ import { useState, useMemo } from "react";
 import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
-import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
+import { SEA_DOLLAR_ICON_PATH } from "../constants";
 import { useShopItemOverrides } from "../hooks/useShopItemOverrides";
+import { EditableNumericInput } from "./EditableNumericInput";
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -62,22 +63,21 @@ export function ShopItemCard({
     }
   };
 
-  const handlePriceChange = async (delta: number) => {
-    const newPrice = Math.max(0, effectivePrice + delta * DEFAULT_REWARD_INCREMENT);
+  const handlePriceSave = async (newPrice: number) => {
     if (newPrice !== effectivePrice) {
       await updateOverride(item.id, { price: newPrice });
     }
   };
 
-  const handleDollarAmountChange = async (delta: number) => {
+  const handleDollarAmountSave = async (newDollarAmount: number) => {
     if (!showDollarAmounts) return;
-    const newDollarAmount = Math.max(0, Math.round(effectiveDollarAmount + delta * DEFAULT_DOLLAR_INCREMENT));
-    if (newDollarAmount !== Math.round(effectiveDollarAmount)) {
-      await updateOverride(item.id, { dollar_amount: newDollarAmount });
+    const roundedAmount = Math.round(newDollarAmount);
+    if (roundedAmount !== Math.round(effectiveDollarAmount)) {
+      await updateOverride(item.id, { dollar_amount: roundedAmount });
     }
   };
 
-  // Check if user can afford both sea dollars and dollars (if dollar amounts are enabled)
+  // Check if user can afford both sand dollars and dollars (if dollar amounts are enabled)
   const canAffordSeaDollars = walletTotal >= effectivePrice;
   const canAffordDollars = !showDollarAmounts || effectiveDollarAmount === 0 || (walletDollarTotal >= Math.round(effectiveDollarAmount));
   const canAfford = canAffordSeaDollars && canAffordDollars;
@@ -116,46 +116,28 @@ export function ShopItemCard({
 
           {/* Price Controls - All users can edit (changes are per-user) */}
           <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
-                <button
-                  onClick={() => handlePriceChange(-1)}
-                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Decrease price"
-                >
-                  −
-                </button>
-                <span className="text-lg font-semibold min-w-[60px] text-center">
-                  {effectivePrice}
-                </span>
-                <button
-                  onClick={() => handlePriceChange(1)}
-                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Increase price"
-                >
-                  +
-                </button>
+                <EditableNumericInput
+                  value={effectivePrice}
+                  onSave={handlePriceSave}
+                  min={0}
+                  className="text-amber-600 dark:text-amber-400"
+                  ariaLabel="Shop item price in sand dollars"
+                />
               </div>
               {showDollarAmounts && (
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">💵</span>
-                  <button
-                    onClick={() => handleDollarAmountChange(-1)}
-                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                    aria-label="Decrease dollar amount"
-                  >
-                    −
-                  </button>
-                  <span className="text-lg font-semibold min-w-[80px] text-center">
-                    ${Math.round(effectiveDollarAmount)}
-                  </span>
-                  <button
-                    onClick={() => handleDollarAmountChange(1)}
-                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                    aria-label="Increase dollar amount"
-                  >
-                    +
-                  </button>
+                  <EditableNumericInput
+                    value={Math.round(effectiveDollarAmount)}
+                    onSave={handleDollarAmountSave}
+                    min={0}
+                    prefix="$"
+                    showPrefix={true}
+                    className="text-amber-600 dark:text-amber-400"
+                    ariaLabel="Shop item dollar amount"
+                  />
                 </div>
               )}
           </div>
@@ -173,7 +155,7 @@ export function ShopItemCard({
               {canAfford || walletTotal < 0
                 ? "Purchase"
                 : !canAffordSeaDollars
-                ? `Need ${effectivePrice - walletTotal} more sea dollars`
+                ? `Need ${effectivePrice - walletTotal} more sand dollars`
                 : !canAffordDollars
                 ? `Need ${Math.round(effectiveDollarAmount) - Math.round(walletDollarTotal)} more dollars`
                 : "Cannot afford"}

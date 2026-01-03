@@ -18,6 +18,7 @@ interface AddShopItemCardProps {
     name: string;
     tags: ShopTag[];
     price: number;
+    dollar_amount?: number;
   }) => Promise<void>;
 }
 
@@ -25,6 +26,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(20);
+  const [dollarAmount, setDollarAmount] = useState(0);
   const [tags, setTags] = useState<ShopTag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -48,10 +50,12 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
         name: name.trim(),
         tags,
         price,
+        dollar_amount: dollarAmount > 0 ? dollarAmount : undefined,
       });
       // Reset form
       setName("");
       setPrice(20);
+      setDollarAmount(0);
       setTags([]);
       setIsOpen(false);
     } catch (err: any) {
@@ -92,7 +96,7 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Sea Dollars
+              Sand Dollars
             </label>
             <div className="flex items-center gap-4">
               <button
@@ -107,6 +111,31 @@ export function AddShopItemCard({ onCreate }: AddShopItemCardProps) {
               <button
                 onClick={() => setPrice(price + 1)}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="add-shop-item-dollar-amount-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              💵 Dollars <span className="text-xs text-gray-500">(Optional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setDollarAmount(Math.max(0, dollarAmount - 1))}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Decrease dollar amount"
+              >
+                −
+              </button>
+              <span id="add-shop-item-dollar-amount-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Dollar amount: ${dollarAmount}`}>
+                {dollarAmount}
+              </span>
+              <button
+                onClick={() => setDollarAmount(dollarAmount + 1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Increase dollar amount"
               >
                 +
               </button>

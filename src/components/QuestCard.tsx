@@ -8,8 +8,9 @@ import { useState, useMemo } from "react";
 import { Button } from "@ffx/sdk";
 import type { Quest } from "../types";
 import { CyclingBorder } from "./CyclingBorder";
-import { SEA_DOLLAR_ICON_PATH, DEFAULT_REWARD_INCREMENT, DEFAULT_DOLLAR_INCREMENT } from "../constants";
+import { SEA_DOLLAR_ICON_PATH } from "../constants";
 import { useQuestOverrides } from "../hooks/useQuestOverrides";
+import { EditableNumericInput } from "./EditableNumericInput";
 
 interface QuestCardProps {
   quest: Quest;
@@ -58,18 +59,17 @@ export function QuestCard({
     }
   };
 
-  const handleRewardChange = async (delta: number) => {
-    const newReward = Math.max(0, effectiveReward + delta * DEFAULT_REWARD_INCREMENT);
+  const handleRewardSave = async (newReward: number) => {
     if (newReward !== effectiveReward) {
       await updateOverride(quest.id, { reward: newReward });
     }
   };
 
-  const handleDollarAmountChange = async (delta: number) => {
+  const handleDollarAmountSave = async (newDollarAmount: number) => {
     if (!showDollarAmounts) return;
-    const newDollarAmount = Math.max(0, Math.round(effectiveDollarAmount + delta * DEFAULT_DOLLAR_INCREMENT));
-    if (newDollarAmount !== Math.round(effectiveDollarAmount)) {
-      await updateOverride(quest.id, { dollar_amount: newDollarAmount });
+    const roundedAmount = Math.round(newDollarAmount);
+    if (roundedAmount !== Math.round(effectiveDollarAmount)) {
+      await updateOverride(quest.id, { dollar_amount: roundedAmount });
     }
   };
 
@@ -107,46 +107,28 @@ export function QuestCard({
 
           {/* Reward Controls - All users can edit (changes are per-user) */}
           <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-2">
                 <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-5 h-5" />
-                <button
-                  onClick={() => handleRewardChange(-1)}
-                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Decrease reward"
-                >
-                  −
-                </button>
-                <span className="text-lg font-semibold min-w-[60px] text-center">
-                  {effectiveReward}
-                </span>
-                <button
-                  onClick={() => handleRewardChange(1)}
-                  className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                  aria-label="Increase reward"
-                >
-                  +
-                </button>
+                <EditableNumericInput
+                  value={effectiveReward}
+                  onSave={handleRewardSave}
+                  min={0}
+                  className="text-amber-600 dark:text-amber-400"
+                  ariaLabel="Quest reward in sand dollars"
+                />
               </div>
               {showDollarAmounts && (
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">💵</span>
-                  <button
-                    onClick={() => handleDollarAmountChange(-1)}
-                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                    aria-label="Decrease dollar amount"
-                  >
-                    −
-                  </button>
-                  <span className="text-lg font-semibold min-w-[80px] text-center">
-                    ${Math.round(effectiveDollarAmount)}
-                  </span>
-                  <button
-                    onClick={() => handleDollarAmountChange(1)}
-                    className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
-                    aria-label="Increase dollar amount"
-                  >
-                    +
-                  </button>
+                  <EditableNumericInput
+                    value={Math.round(effectiveDollarAmount)}
+                    onSave={handleDollarAmountSave}
+                    min={0}
+                    prefix="$"
+                    showPrefix={true}
+                    className="text-amber-600 dark:text-amber-400"
+                    ariaLabel="Quest dollar amount"
+                  />
                 </div>
               )}
           </div>

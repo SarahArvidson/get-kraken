@@ -33,7 +33,10 @@ import {
   LOG_REFRESH_INTERVAL_MS,
   TOAST_DURATION_MS,
   CURRENCY_NAME,
+  FEATURE_UPDATES_VERSION,
 } from "./constants";
+import { getFeatureUpdatesContent, getAboutContent } from "./constants/popupContent";
+import { PopupModal } from "./components/PopupModal";
 import { supabase } from "./lib/supabase";
 
 type View = "quests" | "shop" | "progress";
@@ -66,6 +69,8 @@ function App() {
   } | null>(null);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
   const [editingShopItem, setEditingShopItem] = useState<ShopItem | null>(null);
+  const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const {
     wallet,
@@ -145,6 +150,27 @@ function App() {
     };
   }, []);
 
+  // Feature Updates popup - show once per content version
+  useEffect(() => {
+    // Check localStorage for seen version
+    const seenVersion = localStorage.getItem("get-kraken-feature-updates-seen");
+    
+    // Show popup if version changed or never seen (non-blocking, after initial render)
+    if (seenVersion !== FEATURE_UPDATES_VERSION) {
+      // Small delay to ensure base UI is rendered first (progressive rendering)
+      const timer = setTimeout(() => {
+        setShowFeatureUpdates(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleFeatureUpdatesClose = () => {
+    setShowFeatureUpdates(false);
+    // Mark this version as seen
+    localStorage.setItem("get-kraken-feature-updates-seen", FEATURE_UPDATES_VERSION);
+  };
+
   const handleCompleteQuest = useCallback(async (questId: string, _reward: number) => {
     try {
       const quest = quests.find((q) => q.id === questId);
@@ -185,12 +211,12 @@ function App() {
         item.dollar_amount || 0
       );
 
-      // Validate purchase: check both sea dollars and dollars (if dollar amounts are enabled)
+      // Validate purchase: check both sand dollars and dollars (if dollar amounts are enabled)
       const walletTotal = wallet?.total ?? 0;
       const walletDollarTotal = wallet?.dollar_total ?? 0;
       
       if (walletTotal < effectivePrice) {
-        throw new Error(`Not enough sea dollars. Need ${effectivePrice - walletTotal} more.`);
+        throw new Error(`Not enough sand dollars. Need ${effectivePrice - walletTotal} more.`);
       }
 
       if (preferences.showDollarAmounts && effectiveDollarAmount > 0) {
@@ -507,7 +533,25 @@ function App() {
         />
       )}
 
-      <Footer />
+      <Footer onAboutClick={() => setShowAbout(true)} />
+
+      {/* Feature Updates Popup - shows once per content version */}
+      <PopupModal
+        isOpen={showFeatureUpdates}
+        onClose={handleFeatureUpdatesClose}
+        title="What's New"
+      >
+        {getFeatureUpdatesContent()}
+      </PopupModal>
+
+      {/* About Popup */}
+      <PopupModal
+        isOpen={showAbout}
+        onClose={() => setShowAbout(false)}
+        title="About Get Kraken"
+      >
+        {getAboutContent()}
+      </PopupModal>
     </div>
   );
 }

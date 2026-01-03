@@ -163,7 +163,7 @@ export function GamificationPanel({
                     <div className="mb-2">
                       <div className="flex justify-between text-sm text-blue-100 mb-1">
                         <span>
-                          {walletTotal} / {goal.target_amount} sea dollars
+                          {walletTotal} / {goal.target_amount} sand dollars
                           {goal.dollar_amount && (
                             <span className="ml-2">
                               | 💵 {walletDollarTotal} / {goal.dollar_amount}
@@ -181,7 +181,7 @@ export function GamificationPanel({
                     </div>
                     <p className="text-sm text-blue-100">
                       {remaining > 0 || dollarRemaining > 0
-                        ? `${remaining > 0 ? `${remaining} more sea dollars` : ''}${remaining > 0 && dollarRemaining > 0 ? ' and ' : ''}${dollarRemaining > 0 ? `💵 ${dollarRemaining} more dollars` : ''} to go!`
+                        ? `${remaining > 0 ? `${remaining} more sand dollars` : ''}${remaining > 0 && dollarRemaining > 0 ? ' and ' : ''}${dollarRemaining > 0 ? `💵 ${dollarRemaining} more dollars` : ''} to go!`
                         : "Goal reached! 🎉"}
                     </p>
                   </div>
@@ -213,7 +213,7 @@ export function GamificationPanel({
 
           <div>
             <label htmlFor="goal-amount-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Target Amount (Sea Dollars)
+              Target Amount (Sand Dollars)
             </label>
             <div className="flex items-center gap-4">
               <button
@@ -233,7 +233,7 @@ export function GamificationPanel({
                 }}
                 className="w-32 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2"
                 min="0"
-                aria-label="Goal target amount in sea dollars"
+                aria-label="Goal target amount in sand dollars"
               />
               <button
                 onClick={() => setGoalAmount(goalAmount + 10)}
@@ -307,7 +307,7 @@ export function GamificationPanel({
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg text-center">
           <div className="text-5xl mb-2">🏆</div>
           <h3 className="text-xl font-bold text-white mb-1">
-            {currentMilestone} Sea Dollars Milestone!
+            {currentMilestone} Sand Dollars Milestone!
           </h3>
           <p className="text-sm text-amber-100">Keep it up! 🎉</p>
         </div>

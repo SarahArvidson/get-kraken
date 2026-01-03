@@ -14,6 +14,7 @@ interface AddQuestCardProps {
     name: string;
     tags: Tag[];
     reward: number;
+    dollar_amount?: number;
   }) => Promise<void>;
 }
 
@@ -21,6 +22,7 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
   const [reward, setReward] = useState(10);
+  const [dollarAmount, setDollarAmount] = useState(0);
   const [tags, setTags] = useState<Tag[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -44,10 +46,12 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
         name: name.trim(),
         tags,
         reward,
+        dollar_amount: dollarAmount > 0 ? dollarAmount : undefined,
       });
       // Reset form
       setName("");
       setReward(10);
+      setDollarAmount(0);
       setTags([]);
       setIsOpen(false);
     } catch (err: any) {
@@ -88,23 +92,48 @@ export function AddQuestCard({ onCreate }: AddQuestCardProps) {
 
           <div>
             <label htmlFor="add-quest-reward-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Sea Dollars
+              Sand Dollars
             </label>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setReward(Math.max(0, reward - 1))}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Decrease sea dollars"
+                aria-label="Decrease sand dollars"
               >
                 −
               </button>
-              <span id="add-quest-reward-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Sea dollars reward: ${reward}`}>
+              <span id="add-quest-reward-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Sand dollars reward: ${reward}`}>
                 {reward}
               </span>
               <button
                 onClick={() => setReward(reward + 1)}
                 className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
-                aria-label="Increase sea dollars"
+                aria-label="Increase sand dollars"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="add-quest-dollar-amount-display" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              💵 Dollars <span className="text-xs text-gray-500">(Optional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setDollarAmount(Math.max(0, dollarAmount - 1))}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Decrease dollar amount"
+              >
+                −
+              </button>
+              <span id="add-quest-dollar-amount-display" className="text-2xl font-semibold min-w-[60px] text-center" aria-label={`Dollar amount: ${dollarAmount}`}>
+                {dollarAmount}
+              </span>
+              <button
+                onClick={() => setDollarAmount(dollarAmount + 1)}
+                className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-xl font-bold"
+                aria-label="Increase dollar amount"
               >
                 +
               </button>

@@ -1,12 +1,16 @@
 /**
  * Get Kraken - Footer Component
  *
- * Displays footer with links
+ * Displays footer with links and About button
  */
 
 import { FOOTER_LINKS } from "../constants";
 
-export function Footer() {
+interface FooterProps {
+  onAboutClick: () => void;
+}
+
+export function Footer({ onAboutClick }: FooterProps) {
   return (
     <footer className="mt-12 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
       <p>
@@ -37,6 +41,13 @@ export function Footer() {
         >
           Venmo
         </a>
+        {" · "}
+        <button
+          onClick={onAboutClick}
+          className="underline hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          About
+        </button>
       </p>
     </footer>
   );

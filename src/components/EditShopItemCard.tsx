@@ -112,7 +112,7 @@ export function EditShopItemCard({
           {/* Price */}
           <div>
             <label htmlFor="shop-item-price-input" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-              Sea Dollars
+              Sand Dollars
             </label>
             <div className="flex items-center gap-2">
               <button
@@ -132,7 +132,7 @@ export function EditShopItemCard({
                 }}
                 className="w-20 text-center text-xl font-semibold border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1"
                 min="0"
-                aria-label="Shop item price in sea dollars"
+                aria-label="Shop item price in sand dollars"
               />
               <button
                 onClick={() => setPrice(price + 1)}

@@ -102,7 +102,7 @@ export function QuestsView({
             onCreate={async (questData) => {
               await onCreateQuest({
                 ...questData,
-                dollar_amount: DEFAULT_DOLLAR_AMOUNT,
+                dollar_amount: questData.dollar_amount || DEFAULT_DOLLAR_AMOUNT,
               });
               onShowToast("Quest created! 🎯", "success");
             }}

@@ -31,11 +31,16 @@ export const FOOTER_LINKS = {
 } as const;
 
 // Currency
-export const CURRENCY_NAME = "sea dollars";
+export const CURRENCY_NAME = "sand dollars";
 export const CURRENCY_SYMBOL = "💵";
 
 // Default Values
 export const DEFAULT_DOLLAR_AMOUNT = 0;
 export const DEFAULT_REWARD_INCREMENT = 1;
 export const DEFAULT_DOLLAR_INCREMENT = 1;
+
+// Popup Content
+// TO EDIT FEATURE UPDATES: Change FEATURE_UPDATES_VERSION below
+// TO EDIT FEATURE UPDATES CONTENT: Edit getFeatureUpdatesContent() in src/constants/popupContent.tsx
+export const FEATURE_UPDATES_VERSION = "1.0.0";
 

@@ -115,7 +115,7 @@ export function ShopView({
             onCreate={async (itemData) => {
               await onCreateShopItem({
                 ...itemData,
-                dollar_amount: DEFAULT_DOLLAR_AMOUNT,
+                dollar_amount: itemData.dollar_amount || DEFAULT_DOLLAR_AMOUNT,
               });
               onShowToast("Shop item created! 🛍️", "success");
             }}
