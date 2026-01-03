@@ -4,7 +4,7 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue, useEffect } from "react";
 import { InputField } from "@ffx/sdk";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
@@ -45,25 +45,38 @@ export function QuestsView({
   onEdit,
   onShowToast,
 }: QuestsViewProps) {
+  // Local search state for instant input updates
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  
+  // Sync local state with prop when it changes externally (e.g., navigation)
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  // Defer filtering computation to keep input responsive while typing
+  const deferredSearch = useDeferredValue(searchInput);
+
+  // Sync to parent state (non-blocking, for persistence/other purposes)
+  useEffect(() => {
+    onSearchChange(searchInput);
+  }, [searchInput, onSearchChange]);
+
   const userCompletionCounts = useMemo(
     () => calculateUserCompletionCounts(allQuestLogs),
     [allQuestLogs]
   );
 
-  // Defer filtering computation to keep input responsive while typing
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-  const deferredSelectedTag = useDeferredValue(selectedTag);
-
-  const filteredQuests = useMemo(
-    () =>
-      filterItems<Quest, Tag>({
-        items: quests,
-        searchQuery: deferredSearchQuery,
-        selectedTag: deferredSelectedTag,
-        tagLabels: TAG_LABELS,
-      }),
-    [quests, deferredSearchQuery, deferredSelectedTag]
-  );
+  const filteredQuests = useMemo(() => {
+    if (!deferredSearch.trim()) {
+      return quests;
+    }
+    return filterItems<Quest, Tag>({
+      items: quests,
+      searchQuery: deferredSearch,
+      selectedTag,
+      tagLabels: TAG_LABELS,
+    });
+  }, [quests, deferredSearch, selectedTag]);
 
   return (
     <div>
@@ -75,8 +88,8 @@ export function QuestsView({
           <InputField
             type="search"
             placeholder="Search quests..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full"
           />
         </div>
@@ -91,9 +104,9 @@ export function QuestsView({
       />
 
       {/* Render quests immediately when available - don't block on loading state */}
-      {filteredQuests.length === 0 && !loading && searchQuery ? (
+      {filteredQuests.length === 0 && !loading && deferredSearch ? (
         <div className="text-center py-12 text-gray-500 dark:text-gray-300">
-          No quests found matching "{searchQuery}"
+          No quests found matching "{deferredSearch}"
         </div>
       ) : filteredQuests.length === 0 && loading ? (
         <div className="text-center py-12 text-gray-500">

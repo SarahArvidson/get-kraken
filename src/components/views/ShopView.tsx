@@ -4,7 +4,7 @@
  * Displays the shop view with search, filters, and shop item cards
  */
 
-import { useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue, useEffect } from "react";
 import { InputField } from "@ffx/sdk";
 import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
@@ -58,25 +58,38 @@ export function ShopView({
   onEdit,
   onShowToast,
 }: ShopViewProps) {
+  // Local search state for instant input updates
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  
+  // Sync local state with prop when it changes externally (e.g., navigation)
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  // Defer filtering computation to keep input responsive while typing
+  const deferredSearch = useDeferredValue(searchInput);
+
+  // Sync to parent state (non-blocking, for persistence/other purposes)
+  useEffect(() => {
+    onSearchChange(searchInput);
+  }, [searchInput, onSearchChange]);
+
   const userPurchaseCounts = useMemo(
     () => calculateUserPurchaseCounts(allShopLogs),
     [allShopLogs]
   );
 
-  // Defer filtering computation to keep input responsive while typing
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-  const deferredSelectedTag = useDeferredValue(selectedTag);
-
-  const filteredShopItems = useMemo(
-    () =>
-      filterItems<ShopItem, ShopTag>({
-        items: shopItems,
-        searchQuery: deferredSearchQuery,
-        selectedTag: deferredSelectedTag,
-        tagLabels: SHOP_TAG_LABELS,
-      }),
-    [shopItems, deferredSearchQuery, deferredSelectedTag]
-  );
+  const filteredShopItems = useMemo(() => {
+    if (!deferredSearch.trim()) {
+      return shopItems;
+    }
+    return filterItems<ShopItem, ShopTag>({
+      items: shopItems,
+      searchQuery: deferredSearch,
+      selectedTag,
+      tagLabels: SHOP_TAG_LABELS,
+    });
+  }, [shopItems, deferredSearch, selectedTag]);
 
   return (
     <div>
@@ -88,8 +101,8 @@ export function ShopView({
           <InputField
             type="search"
             placeholder="Search shop items..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="w-full"
           />
         </div>
@@ -104,9 +117,9 @@ export function ShopView({
       />
 
       {/* Render shop items immediately when available - don't block on loading state */}
-      {filteredShopItems.length === 0 && !loading && searchQuery ? (
+      {filteredShopItems.length === 0 && !loading && deferredSearch ? (
         <div className="text-center py-12 text-gray-500 dark:header-text-color">
-          No items found matching "{searchQuery}"
+          No items found matching "{deferredSearch}"
         </div>
       ) : filteredShopItems.length === 0 && loading ? (
         <div className="text-center py-12 text-gray-500 dark:header-text-color">
