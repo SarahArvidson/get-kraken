@@ -4,12 +4,10 @@
  * Displays the shop view with search, filters, and shop item cards
  */
 
-import { useMemo, useDeferredValue } from "react";
-import { InputField } from "@ffx/sdk";
+import { useMemo } from "react";
 import { ShopItemCard } from "../ShopItemCard";
 import { AddShopItemCard } from "../AddShopItemCard";
 import { TagFilterButtons } from "../TagFilterButtons";
-import { filterItems } from "../../utils/filtering";
 import { calculateUserPurchaseCounts } from "../../utils/purchaseCount";
 import {
   SHOP_TAGS,
@@ -47,8 +45,8 @@ export function ShopView({
   walletTotal,
   walletDollarTotal = 0,
   loading,
-  searchQuery,
-  onSearchChange,
+  searchQuery: _searchQuery,
+  onSearchChange: _onSearchChange,
   selectedTag,
   onTagSelect,
   showDollarAmounts,
@@ -63,19 +61,8 @@ export function ShopView({
     [allShopLogs]
   );
 
-  // Defer filtering computation to keep input responsive while typing
-  const deferredSearch = useDeferredValue(searchQuery ?? "");
-
-  const filteredShopItems = useMemo(() => {
-    const q = deferredSearch.trim();
-    if (!q) return shopItems;
-    return filterItems<ShopItem, ShopTag>({
-      items: shopItems,
-      searchQuery: q,
-      selectedTag,
-      tagLabels: SHOP_TAG_LABELS,
-    });
-  }, [shopItems, deferredSearch, selectedTag]);
+  // Render full shop items list unconditionally
+  const filteredShopItems = shopItems;
 
   return (
     <div>
@@ -83,15 +70,6 @@ export function ShopView({
         <h2 className="text-2xl font-bold text-gray-900 header-text-color">
           Shop
         </h2>
-        <div className="w-full sm:w-64">
-          <InputField
-            type="search"
-            placeholder="Search shop items..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full"
-          />
-        </div>
       </div>
 
       <TagFilterButtons
@@ -103,11 +81,7 @@ export function ShopView({
       />
 
       {/* Render shop items immediately when available - don't block on loading state */}
-      {filteredShopItems.length === 0 && !loading && deferredSearch ? (
-        <div className="text-center py-12 text-gray-500 dark:header-text-color">
-          No items found matching "{deferredSearch}"
-        </div>
-      ) : filteredShopItems.length === 0 && loading ? (
+      {filteredShopItems.length === 0 && loading ? (
         <div className="text-center py-12 text-gray-500 dark:header-text-color">
           Loading shop items...
         </div>

@@ -4,12 +4,10 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useMemo, useDeferredValue } from "react";
-import { InputField } from "@ffx/sdk";
+import { useMemo } from "react";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
 import { TagFilterButtons } from "../TagFilterButtons";
-import { filterItems } from "../../utils/filtering";
 import { calculateUserCompletionCounts } from "../../utils/completionCount";
 import { TAGS, TAG_LABELS, TAG_BUTTON_CLASSES } from "../../utils/tags";
 import type { Quest, QuestLog, Tag } from "../../types";
@@ -34,8 +32,8 @@ export function QuestsView({
   quests,
   allQuestLogs,
   loading,
-  searchQuery,
-  onSearchChange,
+  searchQuery: _searchQuery,
+  onSearchChange: _onSearchChange,
   selectedTag,
   onTagSelect,
   showDollarAmounts,
@@ -50,19 +48,8 @@ export function QuestsView({
     [allQuestLogs]
   );
 
-  // Defer filtering computation to keep input responsive while typing
-  const deferredSearch = useDeferredValue(searchQuery ?? "");
-
-  const filteredQuests = useMemo(() => {
-    const q = deferredSearch.trim();
-    if (!q) return quests;
-    return filterItems<Quest, Tag>({
-      items: quests,
-      searchQuery: q,
-      selectedTag,
-      tagLabels: TAG_LABELS,
-    });
-  }, [quests, deferredSearch, selectedTag]);
+  // Render full quest list unconditionally
+  const filteredQuests = quests;
 
   return (
     <div>
@@ -70,15 +57,6 @@ export function QuestsView({
         <h2 className="text-2xl font-bold text-gray-900 header-text-color">
           Quests
         </h2>
-        <div className="w-full sm:w-64">
-          <InputField
-            type="search"
-            placeholder="Search quests..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full"
-          />
-        </div>
       </div>
 
       <TagFilterButtons
@@ -90,11 +68,7 @@ export function QuestsView({
       />
 
       {/* Render quests immediately when available - don't block on loading state */}
-      {filteredQuests.length === 0 && !loading && deferredSearch ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-300">
-          No quests found matching "{deferredSearch}"
-        </div>
-      ) : filteredQuests.length === 0 && loading ? (
+      {filteredQuests.length === 0 && loading ? (
         <div className="text-center py-12 text-gray-500">
           Loading quests...
         </div>
