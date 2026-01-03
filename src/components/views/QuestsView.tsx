@@ -4,7 +4,7 @@
  * Displays the quests view with search, filters, and quest cards
  */
 
-import { useState, useMemo, useDeferredValue, useEffect } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { InputField } from "@ffx/sdk";
 import { QuestCard } from "../QuestCard";
 import { AddQuestCard } from "../AddQuestCard";
@@ -45,34 +45,20 @@ export function QuestsView({
   onEdit,
   onShowToast,
 }: QuestsViewProps) {
-  // Local search state for instant input updates
-  const [searchInput, setSearchInput] = useState(searchQuery);
-  
-  // Sync local state with prop when it changes externally (e.g., navigation)
-  useEffect(() => {
-    setSearchInput(searchQuery);
-  }, [searchQuery]);
-
-  // Defer filtering computation to keep input responsive while typing
-  const deferredSearch = useDeferredValue(searchInput);
-
-  // Sync to parent state (non-blocking, for persistence/other purposes)
-  useEffect(() => {
-    onSearchChange(searchInput);
-  }, [searchInput, onSearchChange]);
-
   const userCompletionCounts = useMemo(
     () => calculateUserCompletionCounts(allQuestLogs),
     [allQuestLogs]
   );
 
+  // Defer filtering computation to keep input responsive while typing
+  const deferredSearch = useDeferredValue(searchQuery ?? "");
+
   const filteredQuests = useMemo(() => {
-    if (!deferredSearch.trim()) {
-      return quests;
-    }
+    const q = deferredSearch.trim();
+    if (!q) return quests;
     return filterItems<Quest, Tag>({
       items: quests,
-      searchQuery: deferredSearch,
+      searchQuery: q,
       selectedTag,
       tagLabels: TAG_LABELS,
     });
@@ -88,8 +74,8 @@ export function QuestsView({
           <InputField
             type="search"
             placeholder="Search quests..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full"
           />
         </div>
