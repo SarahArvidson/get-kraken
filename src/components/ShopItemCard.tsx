@@ -4,7 +4,7 @@
  * Displays a shop item with tap-to-purchase, swipeable log, and editable price
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@ffx/sdk";
 import type { ShopItem } from "../types";
 import { CyclingShopBorder } from "./CyclingBorder";
@@ -36,6 +36,10 @@ export function ShopItemCard({
   const [isPurchasing, setIsPurchasing] = useState(false);
   const { getEffectivePrice, getEffectiveDollarAmount, getEffectiveTags, getEffectiveName, updateOverride } = useShopItemOverrides();
   
+  // Track pending CREATE operations to prevent duplicate INSERTs during rapid typing
+  const priceCreateLockRef = useRef<Promise<void> | null>(null);
+  const dollarAmountCreateLockRef = useRef<Promise<void> | null>(null);
+  
   // Get effective values (user override or base)
   const effectivePrice = useMemo(
     () => getEffectivePrice(item.id, item.price),
@@ -54,6 +58,10 @@ export function ShopItemCard({
     [getEffectiveName, item.id, item.name]
   );
 
+  // Detect if override exists: effective value differs from base value
+  const priceOverrideExists = effectivePrice !== item.price;
+  const dollarAmountOverrideExists = Math.round(effectiveDollarAmount) !== Math.round(item.dollar_amount || 0);
+
   const handlePurchase = async () => {
     setIsPurchasing(true);
     try {
@@ -65,7 +73,25 @@ export function ShopItemCard({
 
   const handlePriceSave = async (newPrice: number) => {
     if (newPrice !== effectivePrice) {
-      await updateOverride(item.id, { price: newPrice });
+      // If override exists, updateOverride will UPDATE (safe to call multiple times)
+      if (priceOverrideExists) {
+        await updateOverride(item.id, { price: newPrice });
+      } else {
+        // No override exists - serialize CREATE operations to prevent 409 conflicts
+        if (priceCreateLockRef.current) {
+          // Wait for pending CREATE to complete
+          await priceCreateLockRef.current;
+        }
+        // Initiate CREATE and store promise
+        const createPromise = updateOverride(item.id, { price: newPrice });
+        priceCreateLockRef.current = createPromise;
+        try {
+          await createPromise;
+        } finally {
+          // Clear lock after completion (override now exists, future calls will UPDATE)
+          priceCreateLockRef.current = null;
+        }
+      }
     }
   };
 
@@ -73,7 +99,25 @@ export function ShopItemCard({
     if (!showDollarAmounts) return;
     const roundedAmount = Math.round(newDollarAmount);
     if (roundedAmount !== Math.round(effectiveDollarAmount)) {
-      await updateOverride(item.id, { dollar_amount: roundedAmount });
+      // If override exists, updateOverride will UPDATE (safe to call multiple times)
+      if (dollarAmountOverrideExists) {
+        await updateOverride(item.id, { dollar_amount: roundedAmount });
+      } else {
+        // No override exists - serialize CREATE operations to prevent 409 conflicts
+        if (dollarAmountCreateLockRef.current) {
+          // Wait for pending CREATE to complete
+          await dollarAmountCreateLockRef.current;
+        }
+        // Initiate CREATE and store promise
+        const createPromise = updateOverride(item.id, { dollar_amount: roundedAmount });
+        dollarAmountCreateLockRef.current = createPromise;
+        try {
+          await createPromise;
+        } finally {
+          // Clear lock after completion (override now exists, future calls will UPDATE)
+          dollarAmountCreateLockRef.current = null;
+        }
+      }
     }
   };
 

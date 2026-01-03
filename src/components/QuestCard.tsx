@@ -4,7 +4,7 @@
  * Displays a quest with tap-to-complete, swipeable log, and editable reward
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Button } from "@ffx/sdk";
 import type { Quest } from "../types";
 import { CyclingBorder } from "./CyclingBorder";
@@ -32,6 +32,10 @@ export function QuestCard({
   const [isCompleting, setIsCompleting] = useState(false);
   const { getEffectiveReward, getEffectiveDollarAmount, getEffectiveTags, getEffectiveName, updateOverride } = useQuestOverrides();
   
+  // Track pending CREATE operations to prevent duplicate INSERTs during rapid typing
+  const rewardCreateLockRef = useRef<Promise<void> | null>(null);
+  const dollarAmountCreateLockRef = useRef<Promise<void> | null>(null);
+  
   // Get effective values (user override or base)
   const effectiveReward = useMemo(
     () => getEffectiveReward(quest.id, quest.reward),
@@ -50,6 +54,10 @@ export function QuestCard({
     [getEffectiveName, quest.id, quest.name]
   );
 
+  // Detect if override exists: effective value differs from base value
+  const rewardOverrideExists = effectiveReward !== quest.reward;
+  const dollarAmountOverrideExists = Math.round(effectiveDollarAmount) !== Math.round(quest.dollar_amount || 0);
+
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
@@ -61,7 +69,25 @@ export function QuestCard({
 
   const handleRewardSave = async (newReward: number) => {
     if (newReward !== effectiveReward) {
-      await updateOverride(quest.id, { reward: newReward });
+      // If override exists, updateOverride will UPDATE (safe to call multiple times)
+      if (rewardOverrideExists) {
+        await updateOverride(quest.id, { reward: newReward });
+      } else {
+        // No override exists - serialize CREATE operations to prevent 409 conflicts
+        if (rewardCreateLockRef.current) {
+          // Wait for pending CREATE to complete
+          await rewardCreateLockRef.current;
+        }
+        // Initiate CREATE and store promise
+        const createPromise = updateOverride(quest.id, { reward: newReward });
+        rewardCreateLockRef.current = createPromise;
+        try {
+          await createPromise;
+        } finally {
+          // Clear lock after completion (override now exists, future calls will UPDATE)
+          rewardCreateLockRef.current = null;
+        }
+      }
     }
   };
 
@@ -69,7 +95,25 @@ export function QuestCard({
     if (!showDollarAmounts) return;
     const roundedAmount = Math.round(newDollarAmount);
     if (roundedAmount !== Math.round(effectiveDollarAmount)) {
-      await updateOverride(quest.id, { dollar_amount: roundedAmount });
+      // If override exists, updateOverride will UPDATE (safe to call multiple times)
+      if (dollarAmountOverrideExists) {
+        await updateOverride(quest.id, { dollar_amount: roundedAmount });
+      } else {
+        // No override exists - serialize CREATE operations to prevent 409 conflicts
+        if (dollarAmountCreateLockRef.current) {
+          // Wait for pending CREATE to complete
+          await dollarAmountCreateLockRef.current;
+        }
+        // Initiate CREATE and store promise
+        const createPromise = updateOverride(quest.id, { dollar_amount: roundedAmount });
+        dollarAmountCreateLockRef.current = createPromise;
+        try {
+          await createPromise;
+        } finally {
+          // Clear lock after completion (override now exists, future calls will UPDATE)
+          dollarAmountCreateLockRef.current = null;
+        }
+      }
     }
   };
 
