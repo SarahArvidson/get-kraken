@@ -48,7 +48,8 @@ export function UnifiedNumericInput({
   // Initialize input value from prop - but ignore while focused
   useEffect(() => {
     if (!isFocused) {
-      setInputValue(value === 0 ? "" : value.toString());
+      // Always display the persisted numeric value, including 0
+      setInputValue(value.toString());
       lastSavedValueRef.current = value;
     }
   }, [value, isFocused]);
@@ -111,14 +112,15 @@ export function UnifiedNumericInput({
       lastSavedValueRef.current = clampedFinal;
     }
     
-    // Reset display value
-    setInputValue(clampedFinal === 0 ? "" : clampedFinal.toString());
+    // Reset display value to persisted value (always show number, including 0)
+    setInputValue(clampedFinal.toString());
   };
 
   const handleFocus = () => {
     setIsFocused(true);
-    // Show empty if value is 0, otherwise show the value
-    setInputValue(value === 0 ? "" : value.toString());
+    // When focusing, allow empty string for editing (transient UI state)
+    // User can clear and type, but we'll show the value initially
+    setInputValue(value.toString());
     inputRef.current?.select();
   };
 
@@ -133,17 +135,16 @@ export function UnifiedNumericInput({
     }
   };
 
-  // Display: show inputValue when focused, otherwise show value (empty if 0)
-  const displayValue = isFocused 
-    ? inputValue 
-    : (value === 0 ? "" : value.toString());
+  // Display: show inputValue when focused (transient editing state),
+  // otherwise always show the persisted numeric value exactly, including 0
+  const displayValue = isFocused ? inputValue : value.toString();
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="inline-flex items-center gap-1">
       {showPrefix && prefix && <span className="text-lg">{prefix}</span>}
       <button
         onClick={() => handleIncrement(-1)}
-        className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+        className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation flex-shrink-0"
         aria-label={`Decrease ${ariaLabel || "value"}`}
         type="button"
       >
@@ -158,12 +159,12 @@ export function UnifiedNumericInput({
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        className={`text-lg font-semibold min-w-[60px] text-center bg-transparent border-b-2 border-transparent focus:border-amber-400 dark:focus:border-amber-500 focus:outline-none ${className}`}
+        className={`text-lg font-semibold w-[4.5rem] max-w-[4.5rem] text-center bg-transparent border-b-2 border-transparent focus:border-amber-400 dark:focus:border-amber-500 focus:outline-none flex-shrink-0 ${className}`}
         aria-label={ariaLabel}
       />
       <button
         onClick={() => handleIncrement(1)}
-        className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation"
+        className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xl font-bold hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95 transition-all touch-manipulation flex-shrink-0"
         aria-label={`Increase ${ariaLabel || "value"}`}
         type="button"
       >
