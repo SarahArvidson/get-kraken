@@ -19,7 +19,10 @@ export const getFeatureUpdatesContent = () => (
       </li>
       <li>Use sand dollars and/or regular dollars when creating new items.</li>
       <li>Improved mobile experience: Better layout on very small screens</li>
-      <li>The search bar was garbage. It's better now.</li>
+      <li>
+        {" "}
+        *** The search bar is currently undergoing code review and improvement**{" "}
+      </li>
     </ul>
     <p className="font-semibold text-lg">Next in Development:</p>
     <ul className="list-disc list-inside space-y-2 ml-2">
@@ -61,9 +64,9 @@ export const getAboutContent = () => (
         </li>
 
         <li>
-          If a quest really helps you save money, like skipping a latte, give it
-          a reasonable dollar value. Later on, you can spend the money you saved
-          on things that cost real money.
+          If a quest genuinely helps you save money, like skipping a latte, give
+          it a reasonable dollar value. Later on, you can spend the money you
+          saved on things that cost real money.
         </li>
       </ul>
     </p>
