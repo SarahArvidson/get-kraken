@@ -4,13 +4,13 @@
  * Overlay/drawer showing wallet details and transaction history
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useWallet } from "../hooks/useWallet";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
 import { usePreferences } from "../hooks/usePreferences";
 import type { QuestLog, ShopLog } from "../types";
-import { CURRENCY_NAME, CURRENCY_SYMBOL } from "../constants";
+import { CURRENCY_SYMBOL } from "../constants";
 
 interface WalletDrilldownProps {
   isOpen: boolean;
@@ -19,8 +19,8 @@ interface WalletDrilldownProps {
 
 export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
   const { wallet, loading: walletLoading } = useWallet();
-  const { loadAllQuestLogs } = useQuests();
-  const { loadAllShopLogs } = useShopItems();
+  const { quests, loadAllQuestLogs } = useQuests();
+  const { shopItems, loadAllShopLogs } = useShopItems();
   const preferences = usePreferences();
   const [questLogs, setQuestLogs] = useState<QuestLog[]>([]);
   const [shopLogs, setShopLogs] = useState<ShopLog[]>([]);
@@ -65,23 +65,58 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
   const total = wallet?.total ?? 0;
   const dollarTotal = wallet?.dollar_total ?? 0;
 
-  // Sort logs by date (most recent first)
-  const allTransactions = [
-    ...questLogs.map(log => ({
-      type: 'quest' as const,
-      id: log.id,
-      date: log.completed_at,
-      amount: 0, // TODO: Get actual reward amount from quest
-      dollarAmount: 0, // TODO: Get actual dollar amount from quest
-    })),
-    ...shopLogs.map(log => ({
-      type: 'purchase' as const,
-      id: log.id,
-      date: log.purchased_at,
-      amount: 0, // TODO: Get actual price from shop item
-      dollarAmount: 0, // TODO: Get actual dollar amount from shop item
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Build lookup maps for quest and shop item names
+  const questMap = useMemo(() => {
+    const map: Record<string, { name: string; reward: number; dollar_amount: number }> = {};
+    quests.forEach(quest => {
+      map[quest.id] = {
+        name: quest.name,
+        reward: quest.reward,
+        dollar_amount: quest.dollar_amount,
+      };
+    });
+    return map;
+  }, [quests]);
+
+  const shopItemMap = useMemo(() => {
+    const map: Record<string, { name: string; price: number; dollar_amount: number }> = {};
+    shopItems.forEach(item => {
+      map[item.id] = {
+        name: item.name,
+        price: item.price,
+        dollar_amount: item.dollar_amount,
+      };
+    });
+    return map;
+  }, [shopItems]);
+
+  // Sort logs by date (most recent first) with names and amounts
+  const allTransactions = useMemo(() => [
+    ...questLogs.map(log => {
+      const quest = questMap[log.quest_id];
+      return {
+        type: 'quest' as const,
+        id: log.id,
+        questId: log.quest_id,
+        date: log.completed_at,
+        name: quest?.name || 'Unknown Quest',
+        amount: quest?.reward || 0,
+        dollarAmount: quest?.dollar_amount || 0,
+      };
+    }),
+    ...shopLogs.map(log => {
+      const item = shopItemMap[log.shop_item_id];
+      return {
+        type: 'purchase' as const,
+        id: log.id,
+        itemId: log.shop_item_id,
+        date: log.purchased_at,
+        name: item?.name || 'Unknown Item',
+        amount: item?.price || 0,
+        dollarAmount: item?.dollar_amount || 0,
+      };
+    }),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [questLogs, shopLogs, questMap, shopItemMap]);
 
   return (
     <>
@@ -125,9 +160,6 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
                 <span className="text-5xl font-bold text-amber-900 dark:text-amber-100">
                   {walletLoading ? "..." : total}
                 </span>
-                <span className="text-amber-900 dark:text-amber-100 text-sm">
-                  {CURRENCY_NAME}
-                </span>
               </div>
               {preferences.showDollarAmounts && (
                 <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-amber-800/30">
@@ -163,7 +195,7 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {transaction.type === 'quest' ? '⚔️ Quest Completed' : '🛒 Purchase'}
+                          {transaction.name}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {new Date(transaction.date).toLocaleDateString()}
