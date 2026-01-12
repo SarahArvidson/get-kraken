@@ -103,14 +103,6 @@ export function SettingsPage() {
                 </button>
               </div>
             </div>
-            <div>
-              <button
-                onClick={toggleTheme}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                Quick Toggle (Light ↔ Dark)
-              </button>
-            </div>
           </div>
         </CollapsibleSection>
 
