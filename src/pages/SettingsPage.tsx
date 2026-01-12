@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { useTheme } from "../hooks/useTheme";
+import { usePreferences } from "../hooks/usePreferences";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -40,6 +41,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }: Collapsibl
 
 export function SettingsPage() {
   const { themeMode, updateThemeMode, toggleTheme } = useTheme();
+  const { showDollarAmounts, showSandDollars, toggleDollarAmounts, toggleSandDollars } = usePreferences();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -101,9 +103,56 @@ export function SettingsPage() {
 
         {/* Wallet and Currencies Section */}
         <CollapsibleSection title="Wallet and Currencies" defaultOpen={true}>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Currency visibility toggles coming in Step 3...
-          </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Show Dollars
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Show dollar amounts throughout the app
+                </p>
+              </div>
+              <button
+                onClick={toggleDollarAmounts}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showDollarAmounts ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+                role="switch"
+                aria-checked={showDollarAmounts}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showDollarAmounts ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Show Sand Dollars
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Show sand dollar amounts throughout the app
+                </p>
+              </div>
+              <button
+                onClick={toggleSandDollars}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showSandDollars ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+                role="switch"
+                aria-checked={showSandDollars}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showSandDollars ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </CollapsibleSection>
 
         {/* Account Section */}

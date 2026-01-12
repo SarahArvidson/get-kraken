@@ -11,6 +11,7 @@ import { supabase } from "../lib/supabase";
 
 export function usePreferences() {
   const [showDollarAmounts, setShowDollarAmounts] = useState(false);
+  const [showSandDollars, setShowSandDollars] = useState(true); // Default: show sand dollars
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,20 +46,26 @@ export function usePreferences() {
       }
 
       if (data) {
-        setShowDollarAmounts(data.show_dollar_amounts);
+        setShowDollarAmounts(data.show_dollar_amounts ?? false);
+        setShowSandDollars(data.show_sand_dollars ?? true);
         // Also store in localStorage as backup
-        localStorage.setItem("showDollarAmounts", String(data.show_dollar_amounts));
+        localStorage.setItem("showDollarAmounts", String(data.show_dollar_amounts ?? false));
+        localStorage.setItem("showSandDollars", String(data.show_sand_dollars ?? true));
       } else {
         // No preferences found, check localStorage
-        const stored = localStorage.getItem("showDollarAmounts");
-        setShowDollarAmounts(stored === "true");
+        const storedDollars = localStorage.getItem("showDollarAmounts");
+        const storedSand = localStorage.getItem("showSandDollars");
+        setShowDollarAmounts(storedDollars === "true");
+        setShowSandDollars(storedSand !== "false"); // Default true if not set
       }
       setError(null);
     } catch (err: any) {
       console.error("Error loading preferences:", err);
       // Fallback to localStorage
-      const stored = localStorage.getItem("showDollarAmounts");
-      setShowDollarAmounts(stored === "true");
+      const storedDollars = localStorage.getItem("showDollarAmounts");
+      const storedSand = localStorage.getItem("showSandDollars");
+      setShowDollarAmounts(storedDollars === "true");
+      setShowSandDollars(storedSand !== "false");
       setError(err.message || "Failed to load preferences");
     } finally {
       setLoading(false);
@@ -67,13 +74,19 @@ export function usePreferences() {
 
   // Save preferences
   const savePreferences = useCallback(
-    async (showDollars: boolean) => {
+    async (updates: { showDollars?: boolean; showSandDollars?: boolean }) => {
       try {
         const userId = await getUserId();
         
-        // Always update localStorage as backup
-        localStorage.setItem("showDollarAmounts", String(showDollars));
-        setShowDollarAmounts(showDollars);
+        // Update local state
+        if (updates.showDollars !== undefined) {
+          setShowDollarAmounts(updates.showDollars);
+          localStorage.setItem("showDollarAmounts", String(updates.showDollars));
+        }
+        if (updates.showSandDollars !== undefined) {
+          setShowSandDollars(updates.showSandDollars);
+          localStorage.setItem("showSandDollars", String(updates.showSandDollars));
+        }
 
         if (!userId) {
           // No user logged in, just use localStorage
@@ -87,14 +100,21 @@ export function usePreferences() {
           .eq("user_id", userId)
           .single();
 
+        const updateData: any = {
+          updated_at: new Date().toISOString(),
+        };
+        if (updates.showDollars !== undefined) {
+          updateData.show_dollar_amounts = updates.showDollars;
+        }
+        if (updates.showSandDollars !== undefined) {
+          updateData.show_sand_dollars = updates.showSandDollars;
+        }
+
         if (existing) {
           // Update existing
           const { error: updateError } = await supabase
             .from("user_preferences")
-            .update({
-              show_dollar_amounts: showDollars,
-              updated_at: new Date().toISOString(),
-            })
+            .update(updateData)
             .eq("user_id", userId);
 
           if (updateError) throw updateError;
@@ -104,7 +124,8 @@ export function usePreferences() {
             .from("user_preferences")
             .insert({
               user_id: userId,
-              show_dollar_amounts: showDollars,
+              show_dollar_amounts: updates.showDollars ?? false,
+              show_sand_dollars: updates.showSandDollars ?? true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });
@@ -124,9 +145,13 @@ export function usePreferences() {
 
   // Toggle dollar amounts display
   const toggleDollarAmounts = useCallback(async () => {
-    const newValue = !showDollarAmounts;
-    await savePreferences(newValue);
+    await savePreferences({ showDollars: !showDollarAmounts });
   }, [showDollarAmounts, savePreferences]);
+
+  // Toggle sand dollars display
+  const toggleSandDollars = useCallback(async () => {
+    await savePreferences({ showSandDollars: !showSandDollars });
+  }, [showSandDollars, savePreferences]);
 
   // Load preferences on mount
   useEffect(() => {
@@ -135,10 +160,13 @@ export function usePreferences() {
 
   return {
     showDollarAmounts,
+    showSandDollars,
     loading,
     error,
     toggleDollarAmounts,
-    setShowDollarAmounts: savePreferences,
+    toggleSandDollars,
+    setShowDollarAmounts: (value: boolean) => savePreferences({ showDollars: value }),
+    setShowSandDollars: (value: boolean) => savePreferences({ showSandDollars: value }),
   };
 }
 
