@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { useTheme } from "../hooks/useTheme";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -38,6 +39,8 @@ function CollapsibleSection({ title, children, defaultOpen = false }: Collapsibl
 }
 
 export function SettingsPage() {
+  const { themeMode, updateThemeMode, toggleTheme } = useTheme();
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -47,9 +50,53 @@ export function SettingsPage() {
       <div className="space-y-4">
         {/* Appearance Section */}
         <CollapsibleSection title="Appearance" defaultOpen={true}>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Appearance controls coming in Step 2...
-          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Theme Mode
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => updateThemeMode('light')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    themeMode === 'light'
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  Light
+                </button>
+                <button
+                  onClick={() => updateThemeMode('dark')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    themeMode === 'dark'
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  Dark
+                </button>
+                <button
+                  onClick={() => updateThemeMode('system')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    themeMode === 'system'
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  System
+                </button>
+              </div>
+            </div>
+            <div>
+              <button
+                onClick={toggleTheme}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Quick Toggle (Light ↔ Dark)
+              </button>
+            </div>
+          </div>
         </CollapsibleSection>
 
         {/* Wallet and Currencies Section */}
