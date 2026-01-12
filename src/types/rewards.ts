@@ -4,7 +4,7 @@
  * Type definitions for v2 reward features, derived from v1 shop item data
  */
 
-import type { ShopItem, ShopLog, ShopTag } from "../types";
+import type { ShopLog, ShopTag } from "../types";
 
 /**
  * RewardSummary - Minimal reward data for list views
