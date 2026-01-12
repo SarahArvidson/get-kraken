@@ -263,7 +263,7 @@ export function RewardDetailPage() {
           <div className="flex items-center gap-3">
             <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             <span className="text-xl font-semibold text-purple-900 dark:text-purple-100">
-              {rewardDetail.price} sand dollars
+              {rewardDetail.price}
             </span>
           </div>
           {preferences.showDollarAmounts && rewardDetail.dollar_amount > 0 && (

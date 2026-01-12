@@ -346,7 +346,7 @@ export function QuestDetailPage() {
           <div className="flex items-center gap-3">
             <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
-              {questDetail.reward} sand dollars
+              {questDetail.reward}
             </span>
           </div>
           {questDetail.dollar_amount > 0 && (
