@@ -1165,4 +1165,163 @@ In QuestDetailPage:
 
 ---
 
+## Phase 3: Data Mapping (v1 Rewards/Shop Data Structure)
+
+### Current Supabase Tables Used by v1
+
+#### `shop_items` table
+- **id** (UUID, PRIMARY KEY)
+- **name** (TEXT, NOT NULL)
+- **tags** (TEXT[], DEFAULT '{}')
+- **price** (INTEGER, NOT NULL, DEFAULT 20) - sand dollars cost
+- **dollar_amount** (DECIMAL(10,2), DEFAULT 0) - real dollars spent per purchase
+- **purchase_count** (INTEGER, NOT NULL, DEFAULT 0) - shared count (deprecated, per-user counts from logs)
+- **created_by** (UUID, nullable) - NULL for seeded items, user_id for user-created items
+- **created_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+- **updated_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+
+**Query Pattern:**
+```sql
+SELECT * FROM shop_items 
+WHERE (created_by IS NULL OR created_by = :user_id)
+ORDER BY name ASC
+```
+
+#### `shop_logs` table
+- **id** (UUID, PRIMARY KEY)
+- **shop_item_id** (UUID, REFERENCES shop_items(id) ON DELETE CASCADE)
+- **user_id** (UUID, REFERENCES auth.users(id) ON DELETE CASCADE)
+- **purchased_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+
+**Query Pattern:**
+```sql
+SELECT * FROM shop_logs 
+WHERE shop_item_id = :shop_item_id AND user_id = :user_id
+ORDER BY purchased_at DESC
+```
+
+#### `user_shop_item_overrides` table (per-user customization)
+- **id** (UUID, PRIMARY KEY)
+- **user_id** (UUID, REFERENCES auth.users(id))
+- **shop_item_id** (UUID, REFERENCES shop_items(id))
+- **name** (TEXT, nullable)
+- **tags** (TEXT[], nullable)
+- **price** (INTEGER, nullable)
+- **dollar_amount** (DECIMAL(10,2), nullable)
+- **created_at** (TIMESTAMPTZ)
+- **updated_at** (TIMESTAMPTZ)
+
+**Purpose:** Allows users to customize seeded shop items without modifying the base item.
+
+#### `user_hidden_shop_items` table
+- **id** (UUID, PRIMARY KEY)
+- **user_id** (UUID, REFERENCES auth.users(id))
+- **shop_item_id** (UUID, REFERENCES shop_items(id))
+
+**Purpose:** Tracks which seeded shop items a user has hidden.
+
+### Current Shop Data Flow (v1)
+
+1. **Load Shop Items:**
+   - Query `shop_items` table for seeded (created_by IS NULL) or user-created (created_by = user_id)
+   - Merge with `user_shop_item_overrides` to get per-user customizations
+   - Filter out items in `user_hidden_shop_items`
+   - Sort alphabetically by name
+
+2. **Purchase Item:**
+   - Insert into `shop_logs` with shop_item_id, user_id, purchased_at
+   - Atomically update `wallets` table (subtract price from total, dollar_amount from dollar_total)
+
+3. **Progress Tracking:**
+   - Per-user purchase count = COUNT(*) from `shop_logs` WHERE shop_item_id = X AND user_id = Y
+   - No separate "progress" table - logs are the source of truth
+
+### Missing Fields for v2 (Not in Current Schema)
+
+The following fields are planned for v2 but do not exist yet:
+- `description` (TEXT) - optional item description
+- `rarity` (TEXT) - enum: 'common', 'rare', 'epic', 'legendary'
+- `is_starred` (BOOLEAN) - user's starred status
+- `linked_quest_id` (UUID) - link to quests table for quest-associated items
+
+**Note:** These will be added in future migrations. For Phase 3, we'll use UI-only state or local storage as temporary storage.
+
+### TypeScript Types for Phase 3
+
+#### RewardSummary (List View)
+```typescript
+export interface RewardSummary {
+  id: string;
+  name: string;
+  tags: ShopTag[];
+  price: number;
+  dollar_amount: number;
+  created_by: string | null;
+  created_at: string;
+  // Derived/computed fields
+  userPurchaseCount: number; // from shop_logs count
+  isStarred: boolean; // from local storage or future is_starred column
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary'; // future field, optional for now
+  linkedQuestId?: string; // future field, optional for now
+}
+```
+
+#### RewardDetail (Detail View)
+```typescript
+export interface RewardDetail extends RewardSummary {
+  description?: string; // future field, optional for now
+  // Logs
+  logs: ShopLog[]; // from shop_logs table
+  // Linked quest info (if linked)
+  linkedQuest?: {
+    id: string;
+    name: string;
+  };
+}
+```
+
+### Data Derivation Strategy
+
+1. **RewardSummary from ShopItem:**
+   - Direct mapping from `shop_items` table
+   - `userPurchaseCount` = COUNT from `shop_logs` WHERE shop_item_id = id AND user_id = current_user
+   - `isStarred` = read from localStorage key `reward_starred_${item_id}` (temporary, until schema migration)
+   - `rarity` = undefined for now (will be added in migration)
+   - `linkedQuestId` = read from localStorage key `reward_linked_quest_${item_id}` (temporary)
+
+2. **RewardDetail from RewardSummary:**
+   - Extend RewardSummary
+   - Load `logs` from `shop_logs` table
+   - Load `linkedQuest` info if `linkedQuestId` exists
+
+### Quest-Associated Items Proposal
+
+**Current State:**
+- Quests can have `associated_item_id` (future field) that links to a shop item
+- This creates a one-way link: quest → item
+
+**Proposed Model:**
+- When a quest defines an `associated_item_id`, that item should appear in the rewards shop
+- The item can be:
+  - **Auto-created:** System creates a shop item when quest is created with associated_item_id
+  - **Pre-existing:** User selects an existing shop item to link
+  - **Manual:** User creates item separately, then links it to quest
+
+**Data Flow:**
+1. Quest has `associated_item_id` → Item appears in shop with "Linked to quest" indicator
+2. Item has `linked_quest_id` → Shows which quest it's associated with
+3. Bidirectional relationship: quest.associated_item_id ↔ shop_item.linked_quest_id
+
+**Migration Strategy:**
+- Add `linked_quest_id` column to `shop_items` table (nullable)
+- Add `associated_item_id` column to `quests` table (nullable)
+- Backfill: For any existing quest-item links, populate both columns
+
+**Phase 3 Implementation:**
+- UI-only indicators showing "Linked to quest" or "Linked to reward"
+- No automatic creation or syncing yet
+- Document proposal in plan for future implementation
+
+---
+
 **End of Phase 0 Plan Document**
