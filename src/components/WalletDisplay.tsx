@@ -25,10 +25,10 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
           {TREASURE_CHEST_LABEL}
         </h2>
         {/* Render wallet immediately - show 0 if loading, actual total when available */}
-        <div className="flex items-center justify-center gap-3">
-          <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-12 h-12" />
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <img src={SEA_DOLLAR_ICON_PATH} alt="Sea Dollar" className="w-8 h-8 sm:w-12 sm:h-12" />
           <span
-            className={`text-6xl font-bold ${
+            className={`text-3xl sm:text-4xl lg:text-6xl font-bold ${
               isNegative
                 ? "text-red-600 dark:text-red-400"
                 : "text-amber-900 dark:text-amber-100"
@@ -38,10 +38,10 @@ export function WalletDisplay({ wallet, loading, showDollarAmounts = false }: Wa
           </span>
           {showDollarAmounts && (
             <>
-              <span className="text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
-              <span className="text-4xl">{CURRENCY_SYMBOL}</span>
+              <span className="text-2xl sm:text-3xl lg:text-4xl text-amber-900 dark:text-amber-100 font-bold">|</span>
+              <span className="text-2xl sm:text-3xl lg:text-4xl">{CURRENCY_SYMBOL}</span>
               <span
-                className={`text-6xl font-bold ${
+                className={`text-3xl sm:text-4xl lg:text-6xl font-bold ${
                   dollarTotal < 0
                     ? "text-red-600 dark:text-red-400"
                     : "text-amber-900 dark:text-amber-100"

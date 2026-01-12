@@ -84,10 +84,10 @@ export function Header({ showDollarAmounts, onToggleDollarAmounts, onLogout, onO
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <Link to="/" className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                  <h1 className="text-2xl font-bold text-left text-gray-900 dark:text-gray-100 leading-tight">
+                  <h1 className="text-xl sm:text-2xl font-bold text-left text-gray-900 dark:text-gray-100 leading-tight">
                     {APP_NAME}
                   </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-200 mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-200 mt-0.5">
                     {APP_SUBTITLE}
                   </p>
                 </Link>

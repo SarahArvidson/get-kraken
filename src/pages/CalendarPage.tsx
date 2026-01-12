@@ -390,8 +390,8 @@ export function CalendarPage() {
       )}
 
       {viewMode === 'month' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 shadow-sm overflow-x-auto">
-          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2 min-w-[280px]">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 shadow-sm overflow-x-auto -mx-4 sm:mx-0">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2 w-full min-w-[280px]">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 py-1 sm:py-2">
                 <span className="hidden sm:inline">{day}</span>
@@ -399,7 +399,7 @@ export function CalendarPage() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 w-full min-w-[280px]">
             {monthDays.map((date, index) => {
               if (!date) {
                 return <div key={index} className="aspect-square" />;

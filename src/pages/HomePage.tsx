@@ -207,7 +207,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 w-full">
               {days.map((date, index) => {
                 const activitiesWithTags = getActivitiesForDateWithTags(date);
                 const isToday =
