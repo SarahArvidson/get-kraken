@@ -269,7 +269,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               })}
             </div>
             <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
-            /** add calendar description here if needed */
+              /** add calendar description here if needed */
             </div>
           </div>
         )}
