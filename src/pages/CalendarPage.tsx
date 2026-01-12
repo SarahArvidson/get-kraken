@@ -26,6 +26,7 @@ export function CalendarPage() {
   const [sourceUserNames, setSourceUserNames] = useState<Record<string, string>>({});
 
   // Load activity logs for current view
+  // Only reload when date or view mode changes, not when metadata changes
   useEffect(() => {
     const startDate = new Date(selectedDate);
     const endDate = new Date(selectedDate);
@@ -57,7 +58,8 @@ export function CalendarPage() {
     }
 
     loadActivityLogs(startDate, endDate);
-  }, [selectedDate, viewMode, loadActivityLogs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, viewMode]);
 
   // Load source user names for buddy attribution
   useEffect(() => {
