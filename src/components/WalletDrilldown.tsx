@@ -121,7 +121,7 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
                 Current Balance
               </h3>
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-4xl">🐚</span>
+                <span className="text-4xl">🪙</span>
                 <span className="text-5xl font-bold text-amber-900 dark:text-amber-100">
                   {walletLoading ? "..." : total}
                 </span>
@@ -172,11 +172,11 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
                       <div className="text-right">
                         {transaction.type === 'quest' ? (
                           <div className="text-green-600 dark:text-green-400 font-semibold">
-                            +{transaction.amount} 🐚
+                            +{transaction.amount} 🪙
                           </div>
                         ) : (
                           <div className="text-red-600 dark:text-red-400 font-semibold">
-                            -{transaction.amount} 🐚
+                            -{transaction.amount} 🪙
                           </div>
                         )}
                         {preferences.showDollarAmounts && transaction.dollarAmount !== 0 && (

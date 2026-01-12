@@ -346,7 +346,7 @@ export function RewardsPage() {
                           </div>
                         )}
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                          <span>🐚 {reward.price}</span>
+                          <span>🪙 {reward.price}</span>
                           {reward.rarity && (
                             <span className="capitalize">{reward.rarity}</span>
                           )}
