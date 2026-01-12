@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { Button, InputField } from "@ffx/sdk";
 import { supabase } from "../lib/supabase";
 import { KRAKEN_ICON_PATH } from "../constants";
+import { usernameToEmail } from "../utils/authHelpers";
 
 interface AuthGateProps {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ export function AuthGate({ children }: AuthGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +58,8 @@ export function AuthGate({ children }: AuthGateProps) {
   }, []);
 
   const handleSignIn = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError("Please enter both email and password");
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
       return;
     }
 
@@ -66,8 +67,10 @@ export function AuthGate({ children }: AuthGateProps) {
     setError(null);
 
     try {
+      // Convert username to fake email for Supabase
+      const email = usernameToEmail(username);
       const result = await supabase.signIn({
-        email: email.trim(),
+        email,
         password,
       });
 
@@ -90,8 +93,8 @@ export function AuthGate({ children }: AuthGateProps) {
   };
 
   const handleSignUp = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError("Please enter both email and password");
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
       return;
     }
 
@@ -104,8 +107,10 @@ export function AuthGate({ children }: AuthGateProps) {
     setError(null);
 
     try {
+      // Convert username to fake email for Supabase
+      const email = usernameToEmail(username);
       const result = await supabase.signUp({
-        email: email.trim(),
+        email,
         password,
       });
 
@@ -114,8 +119,8 @@ export function AuthGate({ children }: AuthGateProps) {
         if (result.error.message?.includes("already registered") || 
             result.error.message?.includes("already exists") ||
             result.error.message?.includes("User already registered")) {
-          setError("Account already exists. Please sign in instead.");
-          // Switch to sign in mode and prefill email
+          setError("That username is already taken. Please sign in instead.");
+          // Switch to sign in mode with username prefilled
           setAuthMode("signin");
           return;
         }
@@ -198,11 +203,11 @@ export function AuthGate({ children }: AuthGateProps) {
             </div>
 
             <InputField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   authMode === "signin" ? handleSignIn() : handleSignUp();
