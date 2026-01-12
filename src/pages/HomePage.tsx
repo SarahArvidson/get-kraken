@@ -25,7 +25,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const navigate = useNavigate();
   const { wallet, loading: walletLoading } = useWallet();
   const preferences = usePreferences();
-  const { logs, getActivitiesForDate, loading: activityLoading } = useActivityLogs();
+  const { getActivitiesForDate, loading: activityLoading } = useActivityLogs();
 
   const today = new Date();
   const days = Array.from({ length: 30 }, (_, i) => {
