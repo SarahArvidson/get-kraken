@@ -207,7 +207,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
               {days.map((date, index) => {
                 const activitiesWithTags = getActivitiesForDateWithTags(date);
                 const isToday =
@@ -226,7 +226,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                       ${
                         activitiesWithTags.length === 0
                           ? "bg-gray-100 dark:bg-gray-800"
-                          : "bg-white dark:bg-gray-900 p-1 flex flex-col"
+                          : "bg-white dark:bg-gray-900 p-0.5 sm:p-1 flex flex-col"
                       }
                       ${
                         isToday
@@ -258,7 +258,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                           ))}
                         </div>
                         {overflowCount > 0 && (
-                          <div className="text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
+                          <div className="text-[7px] sm:text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
                             +{overflowCount}
                           </div>
                         )}
@@ -269,9 +269,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               })}
             </div>
             <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
-              <span>Each square = one activity</span>
-              <span>•</span>
-              <span>Colors = quest tags</span>
+            /** add calendar description here if needed */
             </div>
           </div>
         )}

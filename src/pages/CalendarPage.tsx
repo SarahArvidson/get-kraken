@@ -179,6 +179,32 @@ export function CalendarPage() {
     return "Activity";
   };
 
+  // Get tag hex color for activity (for inline styles)
+  const getActivityTagColorHex = (activity: ActivityLog): string => {
+    if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
+      const firstTag = activity.quest_tags[0] as Tag;
+      const color = TAG_COLORS[firstTag];
+      // Return hex colors that work in both light and dark modes
+      switch (color) {
+        case 'blue':
+          return '#3b82f6'; // blue-500
+        case 'green':
+          return '#22c55e'; // green-500
+        case 'purple':
+          return '#a855f7'; // purple-500
+        case 'red':
+          return '#ef4444'; // red-500
+        case 'pink':
+          return '#ec4899'; // pink-500
+        case 'cyan':
+          return '#06b6d4'; // cyan-500
+        default:
+          return '#9ca3af'; // gray-400
+      }
+    }
+    return '#9ca3af'; // gray-400
+  };
+
   // Get tag color class for activity dots
   const getActivityDotColor = (activity: ActivityLog): string => {
     if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
@@ -202,31 +228,6 @@ export function CalendarPage() {
       }
     }
     return 'bg-gray-400';
-  };
-
-  // Get tag color class for activity (for border coloring)
-  const getActivityTagBorderColor = (activity: ActivityLog): string => {
-    if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
-      const firstTag = activity.quest_tags[0] as Tag;
-      const color = TAG_COLORS[firstTag];
-      switch (color) {
-        case 'blue':
-          return 'border-l-blue-500';
-        case 'green':
-          return 'border-l-green-500';
-        case 'purple':
-          return 'border-l-purple-500';
-        case 'red':
-          return 'border-l-red-500';
-        case 'pink':
-          return 'border-l-pink-500';
-        case 'cyan':
-          return 'border-l-cyan-500';
-        default:
-          return 'border-l-gray-400';
-      }
-    }
-    return 'border-l-gray-400';
   };
 
 
@@ -310,16 +311,17 @@ export function CalendarPage() {
               <div
                 key={activity.id}
                 onClick={() => setEditingActivity(activity)}
-                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border-l-4 ${getActivityTagBorderColor(activity)} border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow`}
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-sm border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+                style={{ borderLeft: `4px solid ${getActivityTagColorHex(activity)}` }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
                         {getActivityDisplayName(activity)}
                       </span>
                       {activity.source_user_id && sourceUserNames[activity.source_user_id] && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 self-start sm:self-center">
                           By {sourceUserNames[activity.source_user_id]}
                         </span>
                       )}
@@ -338,7 +340,7 @@ export function CalendarPage() {
                       </p>
                     )}
                   </div>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-400 hidden sm:inline">→</span>
                 </div>
               </div>
             ))
@@ -357,19 +359,20 @@ export function CalendarPage() {
               <div
                 key={activity.id}
                 onClick={() => setEditingActivity(activity)}
-                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border-l-4 ${getActivityTagBorderColor(activity)} border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow`}
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 shadow-sm border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+                style={{ borderLeft: `4px solid ${getActivityTagColorHex(activity)}` }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
                         {getActivityDisplayName(activity)}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 self-start sm:self-center">
                         {new Date(activity.logged_at).toLocaleDateString()}
                       </span>
                       {activity.source_user_id && sourceUserNames[activity.source_user_id] && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 self-start sm:self-center">
                           By {sourceUserNames[activity.source_user_id]}
                         </span>
                       )}
@@ -378,7 +381,7 @@ export function CalendarPage() {
                       {new Date(activity.logged_at).toLocaleTimeString()}
                     </p>
                   </div>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-gray-400 hidden sm:inline">→</span>
                 </div>
               </div>
             ))
@@ -387,15 +390,16 @@ export function CalendarPage() {
       )}
 
       {viewMode === 'month' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-2 sm:p-4 shadow-sm overflow-x-auto">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2 min-w-[280px]">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="text-center text-sm font-semibold text-gray-700 dark:text-gray-300 py-2">
-                {day}
+              <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 py-1 sm:py-2">
+                <span className="hidden sm:inline">{day}</span>
+                <span className="sm:hidden">{day.substring(0, 1)}</span>
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
             {monthDays.map((date, index) => {
               if (!date) {
                 return <div key={index} className="aspect-square" />;
@@ -413,17 +417,17 @@ export function CalendarPage() {
                     setViewMode('day');
                   }}
                   className={`
-                    aspect-square rounded p-1 cursor-pointer transition-all hover:scale-110
+                    aspect-square rounded p-0.5 sm:p-1 cursor-pointer transition-all hover:scale-105
                     ${dayActivities.length === 0 
                       ? 'bg-gray-100 dark:bg-gray-800' 
                       : 'bg-white dark:bg-gray-900'
                     }
-                    ${isToday ? 'ring-2 ring-amber-500 dark:ring-amber-400' : ''}
+                    ${isToday ? 'ring-1 sm:ring-2 ring-amber-500 dark:ring-amber-400' : ''}
                     flex flex-col
                   `}
                   title={`${date.toLocaleDateString()}: ${dayActivities.length} activities`}
                 >
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
+                  <div className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-gray-100 mb-0.5 sm:mb-1">
                     {date.getDate()}
                   </div>
                   {dayActivities.length > 0 && (
@@ -438,7 +442,7 @@ export function CalendarPage() {
                     </div>
                   )}
                   {overflowCount > 0 && (
-                    <div className="text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
+                    <div className="text-[7px] sm:text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
                       +{overflowCount}
                     </div>
                   )}
