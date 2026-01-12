@@ -1456,6 +1456,29 @@ CREATE TABLE activity_logs (
 - Continue writing to `shop_logs` (backward compatibility)
 - Also insert into `activity_logs` with `action_type = 'reward_purchase'`
 
+### Dual-Write Failure Handling
+
+**Principle:** Primary action (legacy table write) must always succeed. Secondary action (activity_logs write) is best-effort.
+
+**Error Handling:**
+- All dual-write operations wrapped in try/catch
+- If `activity_logs` insert fails, log error but do not fail user action
+- Structured error logging via `dualWriteLogger.ts`:
+  - Console logging with structured data
+  - Optional localStorage logging (last 50 errors) for debugging
+  - Error includes: operation, table, error message, userId, timestamp, metadata
+
+**Failure Modes:**
+1. **activity_logs table doesn't exist** - Gracefully handled, logged as warning
+2. **RLS/permissions error** - Logged, primary action continues
+3. **Network error** - Logged, primary action continues
+4. **Validation error** - Logged, primary action continues
+
+**Files:**
+- `src/utils/dualWriteLogger.ts` - Structured error logging utility
+- `src/components/HabitLogModal.tsx` - Enhanced error handling
+- `src/hooks/useQuests.ts` - Enhanced error handling in `completeQuest`
+
 ### Calendar Views
 
 **Home Preview:**

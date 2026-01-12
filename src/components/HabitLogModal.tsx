@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { saveLastHabitLog } from "../utils/questDataMapping";
+import { logDualWriteError } from "../utils/dualWriteLogger";
 
 interface HabitLogModalProps {
   isOpen: boolean;
@@ -114,22 +115,40 @@ export function HabitLogModal({
       }
 
       // Dual-write: Also insert into activity_logs for calendar/timeline
-      const now = new Date().toISOString();
-      const { error: activityLogError } = await supabase
-        .from("activity_logs")
-        .insert({
-          user_id: userId,
-          quest_id: questId,
-          habit_id: habitId, // Will be NULL if habits table doesn't exist yet, but structure is ready
-          action_type: 'habit_log',
-          difficulty: difficulty,
-          dollars_saved: dollarValue > 0 ? dollarValue : null,
-          logged_at: now,
-        });
+      // This is best-effort - if it fails, the primary action (quest_log) still succeeds
+      try {
+        const now = new Date().toISOString();
+        const { error: activityLogError } = await supabase
+          .from("activity_logs")
+          .insert({
+            user_id: userId,
+            quest_id: questId,
+            habit_id: habitId, // Will be NULL if habits table doesn't exist yet, but structure is ready
+            action_type: 'habit_log',
+            difficulty: difficulty,
+            dollars_saved: dollarValue > 0 ? dollarValue : null,
+            logged_at: now,
+          });
 
-      if (activityLogError) {
-        console.error('Error creating activity log:', activityLogError);
-        // Don't throw - activity logging is best effort, existing quest_logs still work
+        if (activityLogError) {
+          logDualWriteError(
+            'habit_log',
+            'activity_logs',
+            activityLogError,
+            userId,
+            { questId, habitId, difficulty, dollarValue }
+          );
+          // Don't throw - activity logging is best effort, existing quest_logs still work
+        }
+      } catch (error) {
+        logDualWriteError(
+          'habit_log',
+          'activity_logs',
+          error,
+          userId,
+          { questId, habitId, difficulty, dollarValue }
+        );
+        // Don't throw - activity logging is best effort
       }
 
       // Call completion callback

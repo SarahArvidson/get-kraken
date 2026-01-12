@@ -320,20 +320,38 @@ export function useQuests() {
         }
 
         // Dual-write: Also insert into activity_logs for calendar/timeline
-        const { error: activityLogError } = await supabase
-          .from("activity_logs")
-          .insert({
-            user_id: user.id,
-            quest_id: questId,
-            action_type: 'quest_complete',
-            sand_dollars_earned: reward,
-            dollars_saved: dollarAmount > 0 ? dollarAmount : null,
-            logged_at: completedAt,
-          });
+        // This is best-effort - if it fails, the primary action (quest_log + wallet update) still succeeds
+        try {
+          const { error: activityLogError } = await supabase
+            .from("activity_logs")
+            .insert({
+              user_id: user.id,
+              quest_id: questId,
+              action_type: 'quest_complete',
+              sand_dollars_earned: reward,
+              dollars_saved: dollarAmount > 0 ? dollarAmount : null,
+              logged_at: completedAt,
+            });
 
-        if (activityLogError) {
-          console.error("Activity log insert error:", activityLogError);
-          // Don't throw - activity logging is best effort, existing quest_logs still work
+          if (activityLogError) {
+            logDualWriteError(
+              'quest_complete',
+              'activity_logs',
+              activityLogError,
+              user.id,
+              { questId, reward, dollarAmount, completedAt }
+            );
+            // Don't throw - activity logging is best effort, existing quest_logs still work
+          }
+        } catch (error) {
+          logDualWriteError(
+            'quest_complete',
+            'activity_logs',
+            error,
+            user.id,
+            { questId, reward, dollarAmount, completedAt }
+          );
+          // Don't throw - activity logging is best effort
         }
 
         // Then, update wallet atomically
