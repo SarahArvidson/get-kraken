@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import type { Quest, QuestWithLogs, QuestLog } from "../types";
 import { useQuestOverrides } from "./useQuestOverrides";
 import { registerPendingWalletMutation } from "../utils/mutationGuard";
+import { logDualWriteError } from "../utils/dualWriteLogger";
 
 export function useQuests() {
   const [quests, setQuests] = useState<Quest[]>([]);

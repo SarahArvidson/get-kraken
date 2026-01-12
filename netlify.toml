@@ -11,3 +11,32 @@
 [build.environment]
   # Node version
   NODE_VERSION = "20"
+
+# Redirects for v2 SPA routes (deep-link support)
+# All v2 routes are client-side only, handled by React Router
+# These redirects ensure deep links work on refresh without affecting main branch
+[[redirects]]
+  from = "/quests/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/rewards/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/calendar"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+# Fallback: All other routes go to index.html for SPA routing
+# This only applies to v2 branch, main branch behavior unchanged
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false

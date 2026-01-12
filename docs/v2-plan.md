@@ -1479,6 +1479,32 @@ CREATE TABLE activity_logs (
 - `src/components/HabitLogModal.tsx` - Enhanced error handling
 - `src/hooks/useQuests.ts` - Enhanced error handling in `completeQuest`
 
+### Routing Hardening
+
+**Deep Link Behavior:**
+- All v2 routes (`/quests`, `/quests/:id`, `/rewards`, `/rewards/:id`, `/calendar`) are client-side only
+- React Router's `BrowserRouter` handles client-side navigation
+- On refresh, Netlify serves `index.html` which loads React Router, then routes to correct page
+
+**Netlify Redirect Rules:**
+- Added to `netlify.toml` for v2 branch only
+- Redirects `/quests/*`, `/rewards/*`, `/calendar` to `/index.html` with 200 status
+- Fallback redirect for all other routes to `/index.html`
+- **Note:** Redirects are conditional on Role = ["admin"] to avoid affecting main branch
+- Main branch behavior unchanged (no redirects applied)
+
+**Route Handling:**
+- `QuestDetailPage` - Loads quest by ID from URL params, handles 404 gracefully
+- `RewardDetailPage` - Loads reward by ID from URL params, handles 404 gracefully
+- `CalendarPage` - No params, works on refresh
+- All routes redirect to appropriate fallback if resource not found
+
+**Files:**
+- `netlify.toml` - Netlify redirect configuration
+- `src/App.tsx` - React Router route definitions
+- `src/pages/QuestDetailPage.tsx` - Deep link handling with 404 fallback
+- `src/pages/RewardDetailPage.tsx` - Deep link handling with 404 fallback
+
 ### Calendar Views
 
 **Home Preview:**
