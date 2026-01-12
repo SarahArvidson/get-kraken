@@ -1004,4 +1004,165 @@ export interface QuestRunSummary {
 
 ---
 
+## Repeatable Quest Model Proposal
+
+### Overview
+
+The repeatable quest system allows users to complete the same quest multiple times while preserving history. This requires separating quest templates from quest instances (runs).
+
+### Data Model
+
+#### 1. `quest_templates` (Optional - Alternative Approach)
+
+**Option A: Use existing `quests` table as templates**
+- Keep `quests` table as-is (it already represents quest templates)
+- Add `is_repeatable` boolean column (default true)
+- When a quest is repeatable, users can start multiple runs
+
+**Option B: Separate templates table**
+- Create new `quest_templates` table
+- Migrate existing quests to templates
+- Keep `quests` for backward compatibility during transition
+
+**Decision: Option A** - Simpler, no migration needed. Existing quests become templates automatically.
+
+#### 2. `quest_runs` (Quest Instance Tracking)
+
+```sql
+CREATE TABLE quest_runs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  quest_id UUID NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  abandoned_at TIMESTAMPTZ,
+  target_completion_date TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'abandoned')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  INDEX idx_quest_runs_user_quest (user_id, quest_id),
+  INDEX idx_quest_runs_status (user_id, status),
+  INDEX idx_quest_runs_started_at (user_id, started_at DESC)
+);
+```
+
+**Purpose:**
+- Track individual quest instances per user
+- Support multiple concurrent or sequential runs of the same quest
+- Preserve history of all attempts
+
+**Relationships:**
+- One quest template can have many quest_runs (one per user per attempt)
+- Each quest_run belongs to one user and one quest template
+- quest_logs can optionally link to quest_run_id (future migration)
+
+#### 3. `activity_logs` (Unified Timeline)
+
+```sql
+CREATE TABLE activity_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT NOT NULL CHECK (activity_type IN (
+    'quest_completion',
+    'habit_log',
+    'shop_purchase',
+    'quest_start',
+    'quest_abandon'
+  )),
+  quest_id UUID REFERENCES quests(id) ON DELETE SET NULL,
+  quest_run_id UUID REFERENCES quest_runs(id) ON DELETE SET NULL,
+  shop_item_id UUID REFERENCES shop_items(id) ON DELETE SET NULL,
+  habit_id UUID REFERENCES habits(id) ON DELETE SET NULL,
+  metadata JSONB, -- flexible storage for activity-specific data
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  INDEX idx_activity_logs_user_occurred (user_id, occurred_at DESC),
+  INDEX idx_activity_logs_type (activity_type),
+  INDEX idx_activity_logs_quest_run (quest_run_id)
+);
+```
+
+**Purpose:**
+- Unified timeline for calendar view
+- Supports all activity types (quest completions, habit logs, purchases)
+- Enables calendar heatmap and activity tracking
+- Links to quest_runs for repeatable quest history
+
+**Metadata JSONB Examples:**
+```json
+// For habit_log activity_type
+{
+  "difficulty": 7,
+  "saved_money": true,
+  "dollars_saved": 5.50
+}
+
+// For quest_completion activity_type
+{
+  "reward": 10,
+  "dollar_amount": 0
+}
+```
+
+### User Flow for Repeatable Quests
+
+1. **Start Quest:**
+   - User clicks "Start Quest" on a quest template
+   - System creates a new `quest_run` with status 'in_progress'
+   - Creates `activity_log` entry with activity_type 'quest_start'
+
+2. **Log Progress:**
+   - User logs habits, completes tasks
+   - Each log can optionally link to `quest_run_id`
+   - Creates `activity_log` entries for each action
+
+3. **Complete Quest:**
+   - User clicks "End Quest and Claim Rewards"
+   - System updates `quest_run` status to 'completed', sets `completed_at`
+   - Creates `activity_log` entry with activity_type 'quest_completion'
+   - Updates wallet atomically
+   - Quest template remains unchanged
+
+4. **Repeat Quest:**
+   - User can click "Start Again" on completed quest
+   - System creates a new `quest_run` (new instance)
+   - Previous run remains in history (pastRuns)
+
+5. **Abandon Quest:**
+   - User clicks "Abandon and Delete"
+   - System updates `quest_run` status to 'abandoned', sets `abandoned_at`
+   - Creates `activity_log` entry with activity_type 'quest_abandon'
+   - Optionally deletes quest_run or keeps for history
+
+### Migration Strategy
+
+**Phase 2 (Current):**
+- No schema changes
+- UI placeholders for "Current run" and "Past runs"
+- Document model in plan
+
+**Future Migration:**
+1. Add `is_repeatable` column to `quests` table (default true)
+2. Create `quest_runs` table
+3. Create `activity_logs` table
+4. Add `quest_run_id` column to `quest_logs` (nullable, for backward compatibility)
+5. Backfill: Create initial quest_run for each user's existing quest completions (optional)
+
+### UI Placeholders (Phase 2)
+
+In QuestDetailPage:
+- **Current Run Section:** Shows placeholder text "Repeatable quest support coming soon"
+- **Past Runs Section:** Shows placeholder text "Quest history and repeatability features coming soon"
+- Both sections only appear when relevant (e.g., past runs only if userCompletionCount > 0)
+
+### Benefits of This Model
+
+1. **Clean History:** Each quest run is a separate instance with clear start/end
+2. **Flexible:** Supports concurrent runs (user starts quest, abandons, starts again)
+3. **Calendar Integration:** activity_logs provides unified timeline
+4. **Backward Compatible:** Existing quest_logs continue to work
+5. **Scalable:** Can add more activity types without schema changes
+
+---
+
 **End of Phase 0 Plan Document**
