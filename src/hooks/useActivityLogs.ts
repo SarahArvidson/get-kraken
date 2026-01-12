@@ -113,6 +113,32 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
     loadActivityLogs();
   }, [loadActivityLogs]);
 
+  // Re-hydrate logs when metadata becomes available
+  useEffect(() => {
+    if (options?.questMetadata || options?.rewardMetadata) {
+      setLogs((prevLogs) => {
+        return prevLogs.map((log) => {
+          const hydrated: ActivityLog = { ...log };
+          
+          // Merge quest metadata if available
+          if (log.quest_id && options?.questMetadata?.[log.quest_id]) {
+            const questMeta = options.questMetadata[log.quest_id];
+            hydrated.quest_name = questMeta.name;
+            hydrated.quest_tags = questMeta.tags;
+          }
+          
+          // Merge reward metadata if available
+          if (log.reward_id && options?.rewardMetadata?.[log.reward_id]) {
+            const rewardMeta = options.rewardMetadata[log.reward_id];
+            hydrated.reward_name = rewardMeta.name;
+          }
+          
+          return hydrated;
+        });
+      });
+    }
+  }, [options?.questMetadata, options?.rewardMetadata]);
+
   // Get activity count by date (for calendar grid)
   const getActivityCountByDate = useCallback(() => {
     const counts: Record<string, number> = {};
