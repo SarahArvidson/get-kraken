@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { Routes, Route } from "react-router-dom";
 import { Toast } from "@ffx/sdk";
 import { useWallet } from "./hooks/useWallet";
 import { useQuests } from "./hooks/useQuests";
@@ -14,17 +15,23 @@ import { useToast } from "./hooks/useToast";
 import { useFilterState } from "./hooks/useFilterState";
 import { useQuestOverrides } from "./hooks/useQuestOverrides";
 import { useShopItemOverrides } from "./hooks/useShopItemOverrides";
-import { WalletDisplay } from "./components/WalletDisplay";
 import { Header } from "./components/Header";
-import { NavigationTabs } from "./components/NavigationTabs";
 import { BubbleBackground } from "./components/BubbleBackground";
 import { Footer } from "./components/Footer";
+import { HamburgerMenu } from "./components/HamburgerMenu";
+import { WalletDrilldown } from "./components/WalletDrilldown";
 import { EditQuestCard } from "./components/EditQuestCard";
 import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
-import { QuestsView } from "./components/views/QuestsView";
-import { ShopView } from "./components/views/ShopView";
-import { ProgressView } from "./components/views/ProgressView";
+import { HomePage } from "./pages/HomePage";
+import { QuestsPage } from "./pages/QuestsPage";
+import { RewardsPage } from "./pages/RewardsPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { HowToUsePage } from "./pages/HowToUsePage";
+import { LegacyQuestsPage } from "./pages/LegacyQuestsPage";
+import { LegacyShopPage } from "./pages/LegacyShopPage";
+import { LegacyProgressPage } from "./pages/LegacyProgressPage";
 import { playCoinSound, preloadAudio } from "./utils/sound";
 import { calculateUserCompletionCounts } from "./utils/completionCount";
 import { calculateUserPurchaseCounts } from "./utils/purchaseCount";
@@ -39,23 +46,7 @@ import { getFeatureUpdatesContent, getAboutContent } from "./constants/popupCont
 import { PopupModal } from "./components/PopupModal";
 import { supabase } from "./lib/supabase";
 
-type View = "quests" | "shop" | "progress";
-
 function App() {
-  // Persist current view in localStorage
-  const [currentView, setCurrentView] = useState<View>(() => {
-    const saved = localStorage.getItem("get-kraken-current-view");
-    if (saved && (saved === "quests" || saved === "shop" || saved === "progress")) {
-      return saved as View;
-    }
-    return "quests";
-  });
-
-  // Update localStorage when view changes
-  const handleViewChange = useCallback((view: View) => {
-    setCurrentView(view);
-    localStorage.setItem("get-kraken-current-view", view);
-  }, []);
   const preferences = usePreferences();
   const { toast, showToast, showSuccess, showError, dismissToast } = useToast();
 
@@ -71,10 +62,11 @@ function App() {
   const [editingShopItem, setEditingShopItem] = useState<ShopItem | null>(null);
   const [showFeatureUpdates, setShowFeatureUpdates] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isWalletDrilldownOpen, setIsWalletDrilldownOpen] = useState(false);
 
   const {
     wallet,
-    loading: walletLoading,
     resetWallet,
   } = useWallet();
   const {
@@ -399,74 +391,98 @@ function App() {
         showDollarAmounts={preferences.showDollarAmounts}
         onToggleDollarAmounts={() => preferences.toggleDollarAmounts()}
         onLogout={handleLogout}
+        onOpenMenu={() => setIsMenuOpen(true)}
+      />
+
+      <HamburgerMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
+
+      <WalletDrilldown
+        isOpen={isWalletDrilldownOpen}
+        onClose={() => setIsWalletDrilldownOpen(false)}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-        <div className="mb-8">
-          <WalletDisplay
-            wallet={wallet}
-            loading={walletLoading}
-            showDollarAmounts={preferences.showDollarAmounts}
+        <Routes>
+          {/* New v2 Home Page */}
+          <Route
+            path="/"
+            element={
+              <HomePage
+                onOpenWalletDrilldown={() => setIsWalletDrilldownOpen(true)}
+              />
+            }
           />
-        </div>
 
-        <NavigationTabs
-          currentView={currentView}
-          onViewChange={handleViewChange}
-        />
+          {/* New v2 Pages (Placeholders for now) */}
+          <Route path="/quests" element={<QuestsPage />} />
+          <Route path="/rewards" element={<RewardsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/how-to-use" element={<HowToUsePage />} />
 
-        {/* Always mount all views - use CSS visibility to show/hide */}
-        <div className={currentView === "quests" ? "" : "hidden"}>
-          <QuestsView
-            quests={quests}
-            allQuestLogs={allQuestLogs}
-            loading={questsLoading}
-            searchQuery={questSearchQuery}
-            onSearchChange={setQuestSearchQuery}
-            selectedTag={selectedQuestTag}
-            onTagSelect={setSelectedQuestTag}
-            showDollarAmounts={preferences.showDollarAmounts}
-            onCreateQuest={createQuest}
-            onCompleteQuest={handleCompleteQuest}
-            onViewLogs={handleViewQuestLogs}
-            onEdit={handleEditQuest}
-            onShowToast={showToast}
+          {/* Legacy v1 Pages (temporary, preserve functionality) */}
+          <Route
+            path="/legacy/quests"
+            element={
+              <LegacyQuestsPage
+                quests={quests}
+                allQuestLogs={allQuestLogs}
+                loading={questsLoading}
+                searchQuery={questSearchQuery}
+                onSearchChange={setQuestSearchQuery}
+                selectedTag={selectedQuestTag}
+                onTagSelect={setSelectedQuestTag}
+                showDollarAmounts={preferences.showDollarAmounts}
+                onCreateQuest={createQuest}
+                onCompleteQuest={handleCompleteQuest}
+                onViewLogs={handleViewQuestLogs}
+                onEdit={handleEditQuest}
+                onShowToast={showToast}
+              />
+            }
           />
-        </div>
-
-        <div className={currentView === "shop" ? "" : "hidden"}>
-          <ShopView
-            shopItems={shopItems}
-            allShopLogs={allShopLogs}
-            walletTotal={wallet?.total ?? 0}
-            walletDollarTotal={wallet?.dollar_total ?? 0}
-            loading={shopItemsLoading}
-            searchQuery={shopSearchQuery}
-            onSearchChange={setShopSearchQuery}
-            selectedTag={selectedShopTag}
-            onTagSelect={setSelectedShopTag}
-            showDollarAmounts={preferences.showDollarAmounts}
-            onCreateShopItem={createShopItem}
-            onPurchaseItem={handlePurchaseItem}
-            onViewLogs={handleViewShopLogs}
-            onEdit={handleEditShopItem}
-            onShowToast={showToast}
+          <Route
+            path="/legacy/shop"
+            element={
+              <LegacyShopPage
+                shopItems={shopItems}
+                allShopLogs={allShopLogs}
+                walletTotal={wallet?.total ?? 0}
+                walletDollarTotal={wallet?.dollar_total ?? 0}
+                loading={shopItemsLoading}
+                searchQuery={shopSearchQuery}
+                onSearchChange={setShopSearchQuery}
+                selectedTag={selectedShopTag}
+                onTagSelect={setSelectedShopTag}
+                showDollarAmounts={preferences.showDollarAmounts}
+                onCreateShopItem={createShopItem}
+                onPurchaseItem={handlePurchaseItem}
+                onViewLogs={handleViewShopLogs}
+                onEdit={handleEditShopItem}
+                onShowToast={showToast}
+              />
+            }
           />
-        </div>
-
-        <div className={currentView === "progress" ? "" : "hidden"}>
-          <ProgressView
-            walletTotal={wallet?.total ?? 0}
-            walletDollarTotal={wallet?.dollar_total ?? 0}
-            questLogs={allQuestLogs}
-            shopLogs={allShopLogs}
-            quests={quests}
-            shopItems={shopItems}
-            onResetProgress={handleResetProgress}
-            onResetAllProgress={handleResetAllProgress}
-            showDollarAmounts={preferences.showDollarAmounts}
+          <Route
+            path="/legacy/progress"
+            element={
+              <LegacyProgressPage
+                walletTotal={wallet?.total ?? 0}
+                walletDollarTotal={wallet?.dollar_total ?? 0}
+                questLogs={allQuestLogs}
+                shopLogs={allShopLogs}
+                quests={quests}
+                shopItems={shopItems}
+                onResetProgress={handleResetProgress}
+                onResetAllProgress={handleResetAllProgress}
+                showDollarAmounts={preferences.showDollarAmounts}
+              />
+            }
           />
-        </div>
+        </Routes>
       </main>
 
       {selectedQuestLogs && (
