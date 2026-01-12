@@ -54,7 +54,7 @@ export function SettingsPage() {
   const [resetWalletConfirm, setResetWalletConfirm] = useState(false);
   const [resetProgressConfirm, setResetProgressConfirm] = useState(false);
   const [resetProgressType, setResetProgressType] = useState("");
-  const { wallet, loadWallet } = useWallet();
+  const { refresh: refreshWallet } = useWallet();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -357,7 +357,7 @@ export function SettingsPage() {
               if (walletError) throw walletError;
 
               // Reload wallet
-              await loadWallet();
+              await refreshWallet();
               setResetWalletConfirm(false);
               alert("Wallet has been reset to zero.");
             } catch (error: any) {
@@ -423,7 +423,7 @@ export function SettingsPage() {
               if (walletError) throw walletError;
 
               // Reload wallet
-              await loadWallet();
+              await refreshWallet();
               setResetProgressConfirm(false);
               setResetProgressType("");
               alert("All progress has been reset. Your quests and shop items remain intact.");
