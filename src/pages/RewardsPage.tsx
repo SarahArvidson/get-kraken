@@ -11,6 +11,7 @@ import { useFilterState } from "../hooks/useFilterState";
 import { usePreferences } from "../hooks/usePreferences";
 import { deriveRewardSummary } from "../utils/rewardDataMapping";
 import { RewardCreateModal } from "../components/RewardCreateModal";
+import { CyclingShopBorder } from "../components/CyclingBorder";
 import { SHOP_TAG_BUTTON_CLASSES, SHOP_TAG_LABELS } from "../utils/shopTags";
 import type { RewardSummary } from "../types/rewards";
 import type { ShopLog, ShopTag } from "../types";
@@ -300,20 +301,20 @@ export function RewardsPage() {
               {/* Reward Cards for this Letter */}
               <div className="space-y-2">
                 {groupedRewards.groups[letter].map((reward) => (
-                  <div
-                    key={reward.id}
-                    onClick={() => handleRewardClick(reward.id)}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleRewardClick(reward.id);
-                      }
-                    }}
-                    aria-label={`Open reward: ${reward.name}`}
-                  >
+                  <CyclingShopBorder key={reward.id} tags={reward.tags as ShopTag[]}>
+                    <div
+                      onClick={() => handleRewardClick(reward.id)}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRewardClick(reward.id);
+                        }
+                      }}
+                      aria-label={`Open reward: ${reward.name}`}
+                    >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">

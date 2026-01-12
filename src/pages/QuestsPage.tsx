@@ -10,6 +10,7 @@ import { useQuests } from "../hooks/useQuests";
 import { useFilterState } from "../hooks/useFilterState";
 import { deriveQuestSummary } from "../utils/questDataMapping";
 import { QuestCreateModal } from "../components/QuestCreateModal";
+import { CyclingBorder } from "../components/CyclingBorder";
 import { TAG_BUTTON_CLASSES, TAG_LABELS } from "../utils/tags";
 import type { QuestSummary } from "../types/quests";
 import type { QuestLog, Tag } from "../types";
@@ -211,20 +212,20 @@ export function QuestsPage() {
               {/* Quest Cards for this Letter */}
               <div className="space-y-2">
                 {groupedQuests.groups[letter].map((quest) => (
-                  <div
-                    key={quest.id}
-                    onClick={() => handleQuestClick(quest.id)}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleQuestClick(quest.id);
-                      }
-                    }}
-                    aria-label={`Open quest: ${quest.name}`}
-                  >
+                  <CyclingBorder key={quest.id} tags={quest.tags as Tag[]}>
+                    <div
+                      onClick={() => handleQuestClick(quest.id)}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleQuestClick(quest.id);
+                        }
+                      }}
+                      aria-label={`Open quest: ${quest.name}`}
+                    >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
