@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useTheme } from "../hooks/useTheme";
 import { usePreferences } from "../hooks/usePreferences";
+import { useProfile } from "../hooks/useProfile";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -42,6 +43,9 @@ function CollapsibleSection({ title, children, defaultOpen = false }: Collapsibl
 export function SettingsPage() {
   const { themeMode, updateThemeMode, toggleTheme } = useTheme();
   const { showDollarAmounts, showSandDollars, toggleDollarAmounts, toggleSandDollars } = usePreferences();
+  const { username, updateUsername, loading: profileLoading } = useProfile();
+  const [usernameInput, setUsernameInput] = useState("");
+  const [savingUsername, setSavingUsername] = useState(false);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -157,9 +161,44 @@ export function SettingsPage() {
 
         {/* Account Section */}
         <CollapsibleSection title="Account">
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Account controls coming in Step 4...
-          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Public Username
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                This username is visible to your friends. Letters, numbers, underscores, and hyphens only. Max 50 characters.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={usernameInput || username}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  placeholder="Enter username"
+                  maxLength={50}
+                  pattern="[a-zA-Z0-9_-]+"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+                <button
+                  onClick={async () => {
+                    setSavingUsername(true);
+                    try {
+                      await updateUsername(usernameInput || username);
+                      setUsernameInput("");
+                    } catch (error) {
+                      alert("Failed to update username. Please check the format.");
+                    } finally {
+                      setSavingUsername(false);
+                    }
+                  }}
+                  disabled={savingUsername || profileLoading}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {savingUsername ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
         </CollapsibleSection>
 
         {/* Data Section */}
