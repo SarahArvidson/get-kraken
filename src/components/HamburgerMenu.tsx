@@ -6,6 +6,7 @@
 
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -60,9 +61,9 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
         aria-hidden="true"
       />
       
-      {/* Menu Drawer */}
+      {/* Menu Drawer - Opens from right side to match hamburger icon position */}
       <div
-        className="fixed inset-y-0 left-0 w-64 sm:w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out"
+        className="fixed inset-y-0 right-0 w-64 sm:w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out"
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
@@ -104,6 +105,20 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
                 );
               })}
             </ul>
+            
+            {/* Sign Out Button */}
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={async () => {
+                  await supabase.supabase.auth.signOut();
+                  onClose();
+                }}
+                className="w-full text-left px-4 py-3 rounded-lg transition-colors touch-manipulation flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <span className="text-2xl">🚪</span>
+                <span className="text-lg">Sign Out</span>
+              </button>
+            </div>
           </nav>
         </div>
       </div>

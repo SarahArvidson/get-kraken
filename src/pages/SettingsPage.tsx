@@ -171,6 +171,18 @@ export function SettingsPage() {
         {/* Account Section */}
         <CollapsibleSection title="Account">
           <div className="space-y-4">
+            {/* Sign Out */}
+            <div className="pt-2 pb-4 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={async () => {
+                  await supabase.supabase.auth.signOut();
+                }}
+                className="w-full px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Public Username

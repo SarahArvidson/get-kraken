@@ -17,9 +17,10 @@ interface AuthGateProps {
 export function AuthGate({ children }: AuthGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Check for existing session on mount
@@ -55,74 +56,84 @@ export function AuthGate({ children }: AuthGateProps) {
     };
   }, []);
 
-  const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password");
+  const handleSignIn = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password");
       return;
     }
 
-    setIsLoggingIn(true);
+    setIsSubmitting(true);
     setError(null);
 
     try {
-      // Try to sign in with email (username as email)
-      const email = username.includes("@") ? username : `${username}@getkraken.local`;
-      
-      // Try to sign in first
-      const signInResult = await supabase.signIn({
-        email,
+      const result = await supabase.signIn({
+        email: email.trim(),
         password,
       });
 
-      if (signInResult.error) {
-        // If sign in fails, try to sign up
-        const signUpResult = await supabase.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              username: username,
-            },
-          },
-        });
-
-        if (signUpResult.error) {
-          setError(signUpResult.error.message || "Failed to create account");
+      if (result.error) {
+        // Check if user already exists (trying to sign in but account doesn't exist or wrong password)
+        if (result.error.message?.includes("Invalid login credentials") || 
+            result.error.message?.includes("Email not confirmed")) {
+          setError(result.error.message);
         } else {
-          // Check if user needs email confirmation
-          if (signUpResult.data?.user && !signUpResult.data?.session) {
-            // User created but needs email confirmation
-            setError("Account created! Please check your email to confirm your account, then try logging in again.");
-            return;
-          }
-          
-          // If we have a session, user is already logged in
-          if (signUpResult.data?.session) {
-            setIsAuthenticated(true);
-            return;
-          }
-          
-          // Try to sign in after sign up (if email confirmation is disabled)
-          const autoSignInResult = await supabase.signIn({
-            email,
-            password,
-          });
+          setError(result.error.message || "Failed to sign in. Please check your credentials.");
+        }
+      } else if (result.data?.session) {
+        setIsAuthenticated(true);
+      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during sign in");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-          if (autoSignInResult.error) {
-            // Check if it's an email confirmation error
-            if (autoSignInResult.error.message?.includes("email") || 
-                autoSignInResult.error.message?.includes("confirm")) {
-              setError("Please check your email to confirm your account, then try logging in again.");
-            } else {
-              setError(autoSignInResult.error.message || "Account created but login failed. Please try again.");
-            }
-          }
+  const handleSignUp = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await supabase.signUp({
+        email: email.trim(),
+        password,
+      });
+
+      if (result.error) {
+        // Check if user already exists
+        if (result.error.message?.includes("already registered") || 
+            result.error.message?.includes("already exists") ||
+            result.error.message?.includes("User already registered")) {
+          setError("Account already exists. Please sign in instead.");
+          // Switch to sign in mode and prefill email
+          setAuthMode("signin");
+          return;
+        }
+        setError(result.error.message || "Failed to create account");
+      } else {
+        // Check if user needs email confirmation
+        if (result.data?.user && !result.data?.session) {
+          setError("Account created! Please check your email to confirm your account, then sign in.");
+          setAuthMode("signin");
+        } else if (result.data?.session) {
+          // Email confirmation disabled, user is logged in
+          setIsAuthenticated(true);
         }
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred during login");
+      setError(err.message || "An error occurred during sign up");
     } finally {
-      setIsLoggingIn(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -156,15 +167,45 @@ export function AuthGate({ children }: AuthGateProps) {
           </div>
 
           <div className="space-y-4">
+            {/* Mode Toggle */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => {
+                  setAuthMode("signin");
+                  setError(null);
+                }}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  authMode === "signin"
+                    ? "bg-amber-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("signup");
+                  setError(null);
+                }}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  authMode === "signup"
+                    ? "bg-amber-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+
             <InputField
-              label="Username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleLogin();
+                  authMode === "signin" ? handleSignIn() : handleSignUp();
                 }
               }}
             />
@@ -177,7 +218,7 @@ export function AuthGate({ children }: AuthGateProps) {
               placeholder="Enter your password"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleLogin();
+                  authMode === "signin" ? handleSignIn() : handleSignUp();
                 }
               }}
             />
@@ -191,16 +232,21 @@ export function AuthGate({ children }: AuthGateProps) {
             <Button
               variant="primary"
               size="lg"
-              onClick={handleLogin}
-              loading={isLoggingIn}
+              onClick={authMode === "signin" ? handleSignIn : handleSignUp}
+              loading={isSubmitting}
               className="w-full"
             >
-              {isLoggingIn ? "Logging in..." : "Login"}
+              {isSubmitting 
+                ? (authMode === "signin" ? "Signing in..." : "Creating account...")
+                : (authMode === "signin" ? "Sign In" : "Sign Up")
+              }
             </Button>
 
             <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-              First time? Enter a username and password to create your account.
-              Your device will remember you.
+              {authMode === "signin" 
+                ? "Don't have an account? Click 'Sign Up' above."
+                : "Already have an account? Click 'Sign In' above."
+              }
             </p>
           </div>
         </div>
