@@ -12,19 +12,15 @@ import type { Tag } from "../types";
 export type ActionType = 'habit_log' | 'quest_complete' | 'reward_purchase';
 
 // Raw activity log from database (no joins)
+// Only fields we actually fetch from activity_logs
 export interface RawActivityLog {
   id: string;
   user_id: string;
   quest_id: string | null;
-  habit_id: string | null;
   reward_id: string | null;
   action_type: ActionType;
-  difficulty: number | null;
-  dollars_saved: number | null;
-  sand_dollars_earned: number | null;
   logged_at: string;
   source_user_id: string | null;
-  created_at: string;
 }
 
 // Hydrated activity log with metadata merged in JavaScript
@@ -44,6 +40,26 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper function to hydrate a raw log with metadata
+  const hydrateLog = useCallback((log: RawActivityLog): ActivityLog => {
+    const hydrated: ActivityLog = { ...log };
+    
+    // Merge quest metadata if available
+    if (log.quest_id && options?.questMetadata?.[log.quest_id]) {
+      const questMeta = options.questMetadata[log.quest_id];
+      hydrated.quest_name = questMeta.name;
+      hydrated.quest_tags = questMeta.tags;
+    }
+    
+    // Merge reward metadata if available
+    if (log.reward_id && options?.rewardMetadata?.[log.reward_id]) {
+      const rewardMeta = options.rewardMetadata[log.reward_id];
+      hydrated.reward_name = rewardMeta.name;
+    }
+    
+    return hydrated;
+  }, [options?.questMetadata, options?.rewardMetadata]);
+
   // Load activity logs for current user - NO JOINS, raw data only
   const loadActivityLogs = useCallback(async (startDate?: Date, endDate?: Date) => {
     try {
@@ -56,9 +72,10 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
       }
 
       // Fetch only raw activity_logs fields - NO JOINS
+      // Only select fields needed for calendar rendering
       let query = supabase
         .from("activity_logs")
-        .select("id, user_id, quest_id, habit_id, reward_id, action_type, difficulty, dollars_saved, sand_dollars_earned, logged_at, source_user_id, created_at")
+        .select("id, user_id, quest_id, reward_id, action_type, logged_at, source_user_id")
         .eq("user_id", user.id)
         .order("logged_at", { ascending: false });
 
@@ -78,24 +95,7 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
       }
 
       // Hydrate raw logs with metadata in JavaScript (no SQL joins)
-      const hydratedLogs: ActivityLog[] = (data || []).map((log: RawActivityLog) => {
-        const hydrated: ActivityLog = { ...log };
-        
-        // Merge quest metadata if available
-        if (log.quest_id && options?.questMetadata?.[log.quest_id]) {
-          const questMeta = options.questMetadata[log.quest_id];
-          hydrated.quest_name = questMeta.name;
-          hydrated.quest_tags = questMeta.tags;
-        }
-        
-        // Merge reward metadata if available
-        if (log.reward_id && options?.rewardMetadata?.[log.reward_id]) {
-          const rewardMeta = options.rewardMetadata[log.reward_id];
-          hydrated.reward_name = rewardMeta.name;
-        }
-        
-        return hydrated;
-      });
+      const hydratedLogs: ActivityLog[] = (data || []).map((log: RawActivityLog) => hydrateLog(log));
 
       setLogs(hydratedLogs);
       setError(null);
@@ -106,38 +106,33 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
     } finally {
       setLoading(false);
     }
-  }, [options]);
+  }, [hydrateLog]);
 
   // Load logs on mount
   useEffect(() => {
     loadActivityLogs();
   }, [loadActivityLogs]);
 
-  // Re-hydrate logs when metadata becomes available
+  // Re-hydrate logs when metadata becomes available (stable, no re-renders)
   useEffect(() => {
-    if (options?.questMetadata || options?.rewardMetadata) {
-      setLogs((prevLogs) => {
-        return prevLogs.map((log) => {
-          const hydrated: ActivityLog = { ...log };
-          
-          // Merge quest metadata if available
-          if (log.quest_id && options?.questMetadata?.[log.quest_id]) {
-            const questMeta = options.questMetadata[log.quest_id];
-            hydrated.quest_name = questMeta.name;
-            hydrated.quest_tags = questMeta.tags;
-          }
-          
-          // Merge reward metadata if available
-          if (log.reward_id && options?.rewardMetadata?.[log.reward_id]) {
-            const rewardMeta = options.rewardMetadata[log.reward_id];
-            hydrated.reward_name = rewardMeta.name;
-          }
-          
-          return hydrated;
-        });
+    setLogs((prevLogs) => {
+      // Only re-hydrate if we have logs and metadata is available
+      if (prevLogs.length === 0) return prevLogs;
+      if (!options?.questMetadata && !options?.rewardMetadata) return prevLogs;
+      
+      // Check if any logs need hydration
+      const needsHydration = prevLogs.some(log => {
+        if (log.quest_id && !log.quest_name && options?.questMetadata?.[log.quest_id]) return true;
+        if (log.reward_id && !log.reward_name && options?.rewardMetadata?.[log.reward_id]) return true;
+        return false;
       });
-    }
-  }, [options?.questMetadata, options?.rewardMetadata]);
+      
+      if (!needsHydration) return prevLogs;
+      
+      // Re-hydrate logs that need metadata
+      return prevLogs.map((log) => hydrateLog(log));
+    });
+  }, [options?.questMetadata, options?.rewardMetadata, hydrateLog]);
 
   // Get activity count by date (for calendar grid)
   const getActivityCountByDate = useCallback(() => {
@@ -172,16 +167,22 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
         .from("activity_logs")
         .update(updates)
         .eq("id", logId)
-        .select()
+        .select("id, user_id, quest_id, reward_id, action_type, logged_at, source_user_id")
         .single();
 
       if (updateError) {
         throw updateError;
       }
 
-      // Update local state
+      // Update local state - re-hydrate the updated log
       setLogs((prev) =>
-        prev.map((log) => (log.id === logId ? { ...log, ...updates } : log))
+        prev.map((log) => {
+          if (log.id === logId) {
+            const updatedRaw: RawActivityLog = data;
+            return hydrateLog(updatedRaw);
+          }
+          return log;
+        })
       );
 
       return data;
@@ -189,7 +190,7 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
       console.error("Error updating activity log:", err);
       throw err;
     }
-  }, []);
+  }, [hydrateLog]);
 
   return {
     logs,
