@@ -45,7 +45,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }: Collapsibl
 }
 
 export function SettingsPage() {
-  const { themeMode, updateThemeMode, toggleTheme } = useTheme();
+  const { themeMode, updateThemeMode } = useTheme();
   const { showDollarAmounts, showSandDollars, enableSocialFeatures, toggleDollarAmounts, toggleSandDollars, toggleSocialFeatures } = usePreferences();
   const { username, updateUsername, loading: profileLoading } = useProfile();
   const [usernameInput, setUsernameInput] = useState("");
