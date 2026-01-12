@@ -182,7 +182,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
       {/* Calendar Preview Section - Full Width */}
       <div
         onClick={() => navigate("/calendar")}
-        className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-3xl p-6 sm:p-8 shadow-md cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+        className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-md cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
