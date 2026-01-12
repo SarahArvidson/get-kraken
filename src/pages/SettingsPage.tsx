@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useTheme } from "../hooks/useTheme";
 import { usePreferences } from "../hooks/usePreferences";
 import { useProfile } from "../hooks/useProfile";
+import { exportUserData } from "../utils/exportData";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -46,6 +47,7 @@ export function SettingsPage() {
   const { username, updateUsername, loading: profileLoading } = useProfile();
   const [usernameInput, setUsernameInput] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -203,9 +205,30 @@ export function SettingsPage() {
 
         {/* Data Section */}
         <CollapsibleSection title="Data">
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Data export coming in Step 5...
-          </p>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Export your data to CSV files. Each data type will be downloaded as a separate file.
+              </p>
+              <button
+                onClick={async () => {
+                  setExporting(true);
+                  try {
+                    const fileCount = await exportUserData();
+                    alert(`Exported ${fileCount} file(s) successfully!`);
+                  } catch (error: any) {
+                    alert(`Export failed: ${error.message}`);
+                  } finally {
+                    setExporting(false);
+                  }
+                }}
+                disabled={exporting}
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {exporting ? 'Exporting...' : 'Export All Data to CSV'}
+              </button>
+            </div>
+          </div>
         </CollapsibleSection>
 
         {/* Social (Beta) Section */}
