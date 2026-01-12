@@ -169,7 +169,13 @@ export function CalendarPage() {
     setEditingActivity(null);
   };
 
-  const formatActivityType = (type: string) => {
+  const formatActivityType = (activity: ActivityLog) => {
+    // For quest completions, show quest name instead of generic "Quest Complete"
+    if (activity.action_type === 'quest_complete' && activity.quest_name) {
+      return activity.quest_name;
+    }
+    // For other types, format the action type
+    const type = activity.action_type;
     return type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
@@ -268,7 +274,7 @@ export function CalendarPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {formatActivityType(activity.action_type)}
+                        {formatActivityType(activity)}
                       </span>
                       {activity.source_user_id && sourceUserNames[activity.source_user_id] && (
                         <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
@@ -315,7 +321,7 @@ export function CalendarPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {formatActivityType(activity.action_type)}
+                        {formatActivityType(activity)}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(activity.logged_at).toLocaleDateString()}

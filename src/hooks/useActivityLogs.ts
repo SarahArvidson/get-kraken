@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import type { Tag } from "../types";
 
 export type ActionType = 'habit_log' | 'quest_complete' | 'reward_purchase';
 
@@ -22,6 +23,9 @@ export interface ActivityLog {
   logged_at: string;
   source_user_id: string | null;
   created_at: string;
+  // Joined data from quests table
+  quest_name?: string | null;
+  quest_tags?: Tag[] | null;
 }
 
 export function useActivityLogs() {
@@ -40,9 +44,16 @@ export function useActivityLogs() {
         throw new Error("User must be authenticated");
       }
 
+      // Join with quests table to get quest name and tags for quest_complete activities
       let query = supabase
         .from("activity_logs")
-        .select("*")
+        .select(`
+          *,
+          quests:quest_id (
+            name,
+            tags
+          )
+        `)
         .eq("user_id", user.id)
         .order("logged_at", { ascending: false });
 
@@ -61,7 +72,14 @@ export function useActivityLogs() {
         throw fetchError;
       }
 
-      setLogs(data || []);
+      // Transform the joined data to flatten quest name and tags into ActivityLog
+      const transformedLogs = (data || []).map((log: any) => ({
+        ...log,
+        quest_name: log.quests?.name || null,
+        quest_tags: log.quests?.tags || null,
+      }));
+
+      setLogs(transformedLogs);
       setError(null);
     } catch (err: any) {
       console.error("Error loading activity logs:", err);
