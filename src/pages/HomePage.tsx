@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { WalletDisplay } from "../components/WalletDisplay";
 import { useWallet } from "../hooks/useWallet";
 import { usePreferences } from "../hooks/usePreferences";
+import { useActivityLogs } from "../hooks/useActivityLogs";
 
 interface HomePageProps {
   onOpenWalletDrilldown: () => void;
@@ -22,6 +23,26 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const navigate = useNavigate();
   const { wallet, loading: walletLoading } = useWallet();
   const preferences = usePreferences();
+  const { getActivityCountByDate, loading: activityLoading } = useActivityLogs();
+
+  // Get activity counts for last 30 days
+  const activityCounts = getActivityCountByDate();
+  const today = new Date();
+  const days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (29 - i));
+    return date;
+  });
+
+  // Calculate activity intensity for color coding
+  const getActivityIntensity = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const count = activityCounts[dateStr] || 0;
+    if (count === 0) return 'none';
+    if (count === 1) return 'low';
+    if (count <= 3) return 'medium';
+    return 'high';
+  };
 
   return (
     <div className="space-y-6">
@@ -133,9 +154,54 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           </h2>
           <span className="text-gray-600 dark:text-gray-300">→</span>
         </div>
-        <div className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-          Activity grid preview coming soon...
-        </div>
+        
+        {/* Activity Grid - Last 30 Days */}
+        {activityLoading ? (
+          <div className="text-gray-500 dark:text-gray-400 text-sm">Loading activity...</div>
+        ) : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+              {days.map((date, index) => {
+                const intensity = getActivityIntensity(date);
+                const isToday = date.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+                const dayOfWeek = date.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                return (
+                  <div
+                    key={index}
+                    className={`
+                      aspect-square rounded
+                      ${intensity === 'none' 
+                        ? 'bg-gray-100 dark:bg-gray-800' 
+                        : intensity === 'low'
+                        ? 'bg-amber-200 dark:bg-amber-800'
+                        : intensity === 'medium'
+                        ? 'bg-amber-400 dark:bg-amber-700'
+                        : 'bg-amber-600 dark:bg-amber-600'
+                      }
+                      ${isToday ? 'ring-2 ring-amber-500 dark:ring-amber-400' : ''}
+                      ${isWeekend ? 'opacity-75' : ''}
+                      transition-all hover:scale-110
+                    `}
+                    title={`${date.toLocaleDateString()}: ${activityCounts[date.toISOString().split('T')[0]] || 0} activities`}
+                    aria-label={`${date.toLocaleDateString()}: ${activityCounts[date.toISOString().split('T')[0]] || 0} activities`}
+                  />
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+              <span>Less</span>
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded bg-gray-100 dark:bg-gray-800" />
+                <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-800" />
+                <div className="w-3 h-3 rounded bg-amber-400 dark:bg-amber-700" />
+                <div className="w-3 h-3 rounded bg-amber-600 dark:bg-amber-600" />
+              </div>
+              <span>More</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
