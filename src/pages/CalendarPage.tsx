@@ -10,6 +10,8 @@ import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { useRewardMetadata } from "../hooks/useRewardMetadata";
 import { ActivityEditModal } from "../components/ActivityEditModal";
 import { supabase } from "../lib/supabase";
+import { TAG_COLORS } from "../utils/tags";
+import type { Tag } from "../types";
 
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 
@@ -190,6 +192,31 @@ export function CalendarPage() {
     return "Activity";
   };
 
+  // Get tag color class for activity (for border coloring)
+  const getActivityTagBorderColor = (activity: ActivityLog): string => {
+    if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
+      const firstTag = activity.quest_tags[0] as Tag;
+      const color = TAG_COLORS[firstTag];
+      switch (color) {
+        case 'blue':
+          return 'border-l-blue-500';
+        case 'green':
+          return 'border-l-green-500';
+        case 'purple':
+          return 'border-l-purple-500';
+        case 'red':
+          return 'border-l-red-500';
+        case 'pink':
+          return 'border-l-pink-500';
+        case 'cyan':
+          return 'border-l-cyan-500';
+        default:
+          return 'border-l-gray-400';
+      }
+    }
+    return 'border-l-gray-400';
+  };
+
   const getActivityIntensity = (date: Date) => {
     const activities = getActivitiesForDate(date);
     const count = activities.length;
@@ -279,7 +306,7 @@ export function CalendarPage() {
               <div
                 key={activity.id}
                 onClick={() => setEditingActivity(activity)}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border-l-4 ${getActivityTagBorderColor(activity)} border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -326,7 +353,7 @@ export function CalendarPage() {
               <div
                 key={activity.id}
                 onClick={() => setEditingActivity(activity)}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow"
+                className={`bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border-l-4 ${getActivityTagBorderColor(activity)} border-t border-r border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -369,9 +396,10 @@ export function CalendarPage() {
               if (!date) {
                 return <div key={index} className="aspect-square" />;
               }
-              const intensity = getActivityIntensity(date);
               const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
               const dayActivities = getActivitiesForDate(date);
+              const displayActivities = dayActivities.slice(0, 6);
+              const overflowCount = dayActivities.length - 6;
               
               return (
                 <div
@@ -382,24 +410,32 @@ export function CalendarPage() {
                   }}
                   className={`
                     aspect-square rounded p-1 cursor-pointer transition-all hover:scale-110
-                    ${intensity === 'none' 
+                    ${dayActivities.length === 0 
                       ? 'bg-gray-100 dark:bg-gray-800' 
-                      : intensity === 'low'
-                      ? 'bg-amber-200 dark:bg-amber-800'
-                      : intensity === 'medium'
-                      ? 'bg-amber-400 dark:bg-amber-700'
-                      : 'bg-amber-600 dark:bg-amber-600'
+                      : 'bg-white dark:bg-gray-900'
                     }
                     ${isToday ? 'ring-2 ring-amber-500 dark:ring-amber-400' : ''}
+                    flex flex-col
                   `}
                   title={`${date.toLocaleDateString()}: ${dayActivities.length} activities`}
                 >
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
                     {date.getDate()}
                   </div>
                   {dayActivities.length > 0 && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {dayActivities.length}
+                    <div className="grid grid-cols-3 gap-0.5 flex-1">
+                      {displayActivities.map((activity, activityIndex) => (
+                        <div
+                          key={activityIndex}
+                          className={`w-full aspect-square rounded ${getActivityDotColor(activity)}`}
+                          title={getActivityDisplayName(activity)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {overflowCount > 0 && (
+                    <div className="text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
+                      +{overflowCount}
                     </div>
                   )}
                 </div>
@@ -413,8 +449,20 @@ export function CalendarPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 12 }, (_, i) => {
             const monthDate = new Date(selectedDate.getFullYear(), i, 1);
-            const count = yearActivityCounts[i] || 0;
-            const intensity = count === 0 ? 'none' : count <= 5 ? 'low' : count <= 15 ? 'medium' : 'high';
+            const monthStart = new Date(selectedDate.getFullYear(), i, 1);
+            const monthEnd = new Date(selectedDate.getFullYear(), i + 1, 0);
+            
+            // Get all days in this month
+            const monthDays: (Date | null)[] = [];
+            const firstDayOfWeek = monthStart.getDay();
+            // Add empty cells for days before month start
+            for (let j = 0; j < firstDayOfWeek; j++) {
+              monthDays.push(null);
+            }
+            // Add all days in month
+            for (let day = 1; day <= monthEnd.getDate(); day++) {
+              monthDays.push(new Date(selectedDate.getFullYear(), i, day));
+            }
             
             return (
               <div
@@ -423,23 +471,38 @@ export function CalendarPage() {
                   setSelectedDate(monthDate);
                   setViewMode('month');
                 }}
-                className={`
-                  rounded-lg p-4 cursor-pointer transition-all hover:scale-105
-                  ${intensity === 'none' 
-                    ? 'bg-gray-100 dark:bg-gray-800' 
-                    : intensity === 'low'
-                    ? 'bg-amber-200 dark:bg-amber-800'
-                    : intensity === 'medium'
-                    ? 'bg-amber-400 dark:bg-amber-700'
-                    : 'bg-amber-600 dark:bg-amber-600'
-                  }
-                `}
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 cursor-pointer transition-all hover:shadow-md"
               >
-                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   {monthDate.toLocaleDateString('en-US', { month: 'long' })}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {count} {count === 1 ? 'activity' : 'activities'}
+                <div className="grid grid-cols-7 gap-0.5">
+                  {/* Day headers */}
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                    <div key={idx} className="text-[8px] text-center text-gray-500 dark:text-gray-400">
+                      {day}
+                    </div>
+                  ))}
+                  {/* Month days with activity dots */}
+                  {monthDays.map((date, dayIdx) => {
+                    if (!date) {
+                      return <div key={dayIdx} className="aspect-square" />;
+                    }
+                    const dayActivities = getActivitiesForDate(date);
+                    const displayActivities = dayActivities.slice(0, 1); // Show only first activity dot in year view
+                    
+                    return (
+                      <div
+                        key={dayIdx}
+                        className={`aspect-square rounded-sm ${dayActivities.length === 0 ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-900 p-0.5'}`}
+                        title={date.toLocaleDateString()}
+                      >
+                        {displayActivities.length > 0 && (
+                          <div className={`w-full h-full rounded ${getActivityDotColor(displayActivities[0])}`} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

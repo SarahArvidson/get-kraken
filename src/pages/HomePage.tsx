@@ -205,8 +205,8 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                 const isToday = date.toISOString().split('T')[0] === today.toISOString().split('T')[0];
                 const dayOfWeek = date.getDay();
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                const displayActivities = activitiesWithTags.slice(0, 4);
-                const overflowCount = activitiesWithTags.length - 4;
+                const displayActivities = activitiesWithTags.slice(0, 6);
+                const overflowCount = activitiesWithTags.length - 6;
                 
                 return (
                   <div
@@ -215,7 +215,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                       aspect-square rounded-sm
                       ${activitiesWithTags.length === 0 
                         ? 'bg-gray-100 dark:bg-gray-800' 
-                        : 'bg-white dark:bg-gray-900 p-0.5 grid grid-cols-2 gap-0.5'
+                        : 'bg-white dark:bg-gray-900 p-1 flex flex-col'
                       }
                       ${isToday ? 'ring-1 ring-amber-500 dark:ring-amber-400' : ''}
                       ${isWeekend ? 'opacity-75' : ''}
@@ -226,18 +226,18 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                   >
                     {activitiesWithTags.length === 0 ? null : (
                       <>
-                        {displayActivities.map((item, tagIndex) => (
-                          <div
-                            key={tagIndex}
-                            className={`w-full h-full rounded-sm ${item.color}`}
-                            title={item.activity.quest_name || item.activity.action_type.replace('_', ' ')}
-                          />
-                        ))}
+                        <div className="grid grid-cols-3 gap-0.5 flex-1">
+                          {displayActivities.map((item, tagIndex) => (
+                            <div
+                              key={tagIndex}
+                              className={`w-full aspect-square rounded ${item.color}`}
+                              title={item.activity.quest_name || item.activity.action_type.replace('_', ' ')}
+                            />
+                          ))}
+                        </div>
                         {overflowCount > 0 && (
-                          <div className="w-full h-full rounded-sm bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-[8px] font-semibold text-gray-700 dark:text-gray-200">
-                              +{overflowCount}
-                            </span>
+                          <div className="text-[8px] font-semibold text-gray-600 dark:text-gray-400 text-center mt-0.5">
+                            +{overflowCount}
                           </div>
                         )}
                       </>
