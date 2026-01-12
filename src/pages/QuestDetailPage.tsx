@@ -191,25 +191,32 @@ export function QuestDetailPage() {
       </div>
 
       {/* Associated Item */}
-      {questDetail.associated_item_id && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-blue-600 dark:text-blue-400">🔗</span>
-            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              Associated Reward
+      {questDetail.associated_item_id && (() => {
+        const linkedItem = shopItems.find((item) => item.id === questDetail.associated_item_id);
+        return (
+          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-blue-600 dark:text-blue-400">🔗</span>
+              <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                Associated Reward
+              </div>
             </div>
+            <div className="text-gray-900 dark:text-gray-100 mb-2">
+              {linkedItem ? (
+                <>This quest is linked to <strong>{linkedItem.name}</strong></>
+              ) : (
+                <>This quest is linked to a reward item. View it in the Rewards library.</>
+              )}
+            </div>
+            <button
+              onClick={() => navigate(`/rewards/${questDetail.associated_item_id}`)}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              View Reward →
+            </button>
           </div>
-          <div className="text-gray-900 dark:text-gray-100">
-            This quest is linked to a reward item. View it in the Rewards library.
-          </div>
-          <button
-            onClick={() => navigate(`/rewards/${questDetail.associated_item_id}`)}
-            className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            View Reward →
-          </button>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Tasks Placeholder */}
       {questDetail.tasks && questDetail.tasks.length > 0 && (
