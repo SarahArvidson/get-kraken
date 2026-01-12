@@ -346,7 +346,10 @@ export function RewardsPage() {
                           </div>
                         )}
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                          <span>🪙 {reward.price}</span>
+                          <span className="flex items-center gap-1">
+                            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-4 h-4 inline-block" />
+                            {reward.price}
+                          </span>
                           {reward.rarity && (
                             <span className="capitalize">{reward.rarity}</span>
                           )}

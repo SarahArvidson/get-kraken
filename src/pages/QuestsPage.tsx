@@ -252,7 +252,10 @@ export function QuestsPage() {
                           </div>
                         )}
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                          <span>🪙 {quest.reward}</span>
+                          <span className="flex items-center gap-1">
+                            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-4 h-4 inline-block" />
+                            {quest.reward}
+                          </span>
                           {quest.userCompletionCount > 0 && (
                             <span>Completed {quest.userCompletionCount}x</span>
                           )}
