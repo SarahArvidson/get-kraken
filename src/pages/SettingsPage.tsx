@@ -43,7 +43,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }: Collapsibl
 
 export function SettingsPage() {
   const { themeMode, updateThemeMode, toggleTheme } = useTheme();
-  const { showDollarAmounts, showSandDollars, toggleDollarAmounts, toggleSandDollars } = usePreferences();
+  const { showDollarAmounts, showSandDollars, enableSocialFeatures, toggleDollarAmounts, toggleSandDollars, toggleSocialFeatures } = usePreferences();
   const { username, updateUsername, loading: profileLoading } = useProfile();
   const [usernameInput, setUsernameInput] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
@@ -233,9 +233,44 @@ export function SettingsPage() {
 
         {/* Social (Beta) Section */}
         <CollapsibleSection title="Social (Beta)">
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-            Social features toggle coming in Step 6...
-          </p>
+          <div className="space-y-4">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Beta Feature:</strong> Social features are experimental. When enabled, you can add friends and share quests.
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Enable Social Features (Beta)
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Show social UI and enable friend features
+                </p>
+              </div>
+              <button
+                onClick={toggleSocialFeatures}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  enableSocialFeatures ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+                role="switch"
+                aria-checked={enableSocialFeatures}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    enableSocialFeatures ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            {enableSocialFeatures && (
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Social features are enabled. Friends section coming soon...
+                </p>
+              </div>
+            )}
+          </div>
         </CollapsibleSection>
 
         {/* Danger Zone Section */}

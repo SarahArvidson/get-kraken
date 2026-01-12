@@ -12,6 +12,7 @@ import { supabase } from "../lib/supabase";
 export function usePreferences() {
   const [showDollarAmounts, setShowDollarAmounts] = useState(false);
   const [showSandDollars, setShowSandDollars] = useState(true); // Default: show sand dollars
+  const [enableSocialFeatures, setEnableSocialFeatures] = useState(false); // Default: off (beta)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,15 +49,19 @@ export function usePreferences() {
       if (data) {
         setShowDollarAmounts(data.show_dollar_amounts ?? false);
         setShowSandDollars(data.show_sand_dollars ?? true);
+        setEnableSocialFeatures(data.enable_social_features ?? false);
         // Also store in localStorage as backup
         localStorage.setItem("showDollarAmounts", String(data.show_dollar_amounts ?? false));
         localStorage.setItem("showSandDollars", String(data.show_sand_dollars ?? true));
+        localStorage.setItem("enableSocialFeatures", String(data.enable_social_features ?? false));
       } else {
         // No preferences found, check localStorage
         const storedDollars = localStorage.getItem("showDollarAmounts");
         const storedSand = localStorage.getItem("showSandDollars");
+        const storedSocial = localStorage.getItem("enableSocialFeatures");
         setShowDollarAmounts(storedDollars === "true");
         setShowSandDollars(storedSand !== "false"); // Default true if not set
+        setEnableSocialFeatures(storedSocial === "true"); // Default false
       }
       setError(null);
     } catch (err: any) {
@@ -64,8 +69,10 @@ export function usePreferences() {
       // Fallback to localStorage
       const storedDollars = localStorage.getItem("showDollarAmounts");
       const storedSand = localStorage.getItem("showSandDollars");
+      const storedSocial = localStorage.getItem("enableSocialFeatures");
       setShowDollarAmounts(storedDollars === "true");
       setShowSandDollars(storedSand !== "false");
+      setEnableSocialFeatures(storedSocial === "true");
       setError(err.message || "Failed to load preferences");
     } finally {
       setLoading(false);
@@ -74,7 +81,7 @@ export function usePreferences() {
 
   // Save preferences
   const savePreferences = useCallback(
-    async (updates: { showDollars?: boolean; showSandDollars?: boolean }) => {
+    async (updates: { showDollars?: boolean; showSandDollars?: boolean; enableSocialFeatures?: boolean }) => {
       try {
         const userId = await getUserId();
         
@@ -86,6 +93,10 @@ export function usePreferences() {
         if (updates.showSandDollars !== undefined) {
           setShowSandDollars(updates.showSandDollars);
           localStorage.setItem("showSandDollars", String(updates.showSandDollars));
+        }
+        if (updates.enableSocialFeatures !== undefined) {
+          setEnableSocialFeatures(updates.enableSocialFeatures);
+          localStorage.setItem("enableSocialFeatures", String(updates.enableSocialFeatures));
         }
 
         if (!userId) {
@@ -109,6 +120,9 @@ export function usePreferences() {
         if (updates.showSandDollars !== undefined) {
           updateData.show_sand_dollars = updates.showSandDollars;
         }
+        if (updates.enableSocialFeatures !== undefined) {
+          updateData.enable_social_features = updates.enableSocialFeatures;
+        }
 
         if (existing) {
           // Update existing
@@ -126,6 +140,7 @@ export function usePreferences() {
               user_id: userId,
               show_dollar_amounts: updates.showDollars ?? false,
               show_sand_dollars: updates.showSandDollars ?? true,
+              enable_social_features: updates.enableSocialFeatures ?? false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });
@@ -153,6 +168,11 @@ export function usePreferences() {
     await savePreferences({ showSandDollars: !showSandDollars });
   }, [showSandDollars, savePreferences]);
 
+  // Toggle social features
+  const toggleSocialFeatures = useCallback(async () => {
+    await savePreferences({ enableSocialFeatures: !enableSocialFeatures });
+  }, [enableSocialFeatures, savePreferences]);
+
   // Load preferences on mount
   useEffect(() => {
     loadPreferences();
@@ -161,12 +181,15 @@ export function usePreferences() {
   return {
     showDollarAmounts,
     showSandDollars,
+    enableSocialFeatures,
     loading,
     error,
     toggleDollarAmounts,
     toggleSandDollars,
+    toggleSocialFeatures,
     setShowDollarAmounts: (value: boolean) => savePreferences({ showDollars: value }),
     setShowSandDollars: (value: boolean) => savePreferences({ showSandDollars: value }),
+    setEnableSocialFeatures: (value: boolean) => savePreferences({ enableSocialFeatures: value }),
   };
 }
 
