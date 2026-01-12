@@ -344,7 +344,7 @@ export function QuestDetailPage() {
         </h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🪙</span>
+            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
               {questDetail.reward} sand dollars
             </span>
