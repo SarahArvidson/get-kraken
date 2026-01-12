@@ -16,6 +16,12 @@ interface ConfirmDialogProps {
   requireType?: string; // If provided, user must type this to confirm
   typeInput?: string;
   onTypeInputChange?: (value: string) => void;
+  confirmButtonClass?: string;
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    className?: string;
+  };
 }
 
 export function ConfirmDialog({
@@ -30,6 +36,8 @@ export function ConfirmDialog({
   requireType,
   typeInput = "",
   onTypeInputChange,
+  confirmButtonClass,
+  secondaryAction,
 }: ConfirmDialogProps) {
   if (!isOpen) return null;
 
@@ -78,24 +86,36 @@ export function ConfirmDialog({
             )}
 
             {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                {cancelText}
-              </button>
-              <button
-                onClick={onConfirm}
-                disabled={!canConfirm}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  danger
-                    ? 'bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed'
-                    : 'bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed'
-                }`}
-              >
-                {confirmText}
-              </button>
+            <div className={`flex gap-3 ${secondaryAction ? 'flex-col' : ''}`}>
+              {secondaryAction && (
+                <button
+                  onClick={secondaryAction.onClick}
+                  className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+                    secondaryAction.className || 'bg-gray-500 text-white hover:bg-gray-600'
+                  }`}
+                >
+                  {secondaryAction.label}
+                </button>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  {cancelText}
+                </button>
+                <button
+                  onClick={onConfirm}
+                  disabled={!canConfirm}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    confirmButtonClass || (danger
+                      ? 'bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                      : 'bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed')
+                  }`}
+                >
+                  {confirmText}
+                </button>
+              </div>
             </div>
           </div>
         </div>

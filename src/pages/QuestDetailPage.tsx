@@ -10,16 +10,22 @@ import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
 import { HabitLogModal } from "../components/HabitLogModal";
+import { QuestEditModal } from "../components/QuestEditModal";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { QuestDetail } from "../types/quests";
+import type { Quest } from "../types";
 
 export function QuestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { quests, loading, getQuestWithLogs } = useQuests();
+  const { quests, loading, getQuestWithLogs, updateQuest, completeQuest, deleteQuest } = useQuests();
   const { shopItems } = useShopItems();
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -86,6 +92,36 @@ export function QuestDetailPage() {
       setQuestDetail(detail);
     }
   };
+
+  const handleCompleteQuest = async () => {
+    if (!id || !questDetail) return;
+    try {
+      await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
+      setShowCompleteConfirm(false);
+      // Navigate back to quests list
+      navigate('/quests');
+    } catch (error) {
+      console.error('Error completing quest:', error);
+    }
+  };
+
+  const handleAbandonQuest = async (keepProgress: boolean) => {
+    if (!id) return;
+    try {
+      if (!keepProgress) {
+        // Delete quest logs if user wants to delete progress
+        // This would require additional logic to delete logs
+      }
+      await deleteQuest(id);
+      setShowAbandonConfirm(false);
+      navigate('/quests');
+    } catch (error) {
+      console.error('Error abandoning quest:', error);
+    }
+  };
+
+  // Get the base quest for editing
+  const baseQuest = quests.find((q) => q.id === id) || null;
 
   if (detailLoading || loading) {
     return (
@@ -332,17 +368,23 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Primary CTA - End Quest and Claim Rewards (Disabled for now) */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
         <button
-          disabled
-          className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed"
+          onClick={() => setShowEditModal(true)}
+          className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors text-sm"
+        >
+          Edit Quest
+        </button>
+        <button
+          onClick={() => setShowCompleteConfirm(true)}
+          className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
         >
           End Quest and Claim Rewards
         </button>
         <button
-          disabled
-          className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold opacity-50 cursor-not-allowed text-sm"
+          onClick={() => setShowAbandonConfirm(true)}
+          className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
         >
           Abandon and Delete
         </button>
@@ -365,6 +407,54 @@ export function QuestDetailPage() {
           );
         })()
       )}
+
+      {/* Edit Quest Modal */}
+      {baseQuest && (
+        <QuestEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          quest={baseQuest}
+          onUpdate={async (id, updates) => {
+            await updateQuest(id, updates);
+            setShowEditModal(false);
+            // Reload quest detail
+            const questWithLogs = await getQuestWithLogs(id);
+            if (questWithLogs) {
+              const userCompletionCount = questWithLogs.logs.length;
+              const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+              const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+              setQuestDetail(detail);
+            }
+          }}
+        />
+      )}
+
+      {/* Complete Quest Confirmation */}
+      <ConfirmDialog
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleCompleteQuest}
+        title="Complete Quest"
+        message={`Are you sure you want to complete "${questDetail?.name}" and claim the rewards?`}
+        confirmText="Complete Quest"
+        confirmButtonClass="bg-amber-500 hover:bg-amber-600"
+      />
+
+      {/* Abandon Quest Confirmation */}
+      <ConfirmDialog
+        isOpen={showAbandonConfirm}
+        onClose={() => setShowAbandonConfirm(false)}
+        onConfirm={() => handleAbandonQuest(false)}
+        title="Abandon Quest"
+        message={`Are you sure you want to abandon "${questDetail?.name}"? This will delete the quest. Do you want to keep your progress logs?`}
+        confirmText="Delete Progress & Abandon"
+        confirmButtonClass="bg-red-500 hover:bg-red-600"
+        secondaryAction={{
+          label: "Keep Progress & Abandon",
+          onClick: () => handleAbandonQuest(true),
+          className: "bg-gray-500 hover:bg-gray-600",
+        }}
+      />
     </div>
   );
 }

@@ -9,17 +9,19 @@ import { useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useFilterState } from "../hooks/useFilterState";
 import { deriveQuestSummary } from "../utils/questDataMapping";
+import { QuestCreateModal } from "../components/QuestCreateModal";
 import type { QuestSummary } from "../types/quests";
-import type { QuestLog, Tag } from "../types";
+import type { QuestLog, Tag, Quest } from "../types";
 
 export function QuestsPage() {
   const navigate = useNavigate();
-  const { quests, loading, loadAllQuestLogs } = useQuests();
+  const { quests, loading, loadAllQuestLogs, createQuest } = useQuests();
   const { questSearchQuery, selectedQuestTag, setQuestSearchQuery, setSelectedQuestTag } = useFilterState();
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(questSearchQuery || '');
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Load quest logs on mount
   useEffect(() => {
@@ -264,9 +266,19 @@ export function QuestsPage() {
                 ))}
               </div>
             </div>
-          ))}
+          )          )}
         </div>
       )}
+
+      {/* Create Quest Modal */}
+      <QuestCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={async (questData) => {
+          await createQuest(questData);
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 }
