@@ -25,6 +25,7 @@ import { EditShopItemCard } from "./components/EditShopItemCard";
 import { LogView } from "./components/LogView";
 import { HomePage } from "./pages/HomePage";
 import { QuestsPage } from "./pages/QuestsPage";
+import { QuestDetailPage } from "./pages/QuestDetailPage";
 import { RewardsPage } from "./pages/RewardsPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -418,6 +419,7 @@ function App() {
 
           {/* New v2 Pages (Placeholders for now) */}
           <Route path="/quests" element={<QuestsPage />} />
+          <Route path="/quests/:id" element={<QuestDetailPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/settings" element={<SettingsPage />} />
