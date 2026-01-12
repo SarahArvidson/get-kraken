@@ -301,10 +301,11 @@ export function useQuests() {
 
         // Atomically: insert log entry AND update wallet in sequence
         // First, insert log entry
+        const completedAt = new Date().toISOString();
         const { error: logError } = await supabase.from("quest_logs").insert({
           quest_id: questId,
           user_id: user.id,
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt,
         });
 
         if (logError) {
@@ -316,6 +317,23 @@ export function useQuests() {
               logError.message || JSON.stringify(logError)
             }`
           );
+        }
+
+        // Dual-write: Also insert into activity_logs for calendar/timeline
+        const { error: activityLogError } = await supabase
+          .from("activity_logs")
+          .insert({
+            user_id: user.id,
+            quest_id: questId,
+            action_type: 'quest_complete',
+            sand_dollars_earned: reward,
+            dollars_saved: dollarAmount > 0 ? dollarAmount : null,
+            logged_at: completedAt,
+          });
+
+        if (activityLogError) {
+          console.error("Activity log insert error:", activityLogError);
+          // Don't throw - activity logging is best effort, existing quest_logs still work
         }
 
         // Then, update wallet atomically
