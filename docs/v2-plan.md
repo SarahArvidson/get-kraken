@@ -1402,4 +1402,82 @@ When a quest is deleted:
 
 ---
 
+## Phase 4: Calendar and Unified Activity Timeline
+
+### Activity Logs Table Migration
+
+**File:** `supabase/migrations/20240101000000_create_activity_logs.sql`
+
+**Purpose:** Create a unified `activity_logs` table to track all user activities (habit logs, quest completions, reward purchases) for calendar views and activity timelines.
+
+**Table Structure:**
+```sql
+CREATE TABLE activity_logs (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  quest_id UUID REFERENCES quests(id),
+  habit_id UUID REFERENCES habits(id), -- Future: when habits table exists
+  reward_id UUID REFERENCES shop_items(id),
+  action_type TEXT NOT NULL CHECK (action_type IN ('habit_log', 'quest_complete', 'reward_purchase')),
+  difficulty INTEGER CHECK (difficulty >= 1 AND difficulty <= 10),
+  dollars_saved NUMERIC(10, 2),
+  sand_dollars_earned NUMERIC(10, 2),
+  logged_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  source_user_id UUID REFERENCES auth.users(id), -- For buddy attribution
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+**Indexes:**
+- `idx_activity_logs_user_logged_at` - Fast queries by user and date
+- `idx_activity_logs_action_type` - Filter by activity type
+- Indexes on quest_id, habit_id, reward_id (partial, WHERE NOT NULL)
+
+**RLS Policies:**
+- Users can view/insert/update/delete their own logs
+- Buddy attribution visibility handled in application logic (future: shared quests)
+
+**Migration Strategy:**
+- Additive only - no changes to existing `quest_logs` or `shop_logs` tables
+- Dual-write pattern: continue writing to existing tables, also write to `activity_logs`
+- Existing v1 functionality remains unaffected
+
+### Dual-Write Pattern
+
+**Habit Logging:**
+- Continue writing to `quest_logs` (backward compatibility)
+- Also insert into `activity_logs` with `action_type = 'habit_log'`
+
+**Quest Completion:**
+- Continue writing to `quest_logs` (backward compatibility)
+- Also insert into `activity_logs` with `action_type = 'quest_complete'`
+
+**Reward Purchase:**
+- Continue writing to `shop_logs` (backward compatibility)
+- Also insert into `activity_logs` with `action_type = 'reward_purchase'`
+
+### Calendar Views
+
+**Home Preview:**
+- Simple activity grid for last 30 days
+- Colored squares for days with any activity
+- Calm at-a-glance design
+
+**Full Calendar:**
+- Day view: List of activities for selected day with edit capability
+- Week view: List of activities for selected week
+- Month view: Grid calendar with activity indicators
+- Year heatmap: Full year view with activity intensity
+
+**Edit Capability:**
+- Click activity to open edit modal
+- Can edit: difficulty, dollars_saved, logged_at
+- Updates saved to `activity_logs` table
+
+**Buddy Attribution:**
+- If `source_user_id` exists and is not current user, show who logged it
+- Display format: "Logged by [username]" or "Logged by buddy"
+
+---
+
 **End of Phase 0 Plan Document**
