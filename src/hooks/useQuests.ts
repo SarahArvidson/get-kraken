@@ -332,12 +332,13 @@ export function useQuests() {
             logged_at: completedAt,
           });
 
+          // Ensure numeric values are properly formatted for NUMERIC columns
           const insertData = {
             user_id: user.id,
             quest_id: questId,
             action_type: 'quest_complete' as const,
-            sand_dollars_earned: reward,
-            dollars_saved: dollarAmount > 0 ? dollarAmount : null,
+            sand_dollars_earned: Number(reward) || 0,
+            dollars_saved: dollarAmount > 0 ? Number(dollarAmount) : null,
             logged_at: completedAt,
           };
 
