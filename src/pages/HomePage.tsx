@@ -13,7 +13,9 @@ import { useNavigate } from "react-router-dom";
 import { WalletDisplay } from "../components/WalletDisplay";
 import { useWallet } from "../hooks/useWallet";
 import { usePreferences } from "../hooks/usePreferences";
-import { useActivityLogs } from "../hooks/useActivityLogs";
+import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
+import { TAG_COLORS } from "../utils/tags";
+import type { Tag } from "../types";
 
 interface HomePageProps {
   onOpenWalletDrilldown: () => void;
@@ -23,10 +25,8 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const navigate = useNavigate();
   const { wallet, loading: walletLoading } = useWallet();
   const preferences = usePreferences();
-  const { getActivityCountByDate, loading: activityLoading } = useActivityLogs();
+  const { logs, getActivitiesForDate, loading: activityLoading } = useActivityLogs();
 
-  // Get activity counts for last 30 days
-  const activityCounts = getActivityCountByDate();
   const today = new Date();
   const days = Array.from({ length: 30 }, (_, i) => {
     const date = new Date(today);
@@ -34,14 +34,40 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     return date;
   });
 
-  // Calculate activity intensity for color coding
-  const getActivityIntensity = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    const count = activityCounts[dateStr] || 0;
-    if (count === 0) return 'none';
-    if (count === 1) return 'low';
-    if (count <= 3) return 'medium';
-    return 'high';
+  // Get tag color for a quest tag
+  const getTagColorClass = (tag: Tag): string => {
+    const color = TAG_COLORS[tag];
+    switch (color) {
+      case 'blue':
+        return 'bg-blue-500 dark:bg-blue-500';
+      case 'green':
+        return 'bg-green-500 dark:bg-green-500';
+      case 'purple':
+        return 'bg-purple-500 dark:bg-purple-500';
+      case 'red':
+        return 'bg-red-500 dark:bg-red-500';
+      case 'pink':
+        return 'bg-pink-500 dark:bg-pink-500';
+      case 'cyan':
+        return 'bg-cyan-500 dark:bg-cyan-500';
+      default:
+        return 'bg-gray-400 dark:bg-gray-500';
+    }
+  };
+
+  // Get activities for a date with their tag colors
+  const getActivitiesForDateWithTags = (date: Date): Array<{ activity: ActivityLog; color: string }> => {
+    const activities = getActivitiesForDate(date);
+    return activities
+      .filter((activity) => activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0)
+      .map((activity) => {
+        // Use the first tag for color (quests can have multiple tags)
+        const firstTag = activity.quest_tags![0] as Tag;
+        return {
+          activity,
+          color: getTagColorClass(firstTag),
+        };
+      });
   };
 
   return (
@@ -162,7 +188,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           <div className="space-y-2">
             <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {days.map((date, index) => {
-                const intensity = getActivityIntensity(date);
+                const activitiesWithTags = getActivitiesForDateWithTags(date);
                 const isToday = date.toISOString().split('T')[0] === today.toISOString().split('T')[0];
                 const dayOfWeek = date.getDay();
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -172,33 +198,42 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                     key={index}
                     className={`
                       aspect-square rounded
-                      ${intensity === 'none' 
+                      ${activitiesWithTags.length === 0 
                         ? 'bg-gray-100 dark:bg-gray-800' 
-                        : intensity === 'low'
-                        ? 'bg-amber-200 dark:bg-amber-800'
-                        : intensity === 'medium'
-                        ? 'bg-amber-400 dark:bg-amber-700'
-                        : 'bg-amber-600 dark:bg-amber-600'
+                        : 'bg-gray-200 dark:bg-gray-700 p-0.5 sm:p-1'
                       }
                       ${isToday ? 'ring-2 ring-amber-500 dark:ring-amber-400' : ''}
                       ${isWeekend ? 'opacity-75' : ''}
                       transition-all hover:scale-110
+                      ${activitiesWithTags.length > 0 ? 'grid grid-cols-2 gap-0.5' : ''}
                     `}
-                    title={`${date.toLocaleDateString()}: ${activityCounts[date.toISOString().split('T')[0]] || 0} activities`}
-                    aria-label={`${date.toLocaleDateString()}: ${activityCounts[date.toISOString().split('T')[0]] || 0} activities`}
-                  />
+                    title={`${date.toLocaleDateString()}: ${activitiesWithTags.length} quest${activitiesWithTags.length !== 1 ? 's' : ''} completed`}
+                    aria-label={`${date.toLocaleDateString()}: ${activitiesWithTags.length} quest${activitiesWithTags.length !== 1 ? 's' : ''} completed`}
+                  >
+                    {activitiesWithTags.length === 0 ? null : (
+                      activitiesWithTags.slice(0, 4).map((item, tagIndex) => (
+                        <div
+                          key={tagIndex}
+                          className={`w-full h-full rounded ${item.color}`}
+                          title={item.activity.quest_name || 'Quest completed'}
+                        />
+                      ))
+                    )}
+                  </div>
                 );
               })}
             </div>
             <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
-              <span>Less</span>
+              <span>Tag colors</span>
               <div className="flex gap-1">
-                <div className="w-3 h-3 rounded bg-gray-100 dark:bg-gray-800" />
-                <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-800" />
-                <div className="w-3 h-3 rounded bg-amber-400 dark:bg-amber-700" />
-                <div className="w-3 h-3 rounded bg-amber-600 dark:bg-amber-600" />
+                <div className="w-3 h-3 rounded bg-blue-500" title="Work" />
+                <div className="w-3 h-3 rounded bg-green-500" title="Finance" />
+                <div className="w-3 h-3 rounded bg-purple-500" title="Home" />
+                <div className="w-3 h-3 rounded bg-red-500" title="Health" />
+                <div className="w-3 h-3 rounded bg-pink-500" title="Relationship" />
+                <div className="w-3 h-3 rounded bg-cyan-500" title="Social Life" />
               </div>
-              <span>More</span>
+              <span>Quest tags</span>
             </div>
           </div>
         )}
