@@ -156,19 +156,6 @@ export function CalendarPage() {
     return days;
   }, [viewMode, selectedDate]);
 
-  // Year view: Get activity counts by month
-  const yearActivityCounts = useMemo(() => {
-    if (viewMode !== 'year') return {};
-    const counts: Record<number, number> = {};
-    logs.forEach((log) => {
-      const logDate = new Date(log.logged_at);
-      if (logDate.getFullYear() === selectedDate.getFullYear()) {
-        const month = logDate.getMonth();
-        counts[month] = (counts[month] || 0) + 1;
-      }
-    });
-    return counts;
-  }, [viewMode, selectedDate, logs]);
 
   const handleSaveActivity = async (updates: {
     difficulty?: number | null;
@@ -190,6 +177,31 @@ export function CalendarPage() {
       return activity.reward_name;
     }
     return "Activity";
+  };
+
+  // Get tag color class for activity dots
+  const getActivityDotColor = (activity: ActivityLog): string => {
+    if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
+      const firstTag = activity.quest_tags[0] as Tag;
+      const color = TAG_COLORS[firstTag];
+      switch (color) {
+        case 'blue':
+          return 'bg-blue-500';
+        case 'green':
+          return 'bg-green-500';
+        case 'purple':
+          return 'bg-purple-500';
+        case 'red':
+          return 'bg-red-500';
+        case 'pink':
+          return 'bg-pink-500';
+        case 'cyan':
+          return 'bg-cyan-500';
+        default:
+          return 'bg-gray-400';
+      }
+    }
+    return 'bg-gray-400';
   };
 
   // Get tag color class for activity (for border coloring)
