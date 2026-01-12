@@ -6,13 +6,20 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
+import { useQuestMetadata } from "../hooks/useQuestMetadata";
+import { useRewardMetadata } from "../hooks/useRewardMetadata";
 import { ActivityEditModal } from "../components/ActivityEditModal";
 import { supabase } from "../lib/supabase";
 
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 
 export function CalendarPage() {
-  const { logs, loading, getActivitiesForDate, updateActivityLog, loadActivityLogs } = useActivityLogs();
+  const questMetadata = useQuestMetadata();
+  const rewardMetadata = useRewardMetadata();
+  const { logs, loading, getActivitiesForDate, updateActivityLog, loadActivityLogs } = useActivityLogs({
+    questMetadata: questMetadata.metadata,
+    rewardMetadata: rewardMetadata.metadata,
+  });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
@@ -169,17 +176,16 @@ export function CalendarPage() {
     setEditingActivity(null);
   };
 
-  const formatActivityType = (activity: ActivityLog) => {
-    // Show quest name, reward name, or fallback to formatted action type
+  // Get display name from hydrated activity log
+  const getActivityDisplayName = (activity: ActivityLog): string => {
+    // Use hydrated quest_name or reward_name, fallback to "Activity"
     if (activity.quest_name) {
       return activity.quest_name;
     }
     if (activity.reward_name) {
       return activity.reward_name;
     }
-    // Fallback to formatted action type
-    const type = activity.action_type;
-    return type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    return "Activity";
   };
 
   const getActivityIntensity = (date: Date) => {
@@ -277,7 +283,7 @@ export function CalendarPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {formatActivityType(activity)}
+                        {getActivityDisplayName(activity)}
                       </span>
                       {activity.source_user_id && sourceUserNames[activity.source_user_id] && (
                         <span className="text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
@@ -324,7 +330,7 @@ export function CalendarPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {formatActivityType(activity)}
+                        {getActivityDisplayName(activity)}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(activity.logged_at).toLocaleDateString()}

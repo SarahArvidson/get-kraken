@@ -14,6 +14,8 @@ import { WalletDisplay } from "../components/WalletDisplay";
 import { useWallet } from "../hooks/useWallet";
 import { usePreferences } from "../hooks/usePreferences";
 import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
+import { useQuestMetadata } from "../hooks/useQuestMetadata";
+import { useRewardMetadata } from "../hooks/useRewardMetadata";
 import { TAG_COLORS } from "../utils/tags";
 import type { Tag } from "../types";
 
@@ -25,7 +27,12 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const navigate = useNavigate();
   const { wallet, loading: walletLoading } = useWallet();
   const preferences = usePreferences();
-  const { getActivitiesForDate, loading: activityLoading } = useActivityLogs();
+  const questMetadata = useQuestMetadata();
+  const rewardMetadata = useRewardMetadata();
+  const { getActivitiesForDate, loading: activityLoading } = useActivityLogs({
+    questMetadata: questMetadata.metadata,
+    rewardMetadata: rewardMetadata.metadata,
+  });
 
   const today = new Date();
   const days = Array.from({ length: 30 }, (_, i) => {

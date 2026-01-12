@@ -2,6 +2,7 @@
  * Get Kraken v2 - Activity Logs Hook
  * 
  * Manages activity_logs data for calendar and timeline views
+ * Fetches raw activity_logs only - no SQL joins for performance
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -10,7 +11,8 @@ import type { Tag } from "../types";
 
 export type ActionType = 'habit_log' | 'quest_complete' | 'reward_purchase';
 
-export interface ActivityLog {
+// Raw activity log from database (no joins)
+export interface RawActivityLog {
   id: string;
   user_id: string;
   quest_id: string | null;
@@ -23,18 +25,26 @@ export interface ActivityLog {
   logged_at: string;
   source_user_id: string | null;
   created_at: string;
-  // Joined data from quests and shop_items tables
+}
+
+// Hydrated activity log with metadata merged in JavaScript
+export interface ActivityLog extends RawActivityLog {
   quest_name?: string | null;
   quest_tags?: Tag[] | null;
   reward_name?: string | null;
 }
 
-export function useActivityLogs() {
+export interface UseActivityLogsOptions {
+  questMetadata?: Record<string, { id: string; name: string; tags: Tag[] }>;
+  rewardMetadata?: Record<string, { id: string; name: string }>;
+}
+
+export function useActivityLogs(options?: UseActivityLogsOptions) {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load activity logs for current user
+  // Load activity logs for current user - NO JOINS, raw data only
   const loadActivityLogs = useCallback(async (startDate?: Date, endDate?: Date) => {
     try {
       setLoading(true);
@@ -45,19 +55,10 @@ export function useActivityLogs() {
         throw new Error("User must be authenticated");
       }
 
-      // Join with quests and shop_items tables to get names and tags
+      // Fetch only raw activity_logs fields - NO JOINS
       let query = supabase
         .from("activity_logs")
-        .select(`
-          *,
-          quests:quest_id (
-            name,
-            tags
-          ),
-          shop_items:reward_id (
-            name
-          )
-        `)
+        .select("id, user_id, quest_id, habit_id, reward_id, action_type, difficulty, dollars_saved, sand_dollars_earned, logged_at, source_user_id, created_at")
         .eq("user_id", user.id)
         .order("logged_at", { ascending: false });
 
@@ -76,15 +77,27 @@ export function useActivityLogs() {
         throw fetchError;
       }
 
-      // Transform the joined data to flatten quest/reward names and tags into ActivityLog
-      const transformedLogs = (data || []).map((log: any) => ({
-        ...log,
-        quest_name: log.quests?.name || null,
-        quest_tags: log.quests?.tags || null,
-        reward_name: log.shop_items?.name || null,
-      }));
+      // Hydrate raw logs with metadata in JavaScript (no SQL joins)
+      const hydratedLogs: ActivityLog[] = (data || []).map((log: RawActivityLog) => {
+        const hydrated: ActivityLog = { ...log };
+        
+        // Merge quest metadata if available
+        if (log.quest_id && options?.questMetadata?.[log.quest_id]) {
+          const questMeta = options.questMetadata[log.quest_id];
+          hydrated.quest_name = questMeta.name;
+          hydrated.quest_tags = questMeta.tags;
+        }
+        
+        // Merge reward metadata if available
+        if (log.reward_id && options?.rewardMetadata?.[log.reward_id]) {
+          const rewardMeta = options.rewardMetadata[log.reward_id];
+          hydrated.reward_name = rewardMeta.name;
+        }
+        
+        return hydrated;
+      });
 
-      setLogs(transformedLogs);
+      setLogs(hydratedLogs);
       setError(null);
     } catch (err: any) {
       console.error("Error loading activity logs:", err);
@@ -93,7 +106,7 @@ export function useActivityLogs() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [options]);
 
   // Load logs on mount
   useEffect(() => {
