@@ -19,6 +19,8 @@ export interface RawActivityLog {
   quest_id: string | null;
   reward_id: string | null;
   action_type: ActionType;
+  difficulty: number | null;
+  dollars_saved: number | null;
   logged_at: string;
   source_user_id: string | null;
 }
@@ -72,10 +74,10 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
       }
 
       // Fetch only raw activity_logs fields - NO JOINS
-      // Only select fields needed for calendar rendering
+      // Select fields needed for calendar rendering and editing
       let query = supabase
         .from("activity_logs")
-        .select("id, user_id, quest_id, reward_id, action_type, logged_at, source_user_id")
+        .select("id, user_id, quest_id, reward_id, action_type, difficulty, dollars_saved, logged_at, source_user_id")
         .eq("user_id", user.id)
         .order("logged_at", { ascending: false });
 
@@ -167,7 +169,7 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
         .from("activity_logs")
         .update(updates)
         .eq("id", logId)
-        .select("id, user_id, quest_id, reward_id, action_type, logged_at, source_user_id")
+        .select("id, user_id, quest_id, reward_id, action_type, difficulty, dollars_saved, logged_at, source_user_id")
         .single();
 
       if (updateError) {
