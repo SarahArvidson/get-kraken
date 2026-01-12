@@ -10,6 +10,7 @@ import { useQuests } from "../hooks/useQuests";
 import { useFilterState } from "../hooks/useFilterState";
 import { deriveQuestSummary } from "../utils/questDataMapping";
 import { QuestCreateModal } from "../components/QuestCreateModal";
+import { TAG_BUTTON_CLASSES, TAG_LABELS } from "../utils/tags";
 import type { QuestSummary } from "../types/quests";
 import type { QuestLog, Tag } from "../types";
 
@@ -170,19 +171,21 @@ export function QuestsPage() {
             >
               All
             </button>
-            {availableTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSelectedQuestTag(tag)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
-                  selectedQuestTag === tag
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+            {availableTags.map((tag) => {
+              const tagClasses = TAG_BUTTON_CLASSES[tag];
+              const isActive = selectedQuestTag === tag;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedQuestTag(isActive ? null : tag)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation border-2 ${
+                    isActive ? tagClasses.active : tagClasses.base
+                  }`}
+                >
+                  {TAG_LABELS[tag]}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

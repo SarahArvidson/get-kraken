@@ -11,6 +11,7 @@ import { useFilterState } from "../hooks/useFilterState";
 import { usePreferences } from "../hooks/usePreferences";
 import { deriveRewardSummary } from "../utils/rewardDataMapping";
 import { RewardCreateModal } from "../components/RewardCreateModal";
+import { SHOP_TAG_BUTTON_CLASSES, SHOP_TAG_LABELS } from "../utils/shopTags";
 import type { RewardSummary } from "../types/rewards";
 import type { ShopLog, ShopTag } from "../types";
 
@@ -211,19 +212,21 @@ export function RewardsPage() {
               >
                 All Tags
               </button>
-              {availableTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setSelectedShopTag(tag)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
-                    selectedShopTag === tag
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
+              {availableTags.map((tag) => {
+                const tagClasses = SHOP_TAG_BUTTON_CLASSES[tag];
+                const isActive = selectedShopTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedShopTag(isActive ? null : tag)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation border-2 ${
+                      isActive ? tagClasses.active : tagClasses.base
+                    }`}
+                  >
+                    {SHOP_TAG_LABELS[tag]}
+                  </button>
+                );
+              })}
             </>
           )}
 
