@@ -4,7 +4,7 @@
  * Type definitions for v2 quest features, derived from v1 data
  */
 
-import type { Quest, QuestLog, Tag } from "../types";
+import type { QuestLog, Tag } from "../types";
 
 /**
  * QuestSummary - Minimal quest data for list views
