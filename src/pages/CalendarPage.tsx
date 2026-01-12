@@ -65,15 +65,16 @@ export function CalendarPage() {
       if (userIds.size === 0) return;
 
       try {
+        // Username is stored in user_preferences table, not profiles
         const { data } = await supabase
-          .from("profiles")
-          .select("id, username")
-          .in("id", Array.from(userIds));
+          .from("user_preferences")
+          .select("user_id, username")
+          .in("user_id", Array.from(userIds));
 
         if (data) {
           const names: Record<string, string> = {};
-          data.forEach((profile: { id: string; username: string | null }) => {
-            names[profile.id] = profile.username || "Buddy";
+          data.forEach((pref: { user_id: string; username: string | null }) => {
+            names[pref.user_id] = pref.username || "Buddy";
           });
           setSourceUserNames(names);
         }

@@ -1480,4 +1480,69 @@ CREATE TABLE activity_logs (
 
 ---
 
+## Phase 5.5: Stabilization and Consistency Hardening
+
+### Username Single Source of Truth
+
+**Decision:** Username is stored exclusively in `user_preferences.username` column.
+
+**Rationale:**
+- `user_preferences` table already exists and is user-isolated
+- No need for separate `profiles` table
+- Keeps user data consolidated
+- Already has RLS policies in place
+
+**Implementation:**
+- All username reads: Query `user_preferences` table by `user_id`
+- All username writes: Update/insert `user_preferences.username`
+- No references to `profiles` table for username
+
+**Files Updated:**
+- `src/hooks/useProfile.ts` - Already uses `user_preferences` ✓
+- `src/pages/CalendarPage.tsx` - Updated to use `user_preferences` instead of `profiles`
+- `src/components/ActivityEditModal.tsx` - Updated to use `user_preferences` instead of `profiles`
+
+**Note:** `AuthGate` uses "username" as a login identifier (email-like), not the public display username. This is separate and correct.
+
+### Dual-Write Failure Handling
+
+**Pattern:** All dual-write operations (writing to both legacy table and `activity_logs`) must:
+1. Complete the primary action (e.g., insert to `quest_logs`) first
+2. Attempt secondary write (e.g., insert to `activity_logs`) in try/catch
+3. If secondary write fails, log error but do not fail the user action
+4. Log structured errors for debugging
+
+**Failure Modes:**
+1. **activity_logs table doesn't exist yet** - Gracefully handle, log warning
+2. **activity_logs insert fails (permissions, RLS)** - Log error, continue
+3. **activity_logs insert fails (network)** - Log error, continue
+4. **activity_logs insert fails (validation)** - Log error, continue
+
+**Error Logging:**
+- Console error with structured data: `{ operation, table, error, userId, timestamp }`
+- Optional localStorage logging for debugging (key: `getkraken:dual-write-errors`)
+
+**Files Updated:**
+- `src/components/HabitLogModal.tsx` - Enhanced error handling
+- `src/hooks/useQuests.ts` - Enhanced error handling in `completeQuest`
+
+### Routing Hardening
+
+**Deep Link Behavior:**
+- `/quests/:id` - Quest detail page (loads quest by ID)
+- `/rewards/:id` - Reward detail page (loads reward by ID)
+- `/calendar` - Calendar page (no params, works on refresh)
+
+**Netlify Redirect Rules:**
+- All routes handled by React Router (SPA)
+- No server-side redirects needed for v2 routes
+- Main branch behavior unchanged
+
+**Documentation:**
+- All v2 routes are client-side only
+- Deep links work via React Router's `BrowserRouter`
+- 404s on refresh are handled by React Router fallback
+
+---
+
 **End of Phase 0 Plan Document**

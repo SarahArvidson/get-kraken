@@ -39,13 +39,14 @@ export function ActivityEditModal({
     setLoggedAt(new Date(activity.logged_at).toISOString().slice(0, 16));
 
     // Load source user name if buddy attribution exists
+    // Username is stored in user_preferences table, not profiles
     if (activity.source_user_id) {
       const loadSourceUser = async () => {
         try {
           const { data } = await supabase
-            .from("profiles")
+            .from("user_preferences")
             .select("username")
-            .eq("id", activity.source_user_id)
+            .eq("user_id", activity.source_user_id)
             .single();
           if (data) {
             setSourceUserName(data.username || "Buddy");
