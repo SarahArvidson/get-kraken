@@ -10,16 +10,13 @@ import { KRAKEN_ICON_PATH, APP_NAME, APP_SUBTITLE } from "../constants";
 interface HeaderProps {
   showDollarAmounts: boolean;
   onToggleDollarAmounts: () => void;
-  onLogout: () => void;
   onOpenMenu: () => void;
 }
 
-export function Header({ showDollarAmounts, onToggleDollarAmounts, onLogout, onOpenMenu }: HeaderProps) {
+export function Header({ showDollarAmounts, onToggleDollarAmounts, onOpenMenu }: HeaderProps) {
   const toggleButtonClasses = showDollarAmounts
     ? "bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-400 text-green-700 dark:text-green-300"
     : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300";
-
-  const logoutButtonClasses = "px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors touch-manipulation bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600";
 
   return (
     <header className="bg-blue-100/50 dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative backdrop-blur-sm">
@@ -59,13 +56,6 @@ export function Header({ showDollarAmounts, onToggleDollarAmounts, onLogout, onO
                 title={showDollarAmounts ? "Hide dollar amounts" : "Show dollar amounts"}
               >
                 💵 {showDollarAmounts ? "On" : "Off"}
-              </button>
-              <button
-                onClick={onLogout}
-                className={logoutButtonClasses}
-                title="Log out"
-              >
-                🚪 Log Out
               </button>
             </div>
           </div>

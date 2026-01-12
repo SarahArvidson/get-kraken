@@ -354,10 +354,10 @@ export function RewardsPage() {
               {/* Reward Cards for this Letter */}
               <div className="space-y-2">
                 {groupedRewards.groups[letter].map((reward) => (
-                  <CyclingShopBorder key={reward.id} tags={reward.tags as ShopTag[]}>
-                    <div
-                      onClick={() => handleRewardClick(reward.id)}
-                      className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                    <CyclingShopBorder key={reward.id} tags={reward.tags as ShopTag[]}>
+                      <div
+                        onClick={() => handleRewardClick(reward.id)}
+                        className="bg-white dark:bg-gray-800 p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {

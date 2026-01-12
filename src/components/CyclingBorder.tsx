@@ -41,7 +41,9 @@ export function CyclingBorder({
   if (tags.length === 0) {
     return (
       <div className={`border-2 border-transparent rounded-2xl ${className}`}>
-        {children}
+        <div className="rounded-[inherit] overflow-hidden">
+          {children}
+        </div>
       </div>
     );
   }
@@ -50,7 +52,9 @@ export function CyclingBorder({
     const borderClass = TAG_BORDER_CLASSES[tags[0]];
     return (
       <div className={`border-2 rounded-2xl ${borderClass} ${className}`}>
-        {children}
+        <div className="rounded-[inherit] overflow-hidden">
+          {children}
+        </div>
       </div>
     );
   }
@@ -63,7 +67,9 @@ export function CyclingBorder({
     <div
       className={`border-2 rounded-2xl transition-all duration-300 ${borderClass} ${className}`}
     >
-      {children}
+      <div className="rounded-[inherit] overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }
@@ -88,7 +94,9 @@ export function CyclingShopBorder({
   if (tags.length === 0) {
     return (
       <div className={`border-2 border-transparent rounded-2xl ${className}`}>
-        {children}
+        <div className="rounded-[inherit] overflow-hidden">
+          {children}
+        </div>
       </div>
     );
   }
@@ -97,7 +105,9 @@ export function CyclingShopBorder({
     const borderClass = SHOP_TAG_BORDER_CLASSES[tags[0]];
     return (
       <div className={`border-2 rounded-2xl ${borderClass} ${className}`}>
-        {children}
+        <div className="rounded-[inherit] overflow-hidden">
+          {children}
+        </div>
       </div>
     );
   }
@@ -110,7 +120,9 @@ export function CyclingShopBorder({
     <div
       className={`border-2 rounded-2xl transition-all duration-300 ${borderClass} ${className}`}
     >
-      {children}
+      <div className="rounded-[inherit] overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }

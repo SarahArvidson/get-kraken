@@ -259,7 +259,7 @@ export function QuestsPage() {
                   <CyclingBorder key={quest.id} tags={quest.tags as Tag[]}>
                     <div
                       onClick={() => handleQuestClick(quest.id)}
-                      className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                      className="bg-white dark:bg-gray-800 p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {

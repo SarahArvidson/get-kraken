@@ -392,7 +392,6 @@ function App() {
       <Header
         showDollarAmounts={preferences.showDollarAmounts}
         onToggleDollarAmounts={() => preferences.toggleDollarAmounts()}
-        onLogout={handleLogout}
         onOpenMenu={() => setIsMenuOpen(true)}
       />
 
