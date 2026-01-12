@@ -366,7 +366,7 @@ export function RewardsPage() {
                         <span className="text-gray-400 dark:text-gray-500">→</span>
                       </div>
                     </div>
-                  </div>
+                  </CyclingShopBorder>
                 ))}
               </div>
             </div>
