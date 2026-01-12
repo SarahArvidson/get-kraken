@@ -12,7 +12,7 @@ import { usePreferences } from "../hooks/usePreferences";
 import { deriveRewardSummary } from "../utils/rewardDataMapping";
 import { RewardCreateModal } from "../components/RewardCreateModal";
 import type { RewardSummary } from "../types/rewards";
-import type { ShopLog, ShopTag, ShopItem } from "../types";
+import type { ShopLog, ShopTag } from "../types";
 
 export function RewardsPage() {
   const navigate = useNavigate();

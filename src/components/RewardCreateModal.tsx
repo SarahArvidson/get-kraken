@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import type { ShopItem } from "../types";
+import type { ShopItem, ShopTag } from "../types";
 import { SHOP_TAGS, SHOP_TAG_LABELS } from "../utils/shopTags";
 
 interface RewardCreateModalProps {
@@ -22,7 +22,7 @@ export function RewardCreateModal({
   showDollarAmounts,
 }: RewardCreateModalProps) {
   const [name, setName] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<ShopTag[]>([]);
   const [price, setPrice] = useState(20);
   const [dollarAmount, setDollarAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +59,7 @@ export function RewardCreateModal({
     }
   };
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: ShopTag) => {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );

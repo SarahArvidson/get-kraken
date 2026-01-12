@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import type { Quest } from "../types";
+import type { Quest, Tag } from "../types";
 import { TAGS, TAG_LABELS } from "../utils/tags";
 
 interface QuestCreateModalProps {
@@ -21,7 +21,7 @@ export function QuestCreateModal({
 }: QuestCreateModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [reward, setReward] = useState(10);
   const [dollarAmount, setDollarAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -65,7 +65,7 @@ export function QuestCreateModal({
     }
   };
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: Tag) => {
     setTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );

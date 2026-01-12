@@ -13,7 +13,6 @@ import { HabitLogModal } from "../components/HabitLogModal";
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { QuestDetail } from "../types/quests";
-import type { Quest } from "../types";
 
 export function QuestDetailPage() {
   const { id } = useParams<{ id: string }>();

@@ -12,12 +12,11 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useWallet } from "../hooks/useWallet";
 import { deriveRewardSummary, deriveRewardDetail, setRewardStarred } from "../utils/rewardDataMapping";
 import type { RewardDetail } from "../types/rewards";
-import type { ShopItem } from "../types";
 
 export function RewardDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { shopItems, loading, getShopItemWithLogs, purchaseItem, updateShopItem } = useShopItems();
+  const { shopItems, loading, getShopItemWithLogs, purchaseItem } = useShopItems();
   const { quests } = useQuests();
   const preferences = usePreferences();
   const { wallet } = useWallet();
@@ -136,8 +135,6 @@ export function RewardDetailPage() {
     }
   };
 
-  // Get the base shop item for editing
-  const baseItem = shopItems.find((i) => i.id === id) || null;
 
   if (detailLoading || loading) {
     return (

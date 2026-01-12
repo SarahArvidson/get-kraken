@@ -11,7 +11,7 @@ import { useFilterState } from "../hooks/useFilterState";
 import { deriveQuestSummary } from "../utils/questDataMapping";
 import { QuestCreateModal } from "../components/QuestCreateModal";
 import type { QuestSummary } from "../types/quests";
-import type { QuestLog, Tag, Quest } from "../types";
+import type { QuestLog, Tag } from "../types";
 
 export function QuestsPage() {
   const navigate = useNavigate();
