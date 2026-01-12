@@ -23,9 +23,10 @@ export interface ActivityLog {
   logged_at: string;
   source_user_id: string | null;
   created_at: string;
-  // Joined data from quests table
+  // Joined data from quests and shop_items tables
   quest_name?: string | null;
   quest_tags?: Tag[] | null;
+  reward_name?: string | null;
 }
 
 export function useActivityLogs() {
@@ -44,7 +45,7 @@ export function useActivityLogs() {
         throw new Error("User must be authenticated");
       }
 
-      // Join with quests table to get quest name and tags for quest_complete activities
+      // Join with quests and shop_items tables to get names and tags
       let query = supabase
         .from("activity_logs")
         .select(`
@@ -52,6 +53,9 @@ export function useActivityLogs() {
           quests:quest_id (
             name,
             tags
+          ),
+          shop_items:reward_id (
+            name
           )
         `)
         .eq("user_id", user.id)
@@ -72,11 +76,12 @@ export function useActivityLogs() {
         throw fetchError;
       }
 
-      // Transform the joined data to flatten quest name and tags into ActivityLog
+      // Transform the joined data to flatten quest/reward names and tags into ActivityLog
       const transformedLogs = (data || []).map((log: any) => ({
         ...log,
         quest_name: log.quests?.name || null,
         quest_tags: log.quests?.tags || null,
+        reward_name: log.shop_items?.name || null,
       }));
 
       setLogs(transformedLogs);

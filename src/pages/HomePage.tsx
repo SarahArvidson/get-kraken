@@ -56,18 +56,24 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   };
 
   // Get activities for a date with their tag colors
+  // Returns all activities, with tag colors for quest completions, gray for others
   const getActivitiesForDateWithTags = (date: Date): Array<{ activity: ActivityLog; color: string }> => {
     const activities = getActivitiesForDate(date);
-    return activities
-      .filter((activity) => activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0)
-      .map((activity) => {
-        // Use the first tag for color (quests can have multiple tags)
-        const firstTag = activity.quest_tags![0] as Tag;
+    return activities.map((activity) => {
+      // For quest completions with tags, use tag color
+      if (activity.action_type === 'quest_complete' && activity.quest_tags && activity.quest_tags.length > 0) {
+        const firstTag = activity.quest_tags[0] as Tag;
         return {
           activity,
           color: getTagColorClass(firstTag),
         };
-      });
+      }
+      // For other activities (habit logs, reward purchases), use gray
+      return {
+        activity,
+        color: 'bg-gray-400 dark:bg-gray-500',
+      };
+    });
   };
 
   return (
@@ -186,54 +192,57 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           <div className="text-gray-500 dark:text-gray-400 text-sm">Loading activity...</div>
         ) : (
           <div className="space-y-2">
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
               {days.map((date, index) => {
                 const activitiesWithTags = getActivitiesForDateWithTags(date);
                 const isToday = date.toISOString().split('T')[0] === today.toISOString().split('T')[0];
                 const dayOfWeek = date.getDay();
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const displayActivities = activitiesWithTags.slice(0, 4);
+                const overflowCount = activitiesWithTags.length - 4;
                 
                 return (
                   <div
                     key={index}
                     className={`
-                      aspect-square rounded
+                      aspect-square rounded-sm
                       ${activitiesWithTags.length === 0 
                         ? 'bg-gray-100 dark:bg-gray-800' 
-                        : 'bg-gray-200 dark:bg-gray-700 p-0.5 sm:p-1'
+                        : 'bg-white dark:bg-gray-900 p-0.5 grid grid-cols-2 gap-0.5'
                       }
-                      ${isToday ? 'ring-2 ring-amber-500 dark:ring-amber-400' : ''}
+                      ${isToday ? 'ring-1 ring-amber-500 dark:ring-amber-400' : ''}
                       ${isWeekend ? 'opacity-75' : ''}
-                      transition-all hover:scale-110
-                      ${activitiesWithTags.length > 0 ? 'grid grid-cols-2 gap-0.5' : ''}
+                      transition-all hover:scale-105
                     `}
-                    title={`${date.toLocaleDateString()}: ${activitiesWithTags.length} quest${activitiesWithTags.length !== 1 ? 's' : ''} completed`}
-                    aria-label={`${date.toLocaleDateString()}: ${activitiesWithTags.length} quest${activitiesWithTags.length !== 1 ? 's' : ''} completed`}
+                    title={`${date.toLocaleDateString()}: ${activitiesWithTags.length} activit${activitiesWithTags.length !== 1 ? 'ies' : 'y'}`}
+                    aria-label={`${date.toLocaleDateString()}: ${activitiesWithTags.length} activit${activitiesWithTags.length !== 1 ? 'ies' : 'y'}`}
                   >
                     {activitiesWithTags.length === 0 ? null : (
-                      activitiesWithTags.slice(0, 4).map((item, tagIndex) => (
-                        <div
-                          key={tagIndex}
-                          className={`w-full h-full rounded ${item.color}`}
-                          title={item.activity.quest_name || 'Quest completed'}
-                        />
-                      ))
+                      <>
+                        {displayActivities.map((item, tagIndex) => (
+                          <div
+                            key={tagIndex}
+                            className={`w-full h-full rounded-sm ${item.color}`}
+                            title={item.activity.quest_name || item.activity.action_type.replace('_', ' ')}
+                          />
+                        ))}
+                        {overflowCount > 0 && (
+                          <div className="w-full h-full rounded-sm bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                            <span className="text-[8px] font-semibold text-gray-700 dark:text-gray-200">
+                              +{overflowCount}
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
-              <span>Tag colors</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded bg-blue-500" title="Work" />
-                <div className="w-3 h-3 rounded bg-green-500" title="Finance" />
-                <div className="w-3 h-3 rounded bg-purple-500" title="Home" />
-                <div className="w-3 h-3 rounded bg-red-500" title="Health" />
-                <div className="w-3 h-3 rounded bg-pink-500" title="Relationship" />
-                <div className="w-3 h-3 rounded bg-cyan-500" title="Social Life" />
-              </div>
-              <span>Quest tags</span>
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2">
+              <span>Each square = one activity</span>
+              <span>•</span>
+              <span>Colors = quest tags</span>
             </div>
           </div>
         )}

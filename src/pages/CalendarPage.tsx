@@ -170,11 +170,14 @@ export function CalendarPage() {
   };
 
   const formatActivityType = (activity: ActivityLog) => {
-    // For quest completions, show quest name instead of generic "Quest Complete"
-    if (activity.action_type === 'quest_complete' && activity.quest_name) {
+    // Show quest name, reward name, or fallback to formatted action type
+    if (activity.quest_name) {
       return activity.quest_name;
     }
-    // For other types, format the action type
+    if (activity.reward_name) {
+      return activity.reward_name;
+    }
+    // Fallback to formatted action type
     const type = activity.action_type;
     return type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
