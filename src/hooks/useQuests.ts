@@ -323,18 +323,32 @@ export function useQuests() {
         // Dual-write: Also insert into activity_logs for calendar/timeline
         // This is best-effort - if it fails, the primary action (quest_log + wallet update) still succeeds
         try {
-          const { error: activityLogError } = await supabase
+          console.log('[completeQuest] Inserting into activity_logs:', {
+            user_id: user.id,
+            quest_id: questId,
+            action_type: 'quest_complete',
+            sand_dollars_earned: reward,
+            dollars_saved: dollarAmount > 0 ? dollarAmount : null,
+            logged_at: completedAt,
+          });
+
+          const insertData = {
+            user_id: user.id,
+            quest_id: questId,
+            action_type: 'quest_complete' as const,
+            sand_dollars_earned: reward,
+            dollars_saved: dollarAmount > 0 ? dollarAmount : null,
+            logged_at: completedAt,
+          };
+
+          const { data: activityLogData, error: activityLogError } = await supabase
             .from("activity_logs")
-            .insert({
-              user_id: user.id,
-              quest_id: questId,
-              action_type: 'quest_complete',
-              sand_dollars_earned: reward,
-              dollars_saved: dollarAmount > 0 ? dollarAmount : null,
-              logged_at: completedAt,
-            });
+            .insert(insertData)
+            .select()
+            .single();
 
           if (activityLogError) {
+            console.error('[completeQuest] activity_logs insert failed:', activityLogError);
             logDualWriteError(
               'quest_complete',
               'activity_logs',
@@ -343,8 +357,11 @@ export function useQuests() {
               { questId, reward, dollarAmount, completedAt }
             );
             // Don't throw - activity logging is best effort, existing quest_logs still work
+          } else {
+            console.log('[completeQuest] activity_logs insert succeeded:', activityLogData);
           }
         } catch (error) {
+          console.error('[completeQuest] activity_logs insert exception:', error);
           logDualWriteError(
             'quest_complete',
             'activity_logs',
