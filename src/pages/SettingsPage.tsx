@@ -9,6 +9,9 @@ import { useTheme } from "../hooks/useTheme";
 import { usePreferences } from "../hooks/usePreferences";
 import { useProfile } from "../hooks/useProfile";
 import { exportUserData } from "../utils/exportData";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { supabase } from "../lib/supabase";
+import { useWallet } from "../hooks/useWallet";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -48,6 +51,10 @@ export function SettingsPage() {
   const [usernameInput, setUsernameInput] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [resetWalletConfirm, setResetWalletConfirm] = useState(false);
+  const [resetProgressConfirm, setResetProgressConfirm] = useState(false);
+  const [resetProgressType, setResetProgressType] = useState("");
+  const { wallet, loadWallet } = useWallet();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -275,15 +282,164 @@ export function SettingsPage() {
 
         {/* Danger Zone Section */}
         <CollapsibleSection title="Danger Zone">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-sm text-red-800 dark:text-red-200 mb-4">
-              <strong>Warning:</strong> Actions in this section are destructive and cannot be undone.
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-              Danger zone actions coming in Step 7...
-            </p>
+          <div className="space-y-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-sm text-red-800 dark:text-red-200 mb-2">
+                <strong>Warning:</strong> Actions in this section are destructive and cannot be undone.
+              </p>
+              <p className="text-xs text-red-700 dark:text-red-300">
+                These actions will permanently modify or delete your data. Please proceed with caution.
+              </p>
+            </div>
+
+            {/* Reset Wallet */}
+            <div className="border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Reset Wallet to Zero
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                This will set your wallet balances (sand dollars and dollars) to zero. Your activity logs and progress history will remain intact.
+              </p>
+              <button
+                onClick={() => setResetWalletConfirm(true)}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+              >
+                Reset Wallet
+              </button>
+            </div>
+
+            {/* Reset All Progress */}
+            <div className="border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Reset All Progress
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                This will permanently delete:
+              </p>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside mb-4 space-y-1">
+                <li>All quest logs (quest_logs table)</li>
+                <li>All activity logs (activity_logs table)</li>
+                <li>All shop purchase logs (shop_logs table)</li>
+                <li>Wallet balances (set to zero)</li>
+              </ul>
+              <p className="text-xs text-red-700 dark:text-red-300 mb-4">
+                <strong>Note:</strong> Your quests, shop items, and preferences will remain. Only your progress and logs will be deleted.
+              </p>
+              <button
+                onClick={() => setResetProgressConfirm(true)}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+              >
+                Reset All Progress
+              </button>
+            </div>
           </div>
         </CollapsibleSection>
+
+        {/* Reset Wallet Confirmation */}
+        <ConfirmDialog
+          isOpen={resetWalletConfirm}
+          onClose={() => setResetWalletConfirm(false)}
+          onConfirm={async () => {
+            try {
+              const { data: { user } } = await supabase.supabase.auth.getUser();
+              if (!user) throw new Error("User must be authenticated");
+
+              // Set wallet to zero
+              const { error: walletError } = await supabase
+                .from("wallets")
+                .update({
+                  total: 0,
+                  dollar_total: 0,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("user_id", user.id);
+
+              if (walletError) throw walletError;
+
+              // Reload wallet
+              await loadWallet();
+              setResetWalletConfirm(false);
+              alert("Wallet has been reset to zero.");
+            } catch (error: any) {
+              console.error("Error resetting wallet:", error);
+              alert(`Failed to reset wallet: ${error.message}`);
+            }
+          }}
+          title="Reset Wallet to Zero"
+          message="This will set your wallet balances (sand dollars and dollars) to zero. Your activity logs and progress history will remain intact. This action cannot be undone."
+          confirmText="Reset Wallet"
+          danger={true}
+        />
+
+        {/* Reset Progress Confirmation */}
+        <ConfirmDialog
+          isOpen={resetProgressConfirm}
+          onClose={() => {
+            setResetProgressConfirm(false);
+            setResetProgressType("");
+          }}
+          onConfirm={async () => {
+            try {
+              const { data: { user } } = await supabase.supabase.auth.getUser();
+              if (!user) throw new Error("User must be authenticated");
+
+              // Delete quest logs
+              const { error: questLogsError } = await supabase
+                .from("quest_logs")
+                .delete()
+                .eq("user_id", user.id);
+
+              if (questLogsError) throw questLogsError;
+
+              // Delete activity logs
+              const { error: activityLogsError } = await supabase
+                .from("activity_logs")
+                .delete()
+                .eq("user_id", user.id);
+
+              if (activityLogsError) {
+                // activity_logs might not exist yet, that's okay
+                console.warn("Activity logs deletion failed (table might not exist):", activityLogsError);
+              }
+
+              // Delete shop logs
+              const { error: shopLogsError } = await supabase
+                .from("shop_logs")
+                .delete()
+                .eq("user_id", user.id);
+
+              if (shopLogsError) throw shopLogsError;
+
+              // Reset wallet to zero
+              const { error: walletError } = await supabase
+                .from("wallets")
+                .update({
+                  total: 0,
+                  dollar_total: 0,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("user_id", user.id);
+
+              if (walletError) throw walletError;
+
+              // Reload wallet
+              await loadWallet();
+              setResetProgressConfirm(false);
+              setResetProgressType("");
+              alert("All progress has been reset. Your quests and shop items remain intact.");
+            } catch (error: any) {
+              console.error("Error resetting progress:", error);
+              alert(`Failed to reset progress: ${error.message}`);
+            }
+          }}
+          title="Reset All Progress"
+          message="This will permanently delete all your quest logs, activity logs, shop purchase logs, and reset your wallet to zero. Your quests, shop items, and preferences will remain. This action cannot be undone."
+          confirmText="Reset All Progress"
+          danger={true}
+          requireType="RESET"
+          typeInput={resetProgressType}
+          onTypeInputChange={setResetProgressType}
+        />
       </div>
     </div>
   );
