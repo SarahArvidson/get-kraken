@@ -1322,6 +1322,84 @@ export interface RewardDetail extends RewardSummary {
 - No automatic creation or syncing yet
 - Document proposal in plan for future implementation
 
+### Quest-Associated Items Data Model Proposal
+
+#### Current State (Phase 3)
+- Quests can have `associated_item_id` (future field, currently UI-only/localStorage)
+- Shop items can have `linked_quest_id` (future field, currently localStorage)
+- Both stored temporarily in localStorage:
+  - Quest → Item: `quest_associated_item_${questId}` = itemId
+  - Item → Quest: `reward_linked_quest_${itemId}` = questId
+
+#### Proposed Future Schema
+
+**Option A: Bidirectional with both columns (Recommended)**
+```sql
+-- Add to quests table
+ALTER TABLE quests
+  ADD COLUMN IF NOT EXISTS associated_item_id UUID REFERENCES shop_items(id) ON DELETE SET NULL;
+
+-- Add to shop_items table
+ALTER TABLE shop_items
+  ADD COLUMN IF NOT EXISTS linked_quest_id UUID REFERENCES quests(id) ON DELETE SET NULL;
+
+-- Optional: Add constraint to ensure bidirectional consistency
+-- (Can be enforced via trigger or application logic)
+```
+
+**Benefits:**
+- Fast queries from either direction
+- Clear bidirectional relationship
+- Can enforce referential integrity
+- Easy to find all items linked to a quest, or find quest for an item
+
+**Migration:**
+1. Add both columns (nullable)
+2. Backfill: For any localStorage links, populate both columns
+3. Add constraint or trigger: Ensure both columns point to each other (or use application logic)
+
+**Option B: Single source of truth (quests.associated_item_id only)**
+```sql
+-- Add to quests table only
+ALTER TABLE quests
+  ADD COLUMN IF NOT EXISTS associated_item_id UUID REFERENCES shop_items(id) ON DELETE SET NULL;
+```
+
+**Benefits:**
+- Simpler schema
+- Quest is the source of truth
+- Less duplication
+
+**Trade-off:**
+- Need to query quests to find items linked to a quest (slower reverse lookup)
+- Can add index on shop_items for reverse lookup if needed
+
+**Decision: Option A** - Bidirectional columns provide better query performance and clearer data model.
+
+#### Auto-Creation Strategy (Future)
+
+When a quest is created with `associated_item_id`:
+1. **If item exists:** Link it (update `shop_items.linked_quest_id`)
+2. **If item doesn't exist:** Create new shop item with:
+   - Name from quest's associated_item text
+   - Price = 0 (or quest reward amount, configurable)
+   - `linked_quest_id` = quest.id
+   - Auto-populate other fields from quest if applicable
+   - Track via `auto_created_from_quest` flag (optional)
+
+When a quest is deleted:
+- Option 1: Keep item, set `linked_quest_id` to NULL
+- Option 2: Delete item if it was auto-created (track via flag)
+
+**Phase 3:** No auto-creation yet, manual linking only via UI.
+
+#### UI Indicators (Phase 3)
+
+- **In QuestDetailPage:** Show "Associated Reward" section if `associated_item_id` exists
+- **In RewardDetailPage:** Show "Linked to quest" badge/indicator if `linked_quest_id` exists
+- **In RewardsPage:** Show 🔗 icon next to items that have `linked_quest_id`
+- **In QuestsPage:** Optional indicator for quests with associated items
+
 ---
 
 **End of Phase 0 Plan Document**
