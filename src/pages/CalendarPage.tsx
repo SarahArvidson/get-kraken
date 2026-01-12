@@ -217,14 +217,6 @@ export function CalendarPage() {
     return 'border-l-gray-400';
   };
 
-  const getActivityIntensity = (date: Date) => {
-    const activities = getActivitiesForDate(date);
-    const count = activities.length;
-    if (count === 0) return 'none';
-    if (count === 1) return 'low';
-    if (count <= 3) return 'medium';
-    return 'high';
-  };
 
   if (loading) {
     return (
