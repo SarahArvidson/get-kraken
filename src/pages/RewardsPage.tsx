@@ -12,6 +12,7 @@ import { usePreferences } from "../hooks/usePreferences";
 import { deriveRewardSummary } from "../utils/rewardDataMapping";
 import { RewardCreateModal } from "../components/RewardCreateModal";
 import { CyclingShopBorder } from "../components/CyclingBorder";
+import { FilterDrawer } from "../components/FilterDrawer";
 import { SHOP_TAG_BUTTON_CLASSES, SHOP_TAG_LABELS } from "../utils/shopTags";
 import type { RewardSummary } from "../types/rewards";
 import type { ShopLog, ShopTag } from "../types";
@@ -28,6 +29,7 @@ export function RewardsPage() {
   const [selectedRarity, setSelectedRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | null>(null);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
 
   // Load shop logs on mount
   useEffect(() => {
@@ -173,10 +175,10 @@ export function RewardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
-      <div className="space-y-4">
+      {/* Search and Filter Button */}
+      <div className="flex gap-2">
         {/* Search Input */}
-        <div>
+        <div className="flex-1">
           <input
             type="search"
             placeholder="Search rewards..."
@@ -185,78 +187,129 @@ export function RewardsPage() {
             className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
           />
         </div>
+        {/* Filter Button */}
+        <button
+          onClick={() => setShowFilterDrawer(true)}
+          className="px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors touch-manipulation font-medium"
+          aria-label="Open filters"
+        >
+          Filter
+        </button>
+      </div>
 
-        {/* Filters Row */}
-        <div className="flex flex-wrap gap-2">
-          {/* All/Starred Toggle */}
-          <button
-            onClick={() => setShowStarredOnly(!showStarredOnly)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
-              showStarredOnly
-                ? 'bg-amber-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            {showStarredOnly ? '⭐ Starred' : 'All'}
-          </button>
-
-          {/* Tag Filters */}
+      {/* Filter Drawer */}
+      <FilterDrawer
+        isOpen={showFilterDrawer}
+        onClose={() => setShowFilterDrawer(false)}
+        title="Filter Rewards"
+      >
+        <div className="space-y-6">
+          {/* Tags Section */}
           {availableTags.length > 0 && (
-            <>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                Tags
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedShopTag(null)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
+                    selectedShopTag === null
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  All Tags
+                </button>
+                {availableTags.map((tag) => {
+                  const tagClasses = SHOP_TAG_BUTTON_CLASSES[tag];
+                  const isActive = selectedShopTag === tag;
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedShopTag(isActive ? null : tag)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation border-2 ${
+                        isActive ? tagClasses.active : tagClasses.base
+                      }`}
+                    >
+                      {SHOP_TAG_LABELS[tag]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Reward Rarity Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Rarity
+            </h3>
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSelectedShopTag(null)}
+                onClick={() => setSelectedRarity(null)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
-                  selectedShopTag === null
+                  selectedRarity === null
                     ? 'bg-amber-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
-                All Tags
+                All Rarity
               </button>
-              {availableTags.map((tag) => {
-                const tagClasses = SHOP_TAG_BUTTON_CLASSES[tag];
-                const isActive = selectedShopTag === tag;
-                return (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedShopTag(isActive ? null : tag)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation border-2 ${
-                      isActive ? tagClasses.active : tagClasses.base
-                    }`}
-                  >
-                    {SHOP_TAG_LABELS[tag]}
-                  </button>
-                );
-              })}
-            </>
-          )}
+              {(['common', 'rare', 'epic', 'legendary'] as const).map((rarity) => (
+                <button
+                  key={rarity}
+                  onClick={() => setSelectedRarity(rarity)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation capitalize ${
+                    selectedRarity === rarity
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {rarity}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* Rarity Filters */}
-          <button
-            onClick={() => setSelectedRarity(null)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
-              selectedRarity === null
-                ? 'bg-amber-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            All Rarity
-          </button>
-          {(['common', 'rare', 'epic', 'legendary'] as const).map((rarity) => (
+          {/* Starred Filter */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Starred
+            </h3>
             <button
-              key={rarity}
-              onClick={() => setSelectedRarity(rarity)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation capitalize ${
-                selectedRarity === rarity
+              onClick={() => setShowStarredOnly(!showStarredOnly)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
+                showStarredOnly
                   ? 'bg-amber-500 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              {rarity}
+              {showStarredOnly ? '⭐ Starred Only' : 'All Items'}
             </button>
-          ))}
+          </div>
+
+          {/* Sand Dollar Value Range Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Sand Dollar Value Range
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Coming soon
+            </p>
+          </div>
+
+          {/* Dollar Value Range Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Dollar Value Range
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Coming soon
+            </p>
+          </div>
         </div>
-      </div>
+      </FilterDrawer>
 
       {/* Recent Purchases Highlight (Optional, Calm) */}
       {recentPurchases.length > 0 && (
