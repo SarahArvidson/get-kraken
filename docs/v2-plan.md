@@ -811,4 +811,197 @@ WHERE schemaname = 'public' AND tablename IN ('quests', 'activity_logs', 'quest_
 
 ---
 
+---
+
+## Phase 2: Data Mapping (v1 Quest Data Structure)
+
+### Current Supabase Tables Used by v1
+
+#### `quests` table
+- **id** (UUID, PRIMARY KEY)
+- **name** (TEXT, NOT NULL)
+- **tags** (TEXT[], DEFAULT '{}')
+- **reward** (INTEGER, NOT NULL, DEFAULT 10) - sand dollars per completion
+- **dollar_amount** (DECIMAL(10,2), DEFAULT 0) - real dollars saved per completion
+- **completion_count** (INTEGER, NOT NULL, DEFAULT 0) - shared count (deprecated, per-user counts from logs)
+- **created_by** (UUID, nullable) - NULL for seeded quests, user_id for user-created quests
+- **created_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+- **updated_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+
+**Query Pattern:**
+```sql
+SELECT * FROM quests 
+WHERE (created_by IS NULL OR created_by = :user_id)
+ORDER BY name ASC
+```
+
+#### `quest_logs` table
+- **id** (UUID, PRIMARY KEY)
+- **quest_id** (UUID, REFERENCES quests(id) ON DELETE CASCADE)
+- **user_id** (UUID, REFERENCES auth.users(id) ON DELETE CASCADE)
+- **completed_at** (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+
+**Query Pattern:**
+```sql
+SELECT * FROM quest_logs 
+WHERE quest_id = :quest_id AND user_id = :user_id
+ORDER BY completed_at DESC
+```
+
+#### `user_quest_overrides` table (per-user customization)
+- **id** (UUID, PRIMARY KEY)
+- **user_id** (UUID, REFERENCES auth.users(id))
+- **quest_id** (UUID, REFERENCES quests(id))
+- **name** (TEXT, nullable)
+- **tags** (TEXT[], nullable)
+- **reward** (INTEGER, nullable)
+- **dollar_amount** (DECIMAL(10,2), nullable)
+- **created_at** (TIMESTAMPTZ)
+- **updated_at** (TIMESTAMPTZ)
+
+**Purpose:** Allows users to customize seeded quests without modifying the base quest.
+
+#### `user_hidden_quests` table
+- **id** (UUID, PRIMARY KEY)
+- **user_id** (UUID, REFERENCES auth.users(id))
+- **quest_id** (UUID, REFERENCES quests(id))
+
+**Purpose:** Tracks which seeded quests a user has hidden.
+
+### Current Quest Data Flow (v1)
+
+1. **Load Quests:**
+   - Query `quests` table for seeded (created_by IS NULL) or user-created (created_by = user_id)
+   - Merge with `user_quest_overrides` to get per-user customizations
+   - Filter out quests in `user_hidden_quests`
+   - Sort alphabetically by name
+
+2. **Complete Quest:**
+   - Insert into `quest_logs` with quest_id, user_id, completed_at
+   - Atomically update `wallets` table (add reward to total, dollar_amount to dollar_total)
+
+3. **Progress Tracking:**
+   - Per-user completion count = COUNT(*) from `quest_logs` WHERE quest_id = X AND user_id = Y
+   - No separate "progress" table - logs are the source of truth
+
+### Missing Fields for v2 (Not in Current Schema)
+
+The following fields are planned for v2 but do not exist yet:
+- `description` (TEXT) - optional quest description
+- `target_completion_date` (TIMESTAMPTZ) - optional target date
+- `rarity` (TEXT) - enum: 'common', 'rare', 'epic', 'legendary'
+- `associated_item_id` (UUID) - link to shop_items
+- `is_starred` (BOOLEAN) - user's starred status
+- `is_repeatable` (BOOLEAN) - whether quest can be repeated
+
+**Note:** These will be added in future migrations. For Phase 2, we'll use UI-only state or local storage as temporary storage.
+
+### Missing Tables for v2 (Not in Current Schema)
+
+- `habits` - habit definitions
+- `habit_logs` - habit logging with difficulty and dollars saved
+- `quest_tasks` - non-habit tasks/checklist items
+- `quest_runs` - quest instance tracking for repeatability
+- `activity_logs` - unified timeline for calendar
+
+**Note:** These will be created in future migrations. For Phase 2, we'll use temporary local storage or UI-only state.
+
+### TypeScript Types for Phase 2
+
+#### QuestSummary (List View)
+```typescript
+export interface QuestSummary {
+  id: string;
+  name: string;
+  tags: Tag[];
+  reward: number;
+  dollar_amount: number;
+  created_by: string | null;
+  created_at: string;
+  // Derived/computed fields
+  userCompletionCount: number; // from quest_logs count
+  isStarred: boolean; // from local storage or future is_starred column
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary'; // future field, optional for now
+}
+```
+
+#### QuestDetail (Detail View)
+```typescript
+export interface QuestDetail extends QuestSummary {
+  description?: string; // future field, optional for now
+  target_completion_date?: string; // future field, optional for now
+  associated_item_id?: string; // future field, optional for now
+  is_repeatable: boolean; // future field, default true for now
+  // Logs
+  logs: QuestLog[]; // from quest_logs table
+  // Placeholder fields (UI-only for Phase 2)
+  habits?: HabitSummary[]; // temporary, local storage or UI-only
+  tasks?: TaskSummary[]; // temporary, local storage or UI-only
+  currentRun?: QuestRunSummary; // placeholder for future quest_runs
+  pastRuns?: QuestRunSummary[]; // placeholder for future quest_runs
+}
+
+export interface HabitSummary {
+  id: string; // temporary ID
+  name: string;
+  description?: string;
+  // Recent log for autofill
+  lastLog?: {
+    difficulty: number;
+    saved_money: boolean;
+    dollars_saved?: number;
+  };
+}
+
+export interface TaskSummary {
+  id: string; // temporary ID
+  name: string;
+  description?: string;
+  is_completed: boolean;
+  order_index: number;
+}
+
+export interface QuestRunSummary {
+  id: string; // placeholder
+  started_at: string;
+  completed_at?: string;
+  abandoned_at?: string;
+  status: 'in_progress' | 'completed' | 'abandoned';
+}
+```
+
+### Data Derivation Strategy
+
+1. **QuestSummary from Quest:**
+   - Direct mapping from `quests` table
+   - `userCompletionCount` = COUNT from `quest_logs` WHERE quest_id = id AND user_id = current_user
+   - `isStarred` = read from localStorage key `quest_starred_${quest_id}` (temporary, until schema migration)
+   - `rarity` = undefined for now (will be added in migration)
+
+2. **QuestDetail from QuestSummary:**
+   - Extend QuestSummary
+   - Load `logs` from `quest_logs` table
+   - Load `habits` from localStorage key `quest_habits_${quest_id}` (temporary)
+   - Load `tasks` from localStorage key `quest_tasks_${quest_id}` (temporary)
+   - `currentRun` and `pastRuns` = placeholder empty arrays for now
+
+3. **Habit Logging Autofill:**
+   - Read from localStorage key `habit_last_log_${habit_id}` (temporary)
+   - Future: read from `habit_logs` table WHERE habit_id = X AND user_id = Y ORDER BY logged_at DESC LIMIT 1
+
+### Gaps and Temporary Solutions
+
+| Feature | Current State | Phase 2 Solution | Future Solution |
+|---------|--------------|------------------|-----------------|
+| Description | Not in schema | Optional field, UI-only | Add `description` column |
+| Target date | Not in schema | Optional field, UI-only | Add `target_completion_date` column |
+| Rarity | Not in schema | Optional field, UI-only | Add `rarity` column |
+| Starred | Not in schema | localStorage | Add `is_starred` column or user_quest_overrides |
+| Habits | No table | localStorage array | Create `habits` and `habit_logs` tables |
+| Tasks | No table | localStorage array | Create `quest_tasks` table |
+| Quest runs | No table | Placeholder UI | Create `quest_runs` table |
+| Habit autofill | No table | localStorage | Query `habit_logs` table |
+
+---
+
 **End of Phase 0 Plan Document**
