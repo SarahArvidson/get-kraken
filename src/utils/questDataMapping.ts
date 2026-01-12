@@ -4,8 +4,9 @@
  * Functions to derive QuestSummary and QuestDetail from existing v1 Quest data
  */
 
+import { supabase } from "../lib/supabase";
 import type { Quest, QuestLog } from "../types";
-import type { QuestSummary, QuestDetail } from "../types/quests";
+import type { QuestSummary, QuestDetail, HabitSummary } from "../types/quests";
 
 /**
  * Get starred status from localStorage (temporary until schema migration)
@@ -58,18 +59,14 @@ export function deriveQuestSummary(
 /**
  * Derive QuestDetail from QuestSummary, logs, and optional metadata
  */
-export function deriveQuestDetail(
+export async function deriveQuestDetail(
   summary: QuestSummary,
   logs: QuestLog[],
   options?: {
     description?: string;
     target_completion_date?: string;
     associated_item_id?: string;
-    habits?: Array<{
-      id: string;
-      name: string;
-      description?: string;
-    }>;
+    habits?: HabitSummary[];
     tasks?: Array<{
       id: string;
       name: string;
@@ -78,9 +75,20 @@ export function deriveQuestDetail(
       order_index: number;
     }>;
   }
-): QuestDetail {
+): Promise<QuestDetail> {
   // Load habits from localStorage if not provided (temporary)
-  const habits = options?.habits || loadHabitsFromStorage(summary.id);
+  let habits = options?.habits || loadHabitsFromStorage(summary.id);
+  
+  // Populate lastLog for each habit if available
+  habits = await Promise.all(
+    habits.map(async (habit) => {
+      const lastLog = await loadLastHabitLog(habit.id);
+      return {
+        ...habit,
+        lastLog: lastLog || undefined,
+      };
+    })
+  );
   
   // Load tasks from localStorage if not provided (temporary)
   const tasks = options?.tasks || loadTasksFromStorage(summary.id);
@@ -174,16 +182,28 @@ export function saveTasksToStorage(questId: string, tasks: Array<{
 
 /**
  * Load last habit log for autofill (temporary until habit_logs table exists)
+ * Tries new format first (getkraken:habit-autofill:{userId}:{habitId}), then falls back to old format
  */
-export function loadLastHabitLog(habitId: string): {
+export async function loadLastHabitLog(habitId: string): Promise<{
   difficulty: number;
   saved_money: boolean;
   dollars_saved?: number;
-} | null {
+} | null> {
   try {
-    const stored = localStorage.getItem(`habit_last_log_${habitId}`);
-    if (stored) {
-      return JSON.parse(stored);
+    // Try to get user ID for new format
+    const { data: { user } } = await supabase.supabase.auth.getUser();
+    if (user) {
+      const storageKey = `getkraken:habit-autofill:${user.id}:${habitId}`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    }
+    
+    // Fallback to old format
+    const oldStored = localStorage.getItem(`habit_last_log_${habitId}`);
+    if (oldStored) {
+      return JSON.parse(oldStored);
     }
   } catch (error) {
     console.error('Error loading last habit log:', error);

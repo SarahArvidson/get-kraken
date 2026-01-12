@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
+import { HabitLogModal } from "../components/HabitLogModal";
 import type { QuestDetail } from "../types/quests";
 
 export function QuestDetailPage() {
@@ -16,6 +17,7 @@ export function QuestDetailPage() {
   const { quests, loading, getQuestWithLogs } = useQuests();
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
+  const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -39,7 +41,7 @@ export function QuestDetailPage() {
           // Derive summary and detail
           const userCompletionCount = questWithLogs.logs.length;
           const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-          const detail = deriveQuestDetail(summary, questWithLogs.logs);
+          const detail = await deriveQuestDetail(summary, questWithLogs.logs);
           setQuestDetail(detail);
         } else {
           // Load logs
@@ -47,7 +49,7 @@ export function QuestDetailPage() {
           if (questWithLogs) {
             const userCompletionCount = questWithLogs.logs.length;
             const summary = deriveQuestSummary(quest, userCompletionCount);
-            const detail = deriveQuestDetail(summary, questWithLogs.logs);
+            const detail = await deriveQuestDetail(summary, questWithLogs.logs);
             setQuestDetail(detail);
           }
         }
@@ -69,6 +71,18 @@ export function QuestDetailPage() {
     const newStarred = !questDetail.isStarred;
     setQuestStarred(questDetail.id, newStarred);
     setQuestDetail({ ...questDetail, isStarred: newStarred });
+  };
+
+  const handleHabitLogComplete = async () => {
+    if (!id) return;
+    // Reload quest detail to show updated logs
+    const questWithLogs = await getQuestWithLogs(id);
+    if (questWithLogs && questDetail) {
+      const userCompletionCount = questWithLogs.logs.length;
+      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+      const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+      setQuestDetail(detail);
+    }
   };
 
   if (detailLoading || loading) {
@@ -206,17 +220,65 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Habits Placeholder */}
+      {/* Habits Section with Log Buttons */}
       {questDetail.habits && questDetail.habits.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Habits</h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {questDetail.habits.map((habit) => (
-              <div key={habit.id} className="text-gray-900 dark:text-gray-100">
-                {habit.name}
+              <div
+                key={habit.id}
+                className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="text-gray-900 dark:text-gray-100 font-medium">
+                    {habit.name}
+                  </div>
+                  {habit.description && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {habit.description}
+                    </div>
+                  )}
+                  {habit.lastLog && (
+                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Last: Difficulty {habit.lastLog.difficulty}/10
+                      {habit.lastLog.saved_money && habit.lastLog.dollars_saved && (
+                        <span>, ${habit.lastLog.dollars_saved.toFixed(2)} saved</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => setLoggingHabitId(habit.id)}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+                >
+                  Log
+                </button>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Current Run Placeholder */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Current Run
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Repeatable quest support coming soon
+        </p>
+      </div>
+
+      {/* Past Runs Placeholder */}
+      {questDetail.userCompletionCount > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Past Runs
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Quest history and repeatability features coming soon
+          </p>
         </div>
       )}
 
@@ -265,6 +327,24 @@ export function QuestDetailPage() {
           Abandon and Delete
         </button>
       </div>
+
+      {/* Habit Logging Modal */}
+      {loggingHabitId && questDetail.habits && (
+        (() => {
+          const habit = questDetail.habits!.find((h) => h.id === loggingHabitId);
+          if (!habit) return null;
+          return (
+            <HabitLogModal
+              isOpen={!!loggingHabitId}
+              onClose={() => setLoggingHabitId(null)}
+              habitId={habit.id}
+              habitName={habit.name}
+              questId={questDetail.id}
+              onLogComplete={handleHabitLogComplete}
+            />
+          );
+        })()
+      )}
     </div>
   );
 }
