@@ -8,13 +8,16 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopItems } from "../hooks/useShopItems";
 import { useFilterState } from "../hooks/useFilterState";
+import { usePreferences } from "../hooks/usePreferences";
 import { deriveRewardSummary } from "../utils/rewardDataMapping";
+import { RewardCreateModal } from "../components/RewardCreateModal";
 import type { RewardSummary } from "../types/rewards";
-import type { ShopLog, ShopTag } from "../types";
+import type { ShopLog, ShopTag, ShopItem } from "../types";
 
 export function RewardsPage() {
   const navigate = useNavigate();
-  const { shopItems, loading, loadAllShopLogs } = useShopItems();
+  const { shopItems, loading, loadAllShopLogs, createShopItem } = useShopItems();
+  const preferences = usePreferences();
   const { shopSearchQuery, selectedShopTag, setShopSearchQuery, setSelectedShopTag } = useFilterState();
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -22,6 +25,7 @@ export function RewardsPage() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedRarity, setSelectedRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | null>(null);
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Load shop logs on mount
   useEffect(() => {
@@ -359,9 +363,20 @@ export function RewardsPage() {
                 ))}
               </div>
             </div>
-          ))}
+          )          )}
         </div>
       )}
+
+      {/* Create Reward Modal */}
+      <RewardCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={async (itemData) => {
+          await createShopItem(itemData);
+          setShowCreateModal(false);
+        }}
+        showDollarAmounts={preferences.showDollarAmounts}
+      />
     </div>
   );
 }

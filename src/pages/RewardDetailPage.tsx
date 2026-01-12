@@ -9,17 +9,22 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useShopItems } from "../hooks/useShopItems";
 import { useQuests } from "../hooks/useQuests";
 import { usePreferences } from "../hooks/usePreferences";
+import { useWallet } from "../hooks/useWallet";
 import { deriveRewardSummary, deriveRewardDetail, setRewardStarred } from "../utils/rewardDataMapping";
 import type { RewardDetail } from "../types/rewards";
+import type { ShopItem } from "../types";
 
 export function RewardDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { shopItems, loading, getShopItemWithLogs } = useShopItems();
+  const { shopItems, loading, getShopItemWithLogs, purchaseItem, updateShopItem } = useShopItems();
   const { quests } = useQuests();
   const preferences = usePreferences();
+  const { wallet } = useWallet();
   const [rewardDetail, setRewardDetail] = useState<RewardDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -86,6 +91,53 @@ export function RewardDetailPage() {
     setRewardStarred(rewardDetail.id, newStarred);
     setRewardDetail({ ...rewardDetail, isStarred: newStarred });
   };
+
+  const handlePurchase = async () => {
+    if (!rewardDetail || !wallet) return;
+    
+    // Check if user has enough sand dollars
+    if (wallet.total < rewardDetail.price) {
+      setPurchaseError(`Not enough sand dollars. Need ${rewardDetail.price - wallet.total} more.`);
+      return;
+    }
+
+    // Check if user has enough dollars (if dollar amounts are enabled)
+    if (preferences.showDollarAmounts && rewardDetail.dollar_amount > 0) {
+      const roundedDollarAmount = Math.round(rewardDetail.dollar_amount);
+      const roundedWalletDollarTotal = Math.round(wallet.dollar_total || 0);
+      if (roundedWalletDollarTotal < roundedDollarAmount) {
+        setPurchaseError(`Not enough dollars. Need ${roundedDollarAmount - roundedWalletDollarTotal} more.`);
+        return;
+      }
+    }
+
+    setIsPurchasing(true);
+    setPurchaseError(null);
+
+    try {
+      await purchaseItem(rewardDetail.id, rewardDetail.price, rewardDetail.dollar_amount || 0);
+      // Reload reward detail to show updated purchase count
+      const itemWithLogs = await getShopItemWithLogs(rewardDetail.id);
+      if (itemWithLogs) {
+        const userPurchaseCount = itemWithLogs.logs.length;
+        const summary = deriveRewardSummary(itemWithLogs, userPurchaseCount);
+        const linkedQuest = summary.linkedQuestId
+          ? quests.find((q) => q.id === summary.linkedQuestId)
+          : undefined;
+        const detail = await deriveRewardDetail(summary, itemWithLogs.logs, {
+          linkedQuest: linkedQuest ? { id: linkedQuest.id, name: linkedQuest.name } : undefined,
+        });
+        setRewardDetail(detail);
+      }
+    } catch (error: any) {
+      setPurchaseError(error.message || "Failed to purchase item");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  // Get the base shop item for editing
+  const baseItem = shopItems.find((i) => i.id === id) || null;
 
   if (detailLoading || loading) {
     return (
@@ -192,6 +244,19 @@ export function RewardDetailPage() {
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <div className="flex gap-4">
+        <button
+          onClick={() => {
+            // Edit functionality - placeholder for now
+            alert("Edit functionality coming soon");
+          }}
+          className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors text-sm"
+        >
+          Edit Item
+        </button>
+      </div>
+
       {/* Purchase Section - Visually Prominent */}
       <div className="bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 rounded-3xl p-6 shadow-xl">
         <h2 className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-4">
@@ -220,13 +285,19 @@ export function RewardDetailPage() {
             </div>
           )}
         </div>
-        {/* Purchase Button - Disabled for now */}
-        <div className="mt-6">
+        {/* Purchase Button */}
+        <div className="mt-6 space-y-2">
+          {purchaseError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{purchaseError}</p>
+            </div>
+          )}
           <button
-            disabled
-            className="w-full px-6 py-3 bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-300 rounded-lg font-semibold opacity-50 cursor-not-allowed"
+            onClick={handlePurchase}
+            disabled={isPurchasing || !wallet || wallet.total < rewardDetail.price}
+            className="w-full px-6 py-3 bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-300 rounded-lg font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Purchase (Coming Soon)
+            {isPurchasing ? "Purchasing..." : "Purchase"}
           </button>
         </div>
       </div>
