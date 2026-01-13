@@ -4,7 +4,7 @@
  * Manages quest_runs data (scaffold-only implementation)
  */
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 export interface QuestRun {
