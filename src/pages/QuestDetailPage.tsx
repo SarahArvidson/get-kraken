@@ -346,25 +346,65 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Current Run Placeholder */}
+      {/* Current Run */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
           Current Run
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Repeatable quest support coming soon
-        </p>
+        {runsLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+        ) : currentRun ? (
+          <div className="space-y-3">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div>Started: {new Date(currentRun.started_at).toLocaleDateString()}</div>
+              <div>Progress logs: {questDetail.logs.filter(log => new Date(log.completed_at) >= new Date(currentRun.started_at)).length}</div>
+            </div>
+            <button
+              onClick={() => setShowCompleteConfirm(true)}
+              className="w-full px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
+            >
+              End Quest and Claim Rewards
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No active run. Start by completing the quest.
+          </p>
+        )}
       </div>
 
-      {/* Past Runs Placeholder */}
-      {questDetail.userCompletionCount > 0 && (
+      {/* Past Runs */}
+      {pastRuns.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Past Runs
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Quest history and repeatability features coming soon
-          </p>
+          <div className="space-y-3">
+            {pastRuns.map((run) => (
+              <div
+                key={run.id}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              >
+                <div className="flex-1">
+                  <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    Completed: {run.completed_at ? new Date(run.completed_at).toLocaleDateString() : 'N/A'}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Rewards: {questDetail.reward} <img src="/sea-dollar.svg" alt="Sand dollar" className="w-3 h-3 inline-block" />
+                    {questDetail.dollar_amount > 0 && (
+                      <> • ${questDetail.dollar_amount.toFixed(2)}</>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={handleRestartQuest}
+                  className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+                >
+                  Restart Quest
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
