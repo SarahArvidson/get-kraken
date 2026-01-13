@@ -39,6 +39,7 @@ export function QuestDetailPage() {
 
     const loadQuestDetail = async () => {
       setDetailLoading(true);
+      setRunsLoading(true);
       try {
         // Find quest in current list
         const quest = quests.find((q) => q.id === id);
@@ -65,18 +66,27 @@ export function QuestDetailPage() {
             setQuestDetail(detail);
           }
         }
+
+        // Load quest runs
+        const [current, past] = await Promise.all([
+          getCurrentRun(id),
+          getPastRuns(id),
+        ]);
+        setCurrentRun(current);
+        setPastRuns(past);
       } catch (error) {
         console.error('Error loading quest detail:', error);
         navigate('/quests');
       } finally {
         setDetailLoading(false);
+        setRunsLoading(false);
       }
     };
 
     if (!loading) {
       loadQuestDetail();
     }
-  }, [id, quests, loading, getQuestWithLogs, navigate]);
+  }, [id, quests, loading, getQuestWithLogs, getCurrentRun, getPastRuns, navigate]);
 
   const handleToggleStar = () => {
     if (!questDetail) return;
