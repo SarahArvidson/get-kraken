@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
+import { useQuestRuns, type QuestRun } from "../hooks/useQuestRuns";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
 import { HabitLogModal } from "../components/HabitLogModal";
 import { QuestEditModal } from "../components/QuestEditModal";
@@ -19,12 +20,16 @@ export function QuestDetailPage() {
   const navigate = useNavigate();
   const { quests, loading, getQuestWithLogs, updateQuest, completeQuest, deleteQuest } = useQuests();
   const { shopItems } = useShopItems();
+  const { getCurrentRun, getPastRuns, createRun, completeRun } = useQuestRuns();
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [currentRun, setCurrentRun] = useState<QuestRun | null>(null);
+  const [pastRuns, setPastRuns] = useState<QuestRun[]>([]);
+  const [runsLoading, setRunsLoading] = useState(true);
 
   useEffect(() => {
     if (!id) {
@@ -95,12 +100,38 @@ export function QuestDetailPage() {
   const handleCompleteQuest = async () => {
     if (!id || !questDetail) return;
     try {
+      // Complete the quest (writes to quest_logs and updates wallet)
       await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
+      
+      // If there's a current run, mark it as completed
+      if (currentRun) {
+        await completeRun(currentRun.id);
+        setCurrentRun(null);
+      }
+      
       setShowCompleteConfirm(false);
+      // Reload past runs to show the newly completed run
+      const past = await getPastRuns(id);
+      setPastRuns(past);
       // Navigate back to quests list
       navigate('/quests');
     } catch (error) {
       console.error('Error completing quest:', error);
+    }
+  };
+
+  const handleRestartQuest = async () => {
+    if (!id) return;
+    try {
+      await createRun(id);
+      // Reload current run
+      const current = await getCurrentRun(id);
+      setCurrentRun(current);
+      // Reload past runs (in case the new run replaced something)
+      const past = await getPastRuns(id);
+      setPastRuns(past);
+    } catch (error) {
+      console.error('Error restarting quest:', error);
     }
   };
 
