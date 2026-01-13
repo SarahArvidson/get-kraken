@@ -7,6 +7,7 @@
 import { useState } from "react";
 import type { Quest, Tag } from "../types";
 import { TAGS, TAG_LABELS } from "../utils/tags";
+import { useShopItems } from "../hooks/useShopItems";
 
 interface QuestCreateModalProps {
   isOpen: boolean;
@@ -19,11 +20,13 @@ export function QuestCreateModal({
   onClose,
   onCreate,
 }: QuestCreateModalProps) {
+  const { shopItems } = useShopItems();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
-  const [reward, setReward] = useState(10);
+  const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
+  const [rewardItemId, setRewardItemId] = useState<string>("");
   const [targetDate, setTargetDate] = useState("");
   const [rarity, setRarity] = useState<"common" | "rare" | "epic" | "legendary" | "">("common");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,8 +46,9 @@ export function QuestCreateModal({
       await onCreate({
         name: name.trim(),
         tags: tags.length > 0 ? tags : [],
-        reward,
+        reward: reward ? parseInt(reward) : 0,
         dollar_amount: dollarAmount ? parseFloat(dollarAmount) : 0,
+        reward_item_id: rewardItemId || null,
         // Note: description, target_completion_date, rarity will be stored in localStorage
         // until schema migration adds these columns
       });
@@ -53,8 +57,9 @@ export function QuestCreateModal({
       setName("");
       setDescription("");
       setTags([]);
-      setReward(10);
+      setReward("10");
       setDollarAmount("");
+      setRewardItemId("");
       setTargetDate("");
       setRarity("common");
       onClose();
@@ -164,10 +169,27 @@ export function QuestCreateModal({
                 </label>
                 <input
                   type="number"
+                  step="1"
                   min="0"
                   value={reward}
-                  onChange={(e) => setReward(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Block decimal point and comma
+                    if (value.includes('.') || value.includes(',')) {
+                      return;
+                    }
+                    // Strip leading zeros
+                    const normalizedValue = value.replace(/^0+/, "") || "0";
+                    setReward(normalizedValue);
+                  }}
+                  onKeyDown={(e) => {
+                    // Block decimal point and comma keys
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="0"
                 />
               </div>
 
@@ -198,6 +220,25 @@ export function QuestCreateModal({
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="0"
                 />
+              </div>
+
+              {/* Associated Reward Item (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Associated Reward Item (Optional)
+                </label>
+                <select
+                  value={rewardItemId}
+                  onChange={(e) => setRewardItemId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="">None</option>
+                  {shopItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Target Date (Optional) */}

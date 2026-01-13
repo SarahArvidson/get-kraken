@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import type { Quest, Tag } from "../types";
 import { TAGS, TAG_LABELS } from "../utils/tags";
+import { useShopItems } from "../hooks/useShopItems";
 
 interface QuestEditModalProps {
   isOpen: boolean;
@@ -21,11 +22,13 @@ export function QuestEditModal({
   quest,
   onUpdate,
 }: QuestEditModalProps) {
+  const { shopItems } = useShopItems();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
-  const [reward, setReward] = useState(10);
+  const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
+  const [rewardItemId, setRewardItemId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,8 +37,9 @@ export function QuestEditModal({
     if (quest && isOpen) {
       setName(quest.name || "");
       setTags(quest.tags || []);
-      setReward(quest.reward || 10);
+      setReward(quest.reward ? quest.reward.toString() : "10");
       setDollarAmount(quest.dollar_amount ? quest.dollar_amount.toString() : "");
+      setRewardItemId(quest.reward_item_id || "");
       // Note: description, target_completion_date, rarity would come from localStorage or overrides
       // For now, we'll just use the base quest fields
     }
@@ -55,8 +59,9 @@ export function QuestEditModal({
       await onUpdate(quest.id, {
         name: name.trim(),
         tags: tags.length > 0 ? tags : [],
-        reward,
+        reward: reward ? parseInt(reward) : 0,
         dollar_amount: dollarAmount ? parseFloat(dollarAmount) : 0,
+        reward_item_id: rewardItemId || null,
       });
       
       onClose();
@@ -166,10 +171,27 @@ export function QuestEditModal({
                 </label>
                 <input
                   type="number"
+                  step="1"
                   min="0"
                   value={reward}
-                  onChange={(e) => setReward(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Block decimal point and comma
+                    if (value.includes('.') || value.includes(',')) {
+                      return;
+                    }
+                    // Strip leading zeros
+                    const normalizedValue = value.replace(/^0+/, "") || "0";
+                    setReward(normalizedValue);
+                  }}
+                  onKeyDown={(e) => {
+                    // Block decimal point and comma keys
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="0"
                 />
               </div>
 
@@ -200,6 +222,25 @@ export function QuestEditModal({
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="0"
                 />
+              </div>
+
+              {/* Associated Reward Item (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Associated Reward Item (Optional)
+                </label>
+                <select
+                  value={rewardItemId}
+                  onChange={(e) => setRewardItemId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="">None</option>
+                  {shopItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {error && (

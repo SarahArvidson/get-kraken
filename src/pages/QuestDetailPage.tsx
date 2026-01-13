@@ -62,7 +62,9 @@ export function QuestDetailPage() {
           // Derive summary and detail
           const userCompletionCount = questWithLogs.logs.length;
           const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-          const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+          const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+            associated_item_id: questWithLogs.reward_item_id || undefined,
+          });
           setQuestDetail(detail);
         } else {
           // Load logs
@@ -70,7 +72,9 @@ export function QuestDetailPage() {
           if (questWithLogs) {
             const userCompletionCount = questWithLogs.logs.length;
             const summary = deriveQuestSummary(quest, userCompletionCount);
-            const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+            const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+              associated_item_id: quest.reward_item_id || undefined,
+            });
             setQuestDetail(detail);
           }
         }
@@ -112,7 +116,9 @@ export function QuestDetailPage() {
     if (questWithLogs && questDetail) {
       const userCompletionCount = questWithLogs.logs.length;
       const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-      const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+        associated_item_id: questWithLogs.reward_item_id || undefined,
+      });
       setQuestDetail(detail);
     }
   };
@@ -681,7 +687,9 @@ export function QuestDetailPage() {
             if (questWithLogs) {
               const userCompletionCount = questWithLogs.logs.length;
               const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-              const detail = await deriveQuestDetail(summary, questWithLogs.logs);
+              const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+                associated_item_id: questWithLogs.reward_item_id || undefined,
+              });
               setQuestDetail(detail);
             }
           }}
