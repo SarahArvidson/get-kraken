@@ -99,31 +99,32 @@ export function HabitLogModal({
         dollars_saved: dollarValue || undefined,
       });
 
-      // Create a quest_log entry (without schema changes, just basic completion)
-      // This represents the habit being logged as part of quest progress
+      // Insert into habit_logs (primary table)
       const { error: logError } = await supabase
-        .from("quest_logs")
+        .from("habit_logs")
         .insert({
-          quest_id: questId,
+          habit_id: habitId,
           user_id: userId,
-          completed_at: new Date().toISOString(),
+          difficulty,
+          dollars_saved: dollarValue || 0,
+          logged_at: new Date().toISOString(),
         });
 
       if (logError) {
-        console.error('Error creating quest log:', logError);
-        // Don't throw - logging is best effort
+        console.error('Error creating habit log:', logError);
+        throw logError;
       }
 
       // Dual-write: Also insert into activity_logs for calendar/timeline
-      // This is best-effort - if it fails, the primary action (quest_log) still succeeds
+      // This is best-effort - if it fails, the primary action (habit_logs) still succeeds
       try {
         const now = new Date().toISOString();
         const { error: activityLogError } = await supabase
           .from("activity_logs")
           .insert({
             user_id: userId,
-            quest_id: questId,
-            habit_id: habitId, // Will be NULL if habits table doesn't exist yet, but structure is ready
+            quest_id: questId || null,
+            habit_id: habitId,
             action_type: 'habit_log',
             difficulty: difficulty,
             dollars_saved: dollarValue > 0 ? dollarValue : null,
@@ -138,7 +139,7 @@ export function HabitLogModal({
             userId,
             { questId, habitId, difficulty, dollarValue }
           );
-          // Don't throw - activity logging is best effort, existing quest_logs still work
+          // Don't throw - activity logging is best effort, existing habit_logs still work
         }
       } catch (error) {
         logDualWriteError(

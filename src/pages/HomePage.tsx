@@ -10,12 +10,16 @@
  */
 
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import { WalletDisplay } from "../components/WalletDisplay";
 import { useWallet } from "../hooks/useWallet";
 import { usePreferences } from "../hooks/usePreferences";
 import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
 import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { useRewardMetadata } from "../hooks/useRewardMetadata";
+import { useQuests } from "../hooks/useQuests";
+import { useQuestRuns } from "../hooks/useQuestRuns";
+import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
 import type { Tag } from "../types";
 
@@ -29,10 +33,14 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const preferences = usePreferences();
   const questMetadata = useQuestMetadata();
   const rewardMetadata = useRewardMetadata();
-  const { getActivitiesForDate, loading: activityLoading } = useActivityLogs({
+  const { quests } = useQuests();
+  const { getCurrentRun } = useQuestRuns();
+  const { logs: activityLogs, getActivitiesForDate, loading: activityLoading } = useActivityLogs({
     questMetadata: questMetadata.metadata,
     rewardMetadata: rewardMetadata.metadata,
   });
+  const [activeQuestsCount, setActiveQuestsCount] = useState(0);
+  const [recentHabitLogs, setRecentHabitLogs] = useState<Array<{ habit_name: string; difficulty: number; logged_at: string }>>([]);
 
   const today = new Date();
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -40,6 +48,109 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     date.setDate(date.getDate() - (29 - i));
     return date;
   });
+
+  // Calculate Tide Chart metrics
+  const tideChartMetrics = useMemo(() => {
+    // Active quests count (quests with current runs)
+    const activeCount = activeQuestsCount;
+
+    // Completed quests this week
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const completedThisWeek = activityLogs.filter((log) => {
+      if (log.action_type !== "quest_complete") return false;
+      const logDate = new Date(log.logged_at);
+      return logDate >= weekStart && logDate <= weekEnd;
+    }).length;
+
+    // Streak (consecutive days with any activity)
+    const activityDates = new Set<string>();
+    activityLogs.forEach((log) => {
+      const date = new Date(log.logged_at).toISOString().split("T")[0];
+      activityDates.add(date);
+    });
+
+    let streak = 0;
+    const checkDate = new Date(today);
+    checkDate.setHours(0, 0, 0, 0);
+    while (true) {
+      const dateStr = checkDate.toISOString().split("T")[0];
+      if (activityDates.has(dateStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return {
+      activeQuests: activeCount,
+      completedThisWeek,
+      streak,
+    };
+  }, [activityLogs, activeQuestsCount, today]);
+
+  // Load active quests count
+  useEffect(() => {
+    const loadActiveQuests = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: runs } = await supabase
+          .from("quest_runs")
+          .select("quest_id")
+          .eq("user_id", user.id)
+          .is("completed_at", null);
+
+        setActiveQuestsCount(runs?.length || 0);
+      } catch (error) {
+        console.error("Error loading active quests:", error);
+      }
+    };
+
+    loadActiveQuests();
+  }, []);
+
+  // Load recent habit logs
+  useEffect(() => {
+    const loadRecentHabitLogs = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: logs } = await supabase
+          .from("habit_logs")
+          .select(`
+            difficulty,
+            logged_at,
+            quest_habits!inner(name)
+          `)
+          .eq("user_id", user.id)
+          .order("logged_at", { ascending: false })
+          .limit(5);
+
+        if (logs) {
+          setRecentHabitLogs(
+            logs.map((log: any) => ({
+              habit_name: log.quest_habits?.name || "Habit",
+              difficulty: log.difficulty,
+              logged_at: log.logged_at,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error loading recent habit logs:", error);
+      }
+    };
+
+    loadRecentHabitLogs();
+  }, [activityLogs]);
 
   // Get tag color for a quest tag
   const getTagColorClass = (tag: Tag): string => {
@@ -168,14 +279,55 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
           Tide Chart
         </h2>
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-            Your progress at a glance
-          </p>
-          {/* TODO: Add actual progress content from v1 ProgressView */}
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Progress summary coming soon...
+        <div className="space-y-6">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Quests</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {tideChartMetrics.activeQuests}
+              </div>
+            </div>
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Completed This Week</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {tideChartMetrics.completedThisWeek}
+              </div>
+            </div>
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Streak</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {tideChartMetrics.streak} {tideChartMetrics.streak === 1 ? "day" : "days"}
+              </div>
+            </div>
           </div>
+
+          {/* Recent Habit Logs */}
+          {recentHabitLogs.length > 0 && (
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Recent Habit Logs
+              </h3>
+              <div className="space-y-2">
+                {recentHabitLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                      {log.habit_name}
+                    </span>
+                    <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                      <span>Difficulty: {log.difficulty}/10</span>
+                      <span className="text-xs">
+                        {new Date(log.logged_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

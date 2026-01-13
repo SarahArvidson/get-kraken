@@ -9,6 +9,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
 import { useQuestRuns, type QuestRun } from "../hooks/useQuestRuns";
+import { useQuestHabits } from "../hooks/useQuestHabits";
+import { useQuestTasks } from "../hooks/useQuestTasks";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
 import { HabitLogModal } from "../components/HabitLogModal";
 import { QuestEditModal } from "../components/QuestEditModal";
@@ -97,6 +99,8 @@ export function QuestDetailPage() {
 
   const handleHabitLogComplete = async () => {
     if (!id) return;
+    // Refresh habits to show updated logs
+    await refreshHabits();
     // Reload quest detail to show updated logs
     const questWithLogs = await getQuestWithLogs(id);
     if (questWithLogs && questDetail) {
@@ -104,6 +108,41 @@ export function QuestDetailPage() {
       const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
       const detail = await deriveQuestDetail(summary, questWithLogs.logs);
       setQuestDetail(detail);
+    }
+  };
+
+  const handleAddHabit = async () => {
+    if (!newHabitName.trim()) return;
+    try {
+      await createHabit(newHabitName.trim());
+      setNewHabitName("");
+      setShowAddHabitModal(false);
+    } catch (error) {
+      console.error("Error adding habit:", error);
+      alert("Failed to add habit. Please try again.");
+    }
+  };
+
+  const handleAddTask = async () => {
+    if (!newTaskName.trim()) return;
+    try {
+      await createTask(newTaskName.trim());
+      setNewTaskName("");
+      setShowAddTaskModal(false);
+    } catch (error) {
+      console.error("Error adding task:", error);
+      alert("Failed to add task. Please try again.");
+    }
+  };
+
+  const handleLogHabit = async (habitId: string, difficulty: number, dollarsSaved: number) => {
+    try {
+      await logHabit(habitId, difficulty, dollarsSaved);
+      await handleHabitLogComplete();
+      setLoggingHabitId(null);
+    } catch (error) {
+      console.error("Error logging habit:", error);
+      alert("Failed to log habit. Please try again.");
     }
   };
 
@@ -294,67 +333,102 @@ export function QuestDetailPage() {
         );
       })()}
 
-      {/* Tasks Placeholder */}
-      {questDetail.tasks && questDetail.tasks.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Tasks</h3>
+      {/* Tasks Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tasks</h3>
+          <button
+            onClick={() => setShowAddTaskModal(true)}
+            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
+          >
+            + Add Task
+          </button>
+        </div>
+        {tasks.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">No tasks yet. Add one to get started!</p>
+        ) : (
           <div className="space-y-2">
-            {questDetail.tasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-2">
+            {tasks.map((task) => (
+              <div key={task.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
                 <input
                   type="checkbox"
-                  checked={task.is_completed}
-                  disabled
-                  className="w-5 h-5"
+                  checked={task.completed}
+                  onChange={(e) => toggleTask(task.id, e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
                 />
-                <span className={task.is_completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}>
+                <span className={`flex-1 ${task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                   {task.name}
                 </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Habits Section with Log Buttons */}
-      {questDetail.habits && questDetail.habits.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Habits</h3>
-          <div className="space-y-3">
-            {questDetail.habits.map((habit) => (
-              <div
-                key={habit.id}
-                className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                <div className="flex-1">
-                  <div className="text-gray-900 dark:text-gray-100 font-medium">
-                    {habit.name}
-                  </div>
-                  {habit.description && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {habit.description}
-                    </div>
-                  )}
-                  {habit.lastLog && (
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Last: Difficulty {habit.lastLog.difficulty}/10
-                      {habit.lastLog.saved_money && habit.lastLog.dollars_saved && (
-                        <span>, ${habit.lastLog.dollars_saved.toFixed(2)} saved</span>
-                      )}
-                    </div>
-                  )}
-                </div>
                 <button
-                  onClick={() => setLoggingHabitId(habit.id)}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+                  onClick={() => deleteTask(task.id)}
+                  className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                  aria-label="Delete task"
                 >
-                  Log
+                  ✕
                 </button>
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Habits Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Habits</h3>
+          <button
+            onClick={() => setShowAddHabitModal(true)}
+            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
+          >
+            + Add Habit
+          </button>
         </div>
-      )}
+        {habits.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">No habits yet. Add one to start tracking!</p>
+        ) : (
+          <div className="space-y-3">
+            {habits.map((habit) => {
+              const logs = habitLogs[habit.id] || [];
+              const lastLog = logs[0];
+              return (
+                <div
+                  key={habit.id}
+                  className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <div className="text-gray-900 dark:text-gray-100 font-medium">
+                      {habit.name}
+                    </div>
+                    {lastLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        Last: Difficulty {lastLog.difficulty}/10
+                        {lastLog.dollars_saved > 0 && (
+                          <span>, ${lastLog.dollars_saved} saved</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setLoggingHabitId(habit.id)}
+                      className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+                    >
+                      Log
+                    </button>
+                    <button
+                      onClick={() => deleteHabit(habit.id)}
+                      className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      aria-label="Delete habit"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Current Run */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
@@ -471,21 +545,131 @@ export function QuestDetailPage() {
       </div>
 
       {/* Habit Logging Modal */}
-      {loggingHabitId && questDetail.habits && (
-        (() => {
-          const habit = questDetail.habits!.find((h) => h.id === loggingHabitId);
-          if (!habit) return null;
-          return (
-            <HabitLogModal
-              isOpen={!!loggingHabitId}
-              onClose={() => setLoggingHabitId(null)}
-              habitId={habit.id}
-              habitName={habit.name}
-              questId={questDetail.id}
-              onLogComplete={handleHabitLogComplete}
-            />
-          );
-        })()
+      {loggingHabitId && (() => {
+        const habit = habits.find((h) => h.id === loggingHabitId);
+        if (!habit) return null;
+        return (
+          <HabitLogModal
+            isOpen={!!loggingHabitId}
+            onClose={() => setLoggingHabitId(null)}
+            habitId={habit.id}
+            habitName={habit.name}
+            questId={id || ""}
+            onLogComplete={handleHabitLogComplete}
+          />
+        );
+      })()}
+
+      {/* Add Habit Modal */}
+      {showAddHabitModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+            onClick={() => setShowAddHabitModal(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add habit"
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Habit</h2>
+              <input
+                type="text"
+                value={newHabitName}
+                onChange={(e) => setNewHabitName(e.target.value)}
+                placeholder="Habit name..."
+                className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddHabit();
+                  }
+                }}
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddHabitModal(false);
+                    setNewHabitName("");
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddHabit}
+                  disabled={!newHabitName.trim()}
+                  className="flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Add Task Modal */}
+      {showAddTaskModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+            onClick={() => setShowAddTaskModal(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add task"
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Task</h2>
+              <input
+                type="text"
+                value={newTaskName}
+                onChange={(e) => setNewTaskName(e.target.value)}
+                placeholder="Task name..."
+                className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddTask();
+                  }
+                }}
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddTaskModal(false);
+                    setNewTaskName("");
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddTask}
+                  disabled={!newTaskName.trim()}
+                  className="flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Edit Quest Modal */}
