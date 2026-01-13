@@ -23,7 +23,7 @@ export function QuestDetailPage() {
   const { quests, loading, getQuestWithLogs, updateQuest, completeQuest, deleteQuest } = useQuests();
   const { shopItems } = useShopItems();
   const { getCurrentRun, getPastRuns, createRun, completeRun } = useQuestRuns();
-  const { habits, habitLogs, createHabit, deleteHabit, logHabit, refresh: refreshHabits } = useQuestHabits(id || null);
+  const { habits, habitLogs, createHabit, deleteHabit, refresh: refreshHabits } = useQuestHabits(id || null);
   const { tasks, createTask, toggleTask, deleteTask } = useQuestTasks(id || null);
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
