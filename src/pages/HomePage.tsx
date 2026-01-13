@@ -17,8 +17,6 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
 import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { useRewardMetadata } from "../hooks/useRewardMetadata";
-import { useQuests } from "../hooks/useQuests";
-import { useQuestRuns } from "../hooks/useQuestRuns";
 import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
 import type { Tag } from "../types";
@@ -33,8 +31,6 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const preferences = usePreferences();
   const questMetadata = useQuestMetadata();
   const rewardMetadata = useRewardMetadata();
-  const { quests } = useQuests();
-  const { getCurrentRun } = useQuestRuns();
   const { logs: activityLogs, getActivitiesForDate, loading: activityLoading } = useActivityLogs({
     questMetadata: questMetadata.metadata,
     rewardMetadata: rewardMetadata.metadata,
@@ -42,7 +38,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const [activeQuestsCount, setActiveQuestsCount] = useState(0);
   const [recentHabitLogs, setRecentHabitLogs] = useState<Array<{ habit_name: string; difficulty: number; logged_at: string }>>([]);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const days = Array.from({ length: 30 }, (_, i) => {
     const date = new Date(today);
     date.setDate(date.getDate() - (29 - i));
@@ -99,7 +95,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   useEffect(() => {
     const loadActiveQuests = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) return;
 
         const { data: runs } = await supabase
@@ -121,7 +117,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   useEffect(() => {
     const loadRecentHabitLogs = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.supabase.auth.getUser();
         if (!user) return;
 
         const { data: logs } = await supabase
@@ -137,7 +133,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
 
         if (logs) {
           setRecentHabitLogs(
-            logs.map((log: any) => ({
+            logs.map((log: { difficulty: number; logged_at: string; quest_habits: { name: string } | null }) => ({
               habit_name: log.quest_habits?.name || "Habit",
               difficulty: log.difficulty,
               logged_at: log.logged_at,
