@@ -141,17 +141,6 @@ export function QuestDetailPage() {
     }
   };
 
-  const handleLogHabit = async (habitId: string, difficulty: number, dollarsSaved: number) => {
-    try {
-      await logHabit(habitId, difficulty, dollarsSaved);
-      await handleHabitLogComplete();
-      setLoggingHabitId(null);
-    } catch (error) {
-      console.error("Error logging habit:", error);
-      alert("Failed to log habit. Please try again.");
-    }
-  };
-
   const handleCompleteQuest = async () => {
     if (!id || !questDetail) return;
     try {
