@@ -20,6 +20,7 @@ export interface Quest {
   reward: number; // sea dollars earned per completion
   dollar_amount: number; // real dollars saved per completion
   completion_count: number;
+  reward_item_id?: string | null; // associated reward item (optional)
   created_by?: string | null; // user ID who created this quest (null for seeded quests, optional for backwards compatibility)
   created_at: string;
   updated_at: string;
