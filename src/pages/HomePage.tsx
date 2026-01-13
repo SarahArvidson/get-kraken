@@ -31,12 +31,18 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const preferences = usePreferences();
   const questMetadata = useQuestMetadata();
   const rewardMetadata = useRewardMetadata();
-  const { logs: activityLogs, getActivitiesForDate, loading: activityLoading } = useActivityLogs({
+  const {
+    logs: activityLogs,
+    getActivitiesForDate,
+    loading: activityLoading,
+  } = useActivityLogs({
     questMetadata: questMetadata.metadata,
     rewardMetadata: rewardMetadata.metadata,
   });
   const [activeQuestsCount, setActiveQuestsCount] = useState(0);
-  const [recentHabitLogs, setRecentHabitLogs] = useState<Array<{ habit_name: string; difficulty: number; logged_at: string }>>([]);
+  const [recentHabitLogs, setRecentHabitLogs] = useState<
+    Array<{ habit_name: string; difficulty: number; logged_at: string }>
+  >([]);
 
   const today = useMemo(() => new Date(), []);
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -95,7 +101,9 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   useEffect(() => {
     const loadActiveQuests = async () => {
       try {
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) return;
 
         const { data: runs } = await supabase
@@ -117,27 +125,37 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   useEffect(() => {
     const loadRecentHabitLogs = async () => {
       try {
-        const { data: { user } } = await supabase.supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
         if (!user) return;
 
         const { data: logs } = await supabase
           .from("habit_logs")
-          .select(`
+          .select(
+            `
             difficulty,
             logged_at,
             quest_habits!inner(name)
-          `)
+          `
+          )
           .eq("user_id", user.id)
           .order("logged_at", { ascending: false })
           .limit(5);
 
         if (logs) {
           setRecentHabitLogs(
-            logs.map((log: { difficulty: number; logged_at: string; quest_habits: { name: string } | null }) => ({
-              habit_name: log.quest_habits?.name || "Habit",
-              difficulty: log.difficulty,
-              logged_at: log.logged_at,
-            }))
+            logs.map(
+              (log: {
+                difficulty: number;
+                logged_at: string;
+                quest_habits: { name: string } | null;
+              }) => ({
+                habit_name: log.quest_habits?.name || "Habit",
+                difficulty: log.difficulty,
+                logged_at: log.logged_at,
+              })
+            )
           );
         }
       } catch (error) {
@@ -279,21 +297,28 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Quests</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                Active Quests
+              </div>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {tideChartMetrics.activeQuests}
               </div>
             </div>
             <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Completed This Week</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                Completed This Week
+              </div>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {tideChartMetrics.completedThisWeek}
               </div>
             </div>
             <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Streak</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                Current Streak
+              </div>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                {tideChartMetrics.streak} {tideChartMetrics.streak === 1 ? "day" : "days"}
+                {tideChartMetrics.streak}{" "}
+                {tideChartMetrics.streak === 1 ? "day" : "days"}
               </div>
             </div>
           </div>
