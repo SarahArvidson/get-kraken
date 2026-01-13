@@ -175,7 +175,7 @@ export function RewardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Search and Filter Button */}
+      {/* Search, Filter, and Create Item Buttons */}
       <div className="flex gap-2">
         {/* Search Input */}
         <div className="flex-1">
@@ -194,6 +194,14 @@ export function RewardsPage() {
           aria-label="Open filters"
         >
           Filter
+        </button>
+        {/* Create Item Button */}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-4 py-3 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+          aria-label="Create new reward item"
+        >
+          Create Item
         </button>
       </div>
 
