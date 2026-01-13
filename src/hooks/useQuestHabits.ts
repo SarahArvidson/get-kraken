@@ -57,7 +57,7 @@ export function useQuestHabits(questId: string | null) {
 
       // Load logs for all habits
       if (data && data.length > 0) {
-        const habitIds = data.map((h) => h.id);
+        const habitIds = data.map((h: QuestHabit) => h.id);
         const { data: logs, error: logsError } = await supabase
           .from("habit_logs")
           .select("*")
@@ -69,7 +69,7 @@ export function useQuestHabits(questId: string | null) {
 
         // Group logs by habit_id
         const logsByHabit: Record<string, HabitLog[]> = {};
-        (logs || []).forEach((log) => {
+        (logs || []).forEach((log: HabitLog) => {
           if (!logsByHabit[log.habit_id]) {
             logsByHabit[log.habit_id] = [];
           }
@@ -162,7 +162,6 @@ export function useQuestHabits(questId: string | null) {
 
         // Dual-write to activity_logs
         try {
-          const habit = habits.find((h) => h.id === habitId);
           const { error: activityError } = await supabase
             .from("activity_logs")
             .insert({
@@ -176,22 +175,32 @@ export function useQuestHabits(questId: string | null) {
             });
 
           if (activityError) {
-            logDualWriteError("habit_log", {
+            logDualWriteError(
+              "habit_log",
+              "activity_logs",
+              activityError,
+              userId,
+              {
+                habit_id: habitId,
+                quest_id: questId,
+                difficulty,
+                dollars_saved: dollarsSaved,
+              }
+            );
+          }
+        } catch (dualWriteErr: any) {
+          logDualWriteError(
+            "habit_log",
+            "activity_logs",
+            dualWriteErr,
+            userId,
+            {
               habit_id: habitId,
               quest_id: questId,
               difficulty,
               dollars_saved: dollarsSaved,
-              error: activityError.message,
-            });
-          }
-        } catch (dualWriteErr: any) {
-          logDualWriteError("habit_log", {
-            habit_id: habitId,
-            quest_id: questId,
-            difficulty,
-            dollars_saved: dollarsSaved,
-            error: dualWriteErr.message || "Unknown error",
-          });
+            }
+          );
         }
 
         await loadHabits();
