@@ -46,7 +46,6 @@ import {
 } from "./constants";
 import { getFeatureUpdatesContent, getAboutContent } from "./constants/popupContent";
 import { PopupModal } from "./components/PopupModal";
-import { supabase } from "./lib/supabase";
 
 function App() {
   const preferences = usePreferences();
