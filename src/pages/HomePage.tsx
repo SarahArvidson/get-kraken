@@ -17,6 +17,8 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useActivityLogs, type ActivityLog } from "../hooks/useActivityLogs";
 import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { useRewardMetadata } from "../hooks/useRewardMetadata";
+import { useQuests } from "../hooks/useQuests";
+import { useShopItems } from "../hooks/useShopItems";
 import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
 import type { Tag } from "../types";
@@ -31,6 +33,8 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const preferences = usePreferences();
   const questMetadata = useQuestMetadata();
   const rewardMetadata = useRewardMetadata();
+  const { quests } = useQuests();
+  const { shopItems } = useShopItems();
   const {
     logs: activityLogs,
     getActivitiesForDate,
@@ -322,6 +326,56 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               </div>
             </div>
           </div>
+
+          {/* Goals Section */}
+          {quests.length > 0 && (
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Goals
+              </h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {quests.map((quest) => {
+                  const rewardItem = quest.reward_item_id
+                    ? shopItems.find((item) => item.id === quest.reward_item_id)
+                    : null;
+                  return (
+                    <div
+                      key={quest.id}
+                      className="flex items-start justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/quests/${quest.id}`)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                          {quest.name}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <img
+                              src="/sea-dollar.svg"
+                              alt="Sand dollar"
+                              className="w-3 h-3 inline-block"
+                            />
+                            {quest.reward}
+                          </span>
+                          {quest.dollar_amount > 0 && (
+                            <span className="flex items-center gap-1">
+                              <span>💵</span>${quest.dollar_amount}
+                            </span>
+                          )}
+                          {rewardItem && (
+                            <span className="flex items-center gap-1">
+                              <span>🎁</span>
+                              {rewardItem.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recent Habit Logs */}
           {recentHabitLogs.length > 0 && (

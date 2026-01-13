@@ -702,7 +702,20 @@ export function QuestDetailPage() {
         onClose={() => setShowCompleteConfirm(false)}
         onConfirm={handleCompleteQuest}
         title="Complete Quest"
-        message={`Are you sure you want to complete "${questDetail?.name}" and claim the rewards?`}
+        message={(() => {
+          if (!questDetail) return "Are you sure you want to complete this quest and claim the rewards?";
+          const rewardParts = [`${questDetail.reward} sand dollars`];
+          if (questDetail.dollar_amount > 0) {
+            rewardParts.push(`$${questDetail.dollar_amount.toFixed(2)} saved`);
+          }
+          const rewardItem = questDetail.associated_item_id
+            ? shopItems.find((item) => item.id === questDetail.associated_item_id)
+            : null;
+          if (rewardItem) {
+            rewardParts.push(`Item: ${rewardItem.name}`);
+          }
+          return `Are you sure you want to complete "${questDetail.name}" and claim the rewards?\n\nRewards: ${rewardParts.join(", ")}`;
+        })()}
         confirmText="Complete Quest"
         confirmButtonClass="bg-amber-500 hover:bg-amber-600"
       />
