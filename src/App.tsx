@@ -372,16 +372,6 @@ function App() {
     }
   }, [deleteAllQuestLogs, deleteAllShopLogs, resetWallet, loadAllQuestLogs, loadAllShopLogs, showSuccess, showError]);
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await supabase.supabase.auth.signOut();
-      // The AuthGate component will handle the redirect to login
-    } catch (err: unknown) {
-      console.error("Error logging out:", err);
-      showError(err instanceof Error ? err.message : "Failed to log out");
-    }
-  }, [showError]);
-
   return (
     <div
       className="min-h-screen bg-blue-50 dark:bg-gray-900 relative"
