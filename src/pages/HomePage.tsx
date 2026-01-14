@@ -147,7 +147,10 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
       let runningTotal = 0;
       for (const log of activityLogs
         .filter((l) => l.action_type === "quest_complete")
-        .sort((a, b) => new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime())) {
+        .sort(
+          (a, b) =>
+            new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime()
+        )) {
         const quest = quests.find((q) => q.id === log.quest_id);
         if (quest) {
           runningTotal += quest.reward;
