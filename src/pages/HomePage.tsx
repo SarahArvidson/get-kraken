@@ -19,8 +19,10 @@ import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { useRewardMetadata } from "../hooks/useRewardMetadata";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
+import { useGoals } from "../hooks/useGoals";
 import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
+import { CyclingBorder } from "../components/CyclingBorder";
 import type { Tag } from "../types";
 
 interface HomePageProps {
@@ -35,6 +37,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const rewardMetadata = useRewardMetadata();
   const { quests } = useQuests();
   const { shopItems } = useShopItems();
+  const { goals } = useGoals();
   const {
     logs: activityLogs,
     getActivitiesForDate,
@@ -43,10 +46,10 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     questMetadata: questMetadata.metadata,
     rewardMetadata: rewardMetadata.metadata,
   });
-  const [activeQuestsCount, setActiveQuestsCount] = useState(0);
-  const [recentHabitLogs, setRecentHabitLogs] = useState<
-    Array<{ habit_name: string; difficulty: number; logged_at: string }>
+  const [activeQuests, setActiveQuests] = useState<
+    Array<{ quest: (typeof quests)[0]; runId: string }>
   >([]);
+  const [activeQuestsLoading, setActiveQuestsLoading] = useState(true);
 
   const today = useMemo(() => new Date(), []);
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -55,119 +58,85 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     return date;
   });
 
-  // Calculate Tide Chart metrics
-  const tideChartMetrics = useMemo(() => {
-    // Active quests count (quests with current runs)
-    const activeCount = activeQuestsCount;
-
-    // Completed quests this week
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
-
-    const completedThisWeek = activityLogs.filter((log) => {
-      if (log.action_type !== "quest_complete") return false;
-      const logDate = new Date(log.logged_at);
-      return logDate >= weekStart && logDate <= weekEnd;
-    }).length;
-
-    // Streak (consecutive days with any activity)
-    const activityDates = new Set<string>();
-    activityLogs.forEach((log) => {
-      const date = new Date(log.logged_at).toISOString().split("T")[0];
-      activityDates.add(date);
-    });
-
-    let streak = 0;
-    const checkDate = new Date(today);
-    checkDate.setHours(0, 0, 0, 0);
-    while (true) {
-      const dateStr = checkDate.toISOString().split("T")[0];
-      if (activityDates.has(dateStr)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-
-    return {
-      activeQuests: activeCount,
-      completedThisWeek,
-      streak,
-    };
-  }, [activityLogs, activeQuestsCount, today]);
-
-  // Load active quests count
+  // Load active quests (quests with active quest_runs)
   useEffect(() => {
     const loadActiveQuests = async () => {
+      setActiveQuestsLoading(true);
       try {
         const {
           data: { user },
         } = await supabase.supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setActiveQuests([]);
+          setActiveQuestsLoading(false);
+          return;
+        }
 
         const { data: runs } = await supabase
           .from("quest_runs")
-          .select("quest_id")
+          .select("quest_id, id")
           .eq("user_id", user.id)
           .is("completed_at", null);
 
-        setActiveQuestsCount(runs?.length || 0);
-      } catch (error) {
-        console.error("Error loading active quests:", error);
-      }
-    };
-
-    loadActiveQuests();
-  }, []);
-
-  // Load recent habit logs
-  useEffect(() => {
-    const loadRecentHabitLogs = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: logs } = await supabase
-          .from("habit_logs")
-          .select(
-            `
-            difficulty,
-            logged_at,
-            quest_habits!inner(name)
-          `
-          )
-          .eq("user_id", user.id)
-          .order("logged_at", { ascending: false })
-          .limit(5);
-
-        if (logs) {
-          setRecentHabitLogs(
-            logs.map(
-              (log: {
-                difficulty: number;
-                logged_at: string;
-                quest_habits: { name: string } | null;
-              }) => ({
-                habit_name: log.quest_habits?.name || "Habit",
-                difficulty: log.difficulty,
-                logged_at: log.logged_at,
-              })
-            )
+        if (runs && runs.length > 0) {
+          const activeQuestIds = new Set(
+            runs.map((r: { quest_id: string }) => r.quest_id)
           );
+          const activeQuestsList = quests
+            .filter((q) => activeQuestIds.has(q.id))
+            .map((quest) => {
+              const run = runs.find(
+                (r: { quest_id: string }) => r.quest_id === quest.id
+              );
+              return { quest, runId: run?.id || "" };
+            });
+          setActiveQuests(activeQuestsList);
+        } else {
+          setActiveQuests([]);
         }
       } catch (error) {
-        console.error("Error loading recent habit logs:", error);
+        console.error("Error loading active quests:", error);
+        setActiveQuests([]);
+      } finally {
+        setActiveQuestsLoading(false);
       }
     };
 
-    loadRecentHabitLogs();
+    if (quests.length > 0) {
+      loadActiveQuests();
+    }
+  }, [quests]);
+
+  // Get recent milestones (last 5 quest_complete or reward_purchase from activity_logs)
+  const recentMilestones = useMemo(() => {
+    return activityLogs
+      .filter(
+        (log) =>
+          log.action_type === "quest_complete" ||
+          log.action_type === "reward_purchase"
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+      )
+      .slice(0, 5)
+      .map((log) => {
+        if (log.action_type === "quest_complete") {
+          return {
+            type: "quest_complete" as const,
+            quest_name: log.quest_name || "Quest",
+            date: log.logged_at,
+            quest_id: log.quest_id,
+          };
+        } else {
+          return {
+            type: "reward_purchase" as const,
+            reward_name: log.reward_name || "Reward",
+            date: log.logged_at,
+            reward_id: log.reward_id,
+          };
+        }
+      });
   }, [activityLogs]);
 
   // Get tag color for a quest tag
@@ -298,54 +267,39 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           Tide Chart
         </h2>
         <div className="space-y-6">
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div
-              className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-white dark:hover:bg-gray-800 transition-colors"
-              onClick={() => navigate("/quests")}
-            >
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                Active Quests
-              </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                {tideChartMetrics.activeQuests}
-              </div>
-            </div>
-          </div>
-
-          {/* Goals Section */}
-          {quests.length > 0 && (
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                Goals
-              </h3>
+          {/* My Goals */}
+          <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              My Goals
+            </h3>
+            {goals.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No goals yet. Create your first goal!
+              </p>
+            ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {quests.map((quest) => {
-                  const rewardItem = quest.reward_item_id
-                    ? shopItems.find((item) => item.id === quest.reward_item_id)
+                {goals.map((goal) => {
+                  const rewardItem = goal.reward_item_id
+                    ? shopItems.find((item) => item.id === goal.reward_item_id)
                     : null;
                   return (
                     <div
-                      key={quest.id}
-                      className="flex items-start justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/quests/${quest.id}`)}
+                      key={goal.id}
+                      className="flex items-start justify-between text-sm p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/goals/${goal.id}`)}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                          {quest.name}
+                          {goal.name}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
-                            <img
-                              src="/sea-dollar.svg"
-                              alt="Sand dollar"
-                              className="w-3 h-3 inline-block"
-                            />
-                            {quest.reward}
+                            <span>🪙</span>
+                            {goal.sand_dollars}
                           </span>
-                          {quest.dollar_amount > 0 && (
+                          {goal.dollars && goal.dollars > 0 && (
                             <span className="flex items-center gap-1">
-                              <span>💵</span>${quest.dollar_amount}
+                              <span>💵</span>${goal.dollars.toFixed(2)}
                             </span>
                           )}
                           {rewardItem && (
@@ -360,35 +314,65 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Recent Habit Logs */}
-          {recentHabitLogs.length > 0 && (
+          {/* Recent Milestones */}
+          {recentMilestones.length > 0 && (
             <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                Recent Habit Logs
+                Recent Milestones
               </h3>
               <div className="space-y-2">
-                {recentHabitLogs.map((log, idx) => (
+                {recentMilestones.map((milestone, idx) => (
                   <div
                     key={idx}
                     className="flex items-center justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
                   >
                     <span className="text-gray-900 dark:text-gray-100 font-medium">
-                      {log.habit_name}
+                      {milestone.type === "quest_complete"
+                        ? `Completed: ${milestone.quest_name}`
+                        : `Earned: ${milestone.reward_name}`}
                     </span>
-                    <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                      <span>Difficulty: {log.difficulty}/10</span>
-                      <span className="text-xs">
-                        {new Date(log.logged_at).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {new Date(milestone.date).toLocaleDateString()}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Active Quests */}
+          <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Active Quests
+            </h3>
+            {activeQuestsLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Loading...
+              </p>
+            ) : activeQuests.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No active quests. Start a quest to begin!
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {activeQuests.map(({ quest }) => (
+                  <CyclingBorder key={quest.id} tags={quest.tags}>
+                    <div
+                      onClick={() => navigate(`/quests/${quest.id}`)}
+                      className="bg-white dark:bg-gray-800 p-3 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                    >
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {quest.name}
+                      </div>
+                    </div>
+                  </CyclingBorder>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

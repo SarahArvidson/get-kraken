@@ -1,36 +1,34 @@
 /**
- * Get Kraken - Goals Hook
- *
- * Manages user goals data and operations
+ * Get Kraken v2 - Goals Hook
+ * 
+ * Manages goals CRUD operations
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import { useCurrentUser } from "./useCurrentUser";
 import type { Goal } from "../types";
 
 export function useGoals() {
+  const { userId } = useCurrentUser();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Load all goals for current user
   const loadGoals = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.supabase.auth.getUser();
-      if (!user) {
-        setGoals([]);
-        setLoading(false);
-        return;
-      }
+    if (!userId) {
+      setGoals([]);
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    try {
       const { data, error: fetchError } = await supabase
         .from("goals")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -39,213 +37,112 @@ export function useGoals() {
     } catch (err: any) {
       console.error("Error loading goals:", err);
       setError(err.message || "Failed to load goals");
+      setGoals([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   // Create a new goal
   const createGoal = useCallback(
-    async (
-      goal: Omit<
-        Goal,
-        | "id"
-        | "user_id"
-        | "created_at"
-        | "updated_at"
-        | "is_completed"
-        | "completed_at"
-      >
-    ) => {
+    async (goalData: {
+      name: string;
+      description?: string;
+      sand_dollars: number;
+      dollars?: number | null;
+      reward_item_id?: string | null;
+      share_mode?: 'private' | 'copyable' | 'co-op';
+    }): Promise<Goal> => {
+      if (!userId) throw new Error("User must be authenticated");
+
       try {
-        // Get current user
-        const {
-          data: { user },
-        } = await supabase.supabase.auth.getUser();
-        if (!user) {
-          throw new Error("User must be authenticated");
-        }
-
-        // Build insert object
-        const insertData: any = {
-          name: goal.name,
-          target_amount: goal.target_amount,
-          user_id: user.id,
-          is_completed: false,
-          completed_at: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        // Try to include dollar_amount if provided
-        // If the column doesn't exist, we'll retry without it
-        if (
-          goal.dollar_amount !== null &&
-          goal.dollar_amount !== undefined &&
-          goal.dollar_amount > 0
-        ) {
-          insertData.dollar_amount = goal.dollar_amount;
-        }
-
-        let { data, error: createError } = await supabase
+        const { data, error: insertError } = await supabase
           .from("goals")
-          .insert(insertData)
+          .insert({
+            user_id: userId,
+            name: goalData.name,
+            description: goalData.description || null,
+            sand_dollars: goalData.sand_dollars,
+            dollars: goalData.dollars || null,
+            reward_item_id: goalData.reward_item_id || null,
+            share_mode: goalData.share_mode || 'private',
+            is_completed: false,
+          })
           .select()
           .single();
 
-        // If error is due to missing dollar_amount column, retry without it
-        if (createError && insertData.dollar_amount !== undefined) {
-          const errorMessage = createError.message || "";
-          if (
-            errorMessage.includes("dollar_amount") ||
-            errorMessage.includes("PGRST204")
-          ) {
-            console.warn(
-              "dollar_amount column not found in goals table, creating goal without it"
-            );
-            // Remove dollar_amount and retry
-            const { dollar_amount, ...retryData } = insertData;
-            const retryResult = await supabase
-              .from("goals")
-              .insert(retryData)
-              .select()
-              .single();
-
-            if (retryResult.error) throw retryResult.error;
-            data = retryResult.data;
-            createError = null;
-          } else {
-            throw createError;
-          }
-        } else if (createError) {
-          throw createError;
-        }
-
-        if (data) {
-          setGoals((prev) => [data, ...prev]);
-        }
+        if (insertError) throw insertError;
+        await loadGoals();
         return data;
       } catch (err: any) {
         console.error("Error creating goal:", err);
-        setError(err.message || "Failed to create goal");
         throw err;
       }
     },
-    []
+    [userId, loadGoals]
   );
 
   // Update a goal
-  const updateGoal = useCallback(async (id: string, updates: Partial<Goal>) => {
-    try {
-      const { data, error: updateError } = await supabase
-        .from("goals")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      if (data) {
-        setGoals((prev) => prev.map((g) => (g.id === id ? data : g)));
+  const updateGoal = useCallback(
+    async (
+      goalId: string,
+      updates: {
+        name?: string;
+        description?: string | null;
+        sand_dollars?: number;
+        dollars?: number | null;
+        reward_item_id?: string | null;
+        share_mode?: 'private' | 'copyable' | 'co-op';
+        is_completed?: boolean;
       }
-      return data;
-    } catch (err: any) {
-      console.error("Error updating goal:", err);
-      setError(err.message || "Failed to update goal");
-      throw err;
-    }
-  }, []);
+    ): Promise<void> => {
+      if (!userId) throw new Error("User must be authenticated");
 
-  // Delete a goal
-  const deleteGoal = useCallback(async (id: string) => {
-    try {
-      const { error: deleteError } = await supabase
-        .from("goals")
-        .delete()
-        .eq("id", id);
-
-      if (deleteError) throw deleteError;
-      setGoals((prev) => prev.filter((g) => g.id !== id));
-    } catch (err: any) {
-      console.error("Error deleting goal:", err);
-      setError(err.message || "Failed to delete goal");
-      throw err;
-    }
-  }, []);
-
-  // Check and update goal completion based on wallet total and dollar total
-  // Uses cached goals state - non-blocking
-  const checkGoalCompletion = useCallback(
-    async (walletTotal: number, walletDollarTotal: number = 0) => {
-      // Use cached goals state instead of fetching from DB
-      const incompleteGoals = goals.filter((g) => {
-        if (g.is_completed) return false;
-        const seaDollarMet = walletTotal >= g.target_amount;
-        const dollarMet = g.dollar_amount
-          ? walletDollarTotal >= g.dollar_amount
-          : true;
-        return seaDollarMet && dollarMet;
-      });
-
-      // Batch update all completed goals in parallel
-      await Promise.all(
-        incompleteGoals.map((goal) =>
-          updateGoal(goal.id, {
-            is_completed: true,
-            completed_at: new Date().toISOString(),
+      try {
+        const { error: updateError } = await supabase
+          .from("goals")
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
           })
-        )
-      );
+          .eq("id", goalId)
+          .eq("user_id", userId);
+
+        if (updateError) throw updateError;
+        await loadGoals();
+      } catch (err: any) {
+        console.error("Error updating goal:", err);
+        throw err;
+      }
     },
-    [updateGoal, goals]
+    [userId, loadGoals]
   );
 
-  // Subscribe to real-time changes
+  // Delete a goal
+  const deleteGoal = useCallback(
+    async (goalId: string): Promise<void> => {
+      if (!userId) throw new Error("User must be authenticated");
+
+      try {
+        const { error: deleteError } = await supabase
+          .from("goals")
+          .delete()
+          .eq("id", goalId)
+          .eq("user_id", userId);
+
+        if (deleteError) throw deleteError;
+        await loadGoals();
+      } catch (err: any) {
+        console.error("Error deleting goal:", err);
+        throw err;
+      }
+    },
+    [userId, loadGoals]
+  );
+
+  // Load goals on mount and when userId changes
   useEffect(() => {
     loadGoals();
-
-    let subscription: any = null;
-
-    // Get current user for subscription filter
-    const setupSubscription = async () => {
-      const {
-        data: { user },
-      } = await supabase.supabase.auth.getUser();
-      if (!user) return;
-
-      subscription = supabase.subscribe(
-        "goals",
-        (payload: any) => {
-          // Only process events for current user's goals
-          if (
-            payload.new?.user_id === user.id ||
-            payload.old?.user_id === user.id
-          ) {
-            if (payload.eventType === "INSERT") {
-              setGoals((prev) => [payload.new, ...prev]);
-            } else if (payload.eventType === "UPDATE") {
-              setGoals((prev) =>
-                prev.map((g) => (g.id === payload.new.id ? payload.new : g))
-              );
-            } else if (payload.eventType === "DELETE") {
-              setGoals((prev) => prev.filter((g) => g.id !== payload.old.id));
-            }
-          }
-        },
-        `user_id=eq.${user.id}`
-      );
-    };
-
-    setupSubscription();
-
-    return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
   }, [loadGoals]);
 
   return {
@@ -255,7 +152,6 @@ export function useGoals() {
     createGoal,
     updateGoal,
     deleteGoal,
-    checkGoalCompletion,
     refresh: loadGoals,
   };
 }

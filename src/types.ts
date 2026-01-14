@@ -113,8 +113,11 @@ export interface Goal {
   id: string;
   user_id: string; // user who owns this goal
   name: string;
-  target_amount: number;
-  dollar_amount: number | null; // optional dollar amount target
+  description?: string | null;
+  sand_dollars: number; // sand dollar target
+  dollars: number | null; // optional dollar amount target
+  reward_item_id?: string | null; // associated reward item
+  share_mode: 'private' | 'copyable' | 'co-op';
   is_completed: boolean;
   completed_at: string | null;
   created_at: string;

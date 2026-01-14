@@ -122,17 +122,18 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/50 z-[60] transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
       
       {/* Drawer */}
       <div
-        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto"
+        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl z-[70] transform transition-transform duration-300 ease-in-out overflow-y-auto"
         role="dialog"
         aria-modal="true"
         aria-label="Wallet details"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
