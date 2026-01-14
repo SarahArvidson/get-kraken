@@ -4,7 +4,7 @@
  * Displays streaks, weekly recap, milestones, and customizable goals
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useGamification } from "../hooks/useGamification";
 import { useGoals } from "../hooks/useGoals";
 import { Button, InputField, Modal } from "@ffx/sdk";
@@ -48,17 +48,12 @@ export function GamificationPanel({
     shopItems,
   });
 
-  const { goals, loading: goalsLoading, createGoal, deleteGoal, checkGoalCompletion } = useGoals();
+  const { goals, loading: goalsLoading, createGoal, deleteGoal } = useGoals();
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [goalName, setGoalName] = useState("");
   const [goalAmount, setGoalAmount] = useState(100);
   const [goalDollarAmount, setGoalDollarAmount] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
-
-  // Check goal completion when wallet total changes
-  useEffect(() => {
-    checkGoalCompletion(walletTotal, walletDollarTotal);
-  }, [walletTotal, walletDollarTotal, checkGoalCompletion]);
 
   const handleCreateGoal = useCallback(async () => {
     if (!goalName.trim()) {
@@ -70,8 +65,8 @@ export function GamificationPanel({
     try {
       await createGoal({
         name: goalName.trim(),
-        target_amount: goalAmount,
-        dollar_amount: goalDollarAmount > 0 ? goalDollarAmount : null,
+        sand_dollars: goalAmount,
+        dollars: goalDollarAmount > 0 ? goalDollarAmount : null,
       });
       setGoalName("");
       setGoalAmount(100);
@@ -124,10 +119,10 @@ export function GamificationPanel({
         ) : (
           <div className="space-y-4">
             {goals.map((goal) => {
-              const progress = Math.min(100, (walletTotal / goal.target_amount) * 100);
-              const remaining = Math.max(0, goal.target_amount - walletTotal);
-              const dollarRemaining = goal.dollar_amount ? Math.max(0, goal.dollar_amount - (walletDollarTotal || 0)) : 0;
-              const isCompleted = goal.is_completed || (walletTotal >= goal.target_amount && (!goal.dollar_amount || (walletDollarTotal || 0) >= goal.dollar_amount));
+              const progress = Math.min(100, (walletTotal / goal.sand_dollars) * 100);
+              const remaining = Math.max(0, goal.sand_dollars - walletTotal);
+              const dollarRemaining = goal.dollars ? Math.max(0, goal.dollars - (walletDollarTotal || 0)) : 0;
+              const isCompleted = goal.is_completed || (walletTotal >= goal.sand_dollars && (!goal.dollars || (walletDollarTotal || 0) >= goal.dollars));
 
               return (
                 <div
@@ -165,10 +160,10 @@ export function GamificationPanel({
                     <div className="mb-2">
                       <div className="flex justify-between text-sm text-blue-100 mb-1">
                         <span>
-                          {walletTotal} / {goal.target_amount} sand dollars
-                          {goal.dollar_amount && (
+                          {walletTotal} / {goal.sand_dollars} sand dollars
+                          {goal.dollars && (
                             <span className="ml-2">
-                              | 💵 {walletDollarTotal} / {goal.dollar_amount}
+                              | 💵 {walletDollarTotal} / {goal.dollars}
                             </span>
                           )}
                         </span>
