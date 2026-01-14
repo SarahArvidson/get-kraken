@@ -122,10 +122,11 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
   return (
     <OverlayContainer isOpen={isOpen} onClose={onClose}>
       <div
-        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto max-h-screen"
+        className="w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl rounded-l-2xl overflow-y-auto max-h-[90vh]"
         role="dialog"
         aria-modal="true"
         aria-label="Wallet details"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col h-full">
           {/* Header */}

@@ -281,6 +281,7 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        // Update quest status in database
         const { data, error } = await supabase
           .from("quests")
           .update({
@@ -291,13 +292,18 @@ export function useQuests() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating quest status:", error);
+          throw error;
+        }
 
-        // Update local state and refresh
-        setQuests((prev) =>
-          prev.map((q) => (q.id === questId ? { ...q, status: 'active' } : q))
-        );
+        if (!data) {
+          throw new Error("Quest not found or update failed");
+        }
+
+        // Immediately refresh quests to ensure state is synchronized
         await loadQuests();
+        
         return data;
       } catch (err: any) {
         console.error("Error starting quest:", err);

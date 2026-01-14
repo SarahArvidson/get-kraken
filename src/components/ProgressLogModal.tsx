@@ -134,7 +134,7 @@ export function ProgressLogModal({
           });
 
           // Insert into habit_logs (primary table)
-          const { error: logError } = await supabase
+          const { data: habitLogData, error: logError } = await supabase
             .from("habit_logs")
             .insert({
               habit_id: habitId,
@@ -142,17 +142,24 @@ export function ProgressLogModal({
               difficulty: log.difficulty,
               dollars_saved: dollarValue,
               logged_at: new Date().toISOString(),
-            });
+            })
+            .select();
 
           if (logError) {
             console.error('Error creating habit log:', logError);
+            console.error('Supabase error details:', JSON.stringify(logError, null, 2));
             throw logError;
+          }
+
+          if (!habitLogData || habitLogData.length === 0) {
+            console.error('Habit log insert returned no data');
+            throw new Error('Failed to create habit log: no data returned');
           }
 
           // Dual-write: Also insert into activity_logs for calendar/timeline
           try {
             const now = new Date().toISOString();
-            const { error: activityLogError } = await supabase
+            const { data: activityLogData, error: activityLogError } = await supabase
               .from("activity_logs")
               .insert({
                 user_id: userId,
@@ -162,9 +169,12 @@ export function ProgressLogModal({
                 difficulty: log.difficulty,
                 dollars_saved: dollarValue > 0 ? dollarValue : null,
                 logged_at: now,
-              });
+              })
+              .select();
 
             if (activityLogError) {
+              console.error('Error creating activity log:', activityLogError);
+              console.error('Supabase error details:', JSON.stringify(activityLogError, null, 2));
               logDualWriteError(
                 'habit_log',
                 'activity_logs',
@@ -172,8 +182,12 @@ export function ProgressLogModal({
                 userId,
                 { questId, habitId, difficulty: log.difficulty, dollarValue }
               );
+            } else if (!activityLogData || activityLogData.length === 0) {
+              console.error('Activity log insert returned no data');
             }
-          } catch (error) {
+          } catch (error: any) {
+            console.error('Exception creating activity log:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
             logDualWriteError(
               'habit_log',
               'activity_logs',
