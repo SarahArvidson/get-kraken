@@ -5,6 +5,7 @@
  */
 
 import { useEffect } from "react";
+import { OverlayContainer } from "./OverlayContainer";
 
 interface FilterDrawerProps {
   isOpen: boolean;
@@ -43,17 +44,9 @@ export function FilterDrawer({ isOpen, onClose, children, title = "Filters" }: F
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Backdrop */}
+    <OverlayContainer isOpen={isOpen} onClose={onClose}>
       <div
-        className="fixed inset-0 bg-black/50 z-50 transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      {/* Drawer */}
-      <div
-        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto"
+        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto max-h-screen"
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -79,6 +72,6 @@ export function FilterDrawer({ isOpen, onClose, children, title = "Filters" }: F
           </div>
         </div>
       </div>
-    </>
+    </OverlayContainer>
   );
 }

@@ -42,8 +42,8 @@ export function RewardCreateModal({
       await onCreate({
         name: name.trim(),
         tags: tags.length > 0 ? tags : [],
-        price,
-        dollar_amount: dollarAmount ? parseFloat(dollarAmount) : 0,
+        price: parseInt(price) || 0,
+        dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
       });
       
       // Reset form
@@ -79,7 +79,7 @@ export function RewardCreateModal({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-[640px] w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
@@ -143,11 +143,20 @@ export function RewardCreateModal({
                   Sand Dollar Cost
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={price}
-                  onChange={(e) => setPrice(parseInt(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setPrice(value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="0"
                 />
               </div>
 
@@ -158,20 +167,14 @@ export function RewardCreateModal({
                     Dollar Cost (Optional)
                   </label>
                   <input
-                    type="number"
-                    step="1"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     value={dollarAmount}
                     onChange={(e) => {
-                      const value = e.target.value;
-                      // Block decimal point and comma
-                      if (value.includes('.') || value.includes(',')) {
-                        return;
-                      }
+                      const value = e.target.value.replace(/\D/g, '');
                       setDollarAmount(value);
                     }}
                     onKeyDown={(e) => {
-                      // Block decimal point and comma keys
                       if (e.key === '.' || e.key === ',') {
                         e.preventDefault();
                       }

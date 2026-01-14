@@ -59,8 +59,8 @@ export function QuestEditModal({
       await onUpdate(quest.id, {
         name: name.trim(),
         tags: tags.length > 0 ? tags : [],
-        reward: reward ? parseInt(reward) : 0,
-        dollar_amount: dollarAmount ? parseFloat(dollarAmount) : 0,
+        reward: reward ? parseInt(reward) || 0 : 0,
+        dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
         reward_item_id: rewardItemId || null,
       });
       
@@ -92,7 +92,7 @@ export function QuestEditModal({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-[640px] w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
@@ -170,22 +170,14 @@ export function QuestEditModal({
                   Sand Dollar Reward
                 </label>
                 <input
-                  type="number"
-                  step="1"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={reward}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    // Block decimal point and comma
-                    if (value.includes('.') || value.includes(',')) {
-                      return;
-                    }
-                    // Strip leading zeros
-                    const normalizedValue = value.replace(/^0+/, "") || "0";
-                    setReward(normalizedValue);
+                    const value = e.target.value.replace(/\D/g, '');
+                    setReward(value);
                   }}
                   onKeyDown={(e) => {
-                    // Block decimal point and comma keys
                     if (e.key === '.' || e.key === ',') {
                       e.preventDefault();
                     }
@@ -201,20 +193,14 @@ export function QuestEditModal({
                   Dollar Amount Saved (Optional)
                 </label>
                 <input
-                  type="number"
-                  step="1"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={dollarAmount}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    // Block decimal point and comma
-                    if (value.includes('.') || value.includes(',')) {
-                      return;
-                    }
+                    const value = e.target.value.replace(/\D/g, '');
                     setDollarAmount(value);
                   }}
                   onKeyDown={(e) => {
-                    // Block decimal point and comma keys
                     if (e.key === '.' || e.key === ',') {
                       e.preventDefault();
                     }

@@ -20,7 +20,7 @@ import type { QuestDetail } from "../types/quests";
 export function QuestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { quests, loading, getQuestWithLogs, updateQuest, updateQuestStatus, completeQuest, deleteQuest, refresh } = useQuests();
+  const { quests, loading, getQuestWithLogs, updateQuest, startQuest, restartQuest, completeQuest, deleteQuest, refresh } = useQuests();
   const { shopItems } = useShopItems();
   const { habits, habitLogs, createHabit, deleteHabit, refresh: refreshHabits } = useQuestHabits(id || null);
   const { tasks, createTask, toggleTask, deleteTask } = useQuestTasks(id || null);
@@ -155,10 +155,11 @@ export function QuestDetailPage() {
   const handleStartQuest = async () => {
     if (!id) return;
     try {
-      await updateQuestStatus(id, 'active');
-      setQuestStatus('active');
-      // Refresh quest list
-      await refresh();
+      const updated = await startQuest(id);
+      if (updated) {
+        setQuestStatus('active');
+        await refresh();
+      }
     } catch (error) {
       console.error('Error starting quest:', error);
     }
@@ -167,10 +168,11 @@ export function QuestDetailPage() {
   const handleRestartQuest = async () => {
     if (!id) return;
     try {
-      await updateQuestStatus(id, 'active');
-      setQuestStatus('active');
-      // Refresh quest list
-      await refresh();
+      const updated = await restartQuest(id);
+      if (updated) {
+        setQuestStatus('active');
+        await refresh();
+      }
     } catch (error) {
       console.error('Error restarting quest:', error);
     }
@@ -415,15 +417,15 @@ export function QuestDetailPage() {
         <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-4">
           Rewards
         </h2>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
             <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
               {questDetail.reward}
             </span>
           </div>
           {questDetail.dollar_amount > 0 && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-2xl">💵</span>
               <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
                 ${questDetail.dollar_amount.toFixed(2)}
@@ -434,7 +436,7 @@ export function QuestDetailPage() {
             const linkedItem = shopItems.find((item) => item.id === questDetail.associated_item_id);
             if (!linkedItem) return null;
             return (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="text-2xl">🎁</span>
                 <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
                   {linkedItem.name}

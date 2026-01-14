@@ -106,7 +106,7 @@ export function GoalDetailPage() {
               <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             </span>
             <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              {goal.sand_dollars} sand dollars
+              {goal.sand_dollars}
             </span>
           </div>
 

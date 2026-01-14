@@ -9,6 +9,7 @@ import { useWallet } from "../hooks/useWallet";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
 import { usePreferences } from "../hooks/usePreferences";
+import { OverlayContainer } from "./OverlayContainer";
 import type { QuestLog, ShopLog } from "../types";
 import { CURRENCY_SYMBOL } from "../constants";
 
@@ -119,21 +120,12 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [questLogs, shopLogs, questMap, shopItemMap]);
 
   return (
-    <>
-      {/* Backdrop */}
+    <OverlayContainer isOpen={isOpen} onClose={onClose}>
       <div
-        className="fixed inset-0 bg-black/50 z-[60] transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      {/* Drawer */}
-      <div
-        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl z-[70] transform transition-transform duration-300 ease-in-out overflow-y-auto"
+        className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto max-h-screen"
         role="dialog"
         aria-modal="true"
         aria-label="Wallet details"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -231,6 +223,6 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
           </div>
         </div>
       </div>
-    </>
+    </OverlayContainer>
   );
 }

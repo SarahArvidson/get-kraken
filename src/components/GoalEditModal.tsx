@@ -62,8 +62,8 @@ export function GoalEditModal({
       await onUpdate(goal.id, {
         name: name.trim(),
         description: description.trim() || null,
-        sand_dollars: parseInt(sandDollars),
-        dollars: dollars ? parseFloat(dollars) : null,
+        sand_dollars: parseInt(sandDollars) || 0,
+        dollars: dollars ? parseInt(dollars) || null : null,
         reward_item_id: rewardItemId || null,
         share_mode: shareMode,
       });
@@ -159,16 +159,17 @@ export function GoalEditModal({
                   Sand Dollars Target 🪙 *
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
                   value={sandDollars}
                   onChange={(e) => {
-                    let value = e.target.value;
-                    // Strip leading zeros
-                    if (value.length > 1 && value.startsWith('0') && !value.startsWith('0.')) {
-                      value = value.substring(1);
-                    }
+                    const value = e.target.value.replace(/\D/g, '');
                     setSandDollars(value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                    }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500"
                   placeholder="0"
@@ -181,20 +182,20 @@ export function GoalEditModal({
                   Dollars Target 💵 (Optional)
                 </label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={dollars}
                   onChange={(e) => {
-                    let value = e.target.value;
-                    // Strip leading zeros
-                    if (value.length > 1 && value.startsWith('0') && !value.startsWith('0.')) {
-                      value = value.substring(1);
-                    }
+                    const value = e.target.value.replace(/\D/g, '');
                     setDollars(value);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === '.' || e.key === ',') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500"
-                  placeholder="0.00"
+                  placeholder="0"
                 />
               </div>
 

@@ -266,9 +266,9 @@ export function useQuests() {
     [updateOverride, mergeQuestWithOverrides, quests]
   );
 
-  // Update quest status
-  const updateQuestStatus = useCallback(
-    async (questId: string, status: 'idle' | 'active' | 'completed') => {
+  // Start a quest (set status to 'active')
+  const startQuest = useCallback(
+    async (questId: string): Promise<Quest | null> => {
       try {
         const {
           data: { user },
@@ -277,26 +277,67 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("quests")
           .update({
-            status,
+            status: 'active',
             updated_at: new Date().toISOString(),
           })
-          .eq("id", questId);
+          .eq("id", questId)
+          .select()
+          .single();
 
         if (error) throw error;
 
-        // Update local state
+        // Update local state and refresh
         setQuests((prev) =>
-          prev.map((q) => (q.id === questId ? { ...q, status } : q))
+          prev.map((q) => (q.id === questId ? { ...q, status: 'active' } : q))
         );
+        await loadQuests();
+        return data;
       } catch (err: any) {
-        console.error("Error updating quest status:", err);
+        console.error("Error starting quest:", err);
         throw err;
       }
     },
-    []
+    [loadQuests]
+  );
+
+  // Restart a quest (set status to 'active')
+  const restartQuest = useCallback(
+    async (questId: string): Promise<Quest | null> => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        const { data, error } = await supabase
+          .from("quests")
+          .update({
+            status: 'active',
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", questId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update local state and refresh
+        setQuests((prev) =>
+          prev.map((q) => (q.id === questId ? { ...q, status: 'active' } : q))
+        );
+        await loadQuests();
+        return data;
+      } catch (err: any) {
+        console.error("Error restarting quest:", err);
+        throw err;
+      }
+    },
+    [loadQuests]
   );
 
   // Complete a quest (adds to log with user_id and atomically updates wallet)
@@ -430,17 +471,36 @@ export function useQuests() {
           if (updateError) throw updateError;
         }
 
-        // Note: We don't update completion_count anymore since it's shared
-        // Per-user counts are calculated from logs
+        // Update quest status to 'completed' and increment completion_count
+        const { data: updatedQuest, error: questUpdateError } = await supabase
+          .from("quests")
+          .update({
+            completion_count: supabase.raw("completion_count + 1"),
+            status: 'completed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", questId)
+          .select()
+          .single();
 
-        return reward;
+        if (questUpdateError) throw questUpdateError;
+
+        // Update local state and refresh
+        if (updatedQuest) {
+          setQuests((prev) =>
+            prev.map((q) => (q.id === questId ? { ...q, status: 'completed', completion_count: updatedQuest.completion_count } : q))
+          );
+          await loadQuests();
+        }
+
+        return updatedQuest || null;
       } catch (err: any) {
         console.error("Error completing quest:", err);
         setError(err.message || "Failed to complete quest");
         throw err;
       }
     },
-    []
+    [loadQuests]
   );
 
   // Get quest with logs for current user
