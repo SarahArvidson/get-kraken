@@ -510,12 +510,25 @@ export function QuestDetailPage() {
           {questDetail.associated_item_id && (() => {
             const linkedItem = shopItems.find((item) => item.id === questDetail.associated_item_id);
             if (!linkedItem) return null;
+            const quest = quests.find((q) => q.id === id);
+            const rarity = quest?.reward_rarity;
+            const rarityColors: Record<string, string> = {
+              common: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+              rare: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+              epic: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+              legendary: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+            };
             return (
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🎁</span>
                 <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
                   {linkedItem.name}
                 </span>
+                {rarity && (
+                  <span className={`px-2 py-1 text-xs font-semibold rounded ${rarityColors[rarity] || rarityColors.common}`}>
+                    {rarity.toUpperCase()}
+                  </span>
+                )}
               </div>
             );
           })()}
