@@ -28,6 +28,7 @@ import { QuestsPage } from "./pages/QuestsPage";
 import { QuestDetailPage } from "./pages/QuestDetailPage";
 import { RewardsPage } from "./pages/RewardsPage";
 import { RewardDetailPage } from "./pages/RewardDetailPage";
+import { GoalDetailPage } from "./pages/GoalDetailPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { HowToUsePage } from "./pages/HowToUsePage";
@@ -411,6 +412,7 @@ function App() {
           <Route path="/quests/:id" element={<QuestDetailPage />} />
           <Route path="/rewards" element={<RewardsPage />} />
           <Route path="/rewards/:id" element={<RewardDetailPage />} />
+          <Route path="/goals/:id" element={<GoalDetailPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/how-to-use" element={<HowToUsePage />} />

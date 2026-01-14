@@ -61,7 +61,7 @@ export function GoalCreateModal({
       setDollars("");
       setRewardItemId("");
       setShareMode('private');
-      onClose();
+      // Don't close here - let parent handle it after refresh
     } catch (err: any) {
       setError(err.message || "Failed to create goal");
     } finally {

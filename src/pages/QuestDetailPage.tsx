@@ -81,7 +81,7 @@ export function QuestDetailPage() {
           }
         }
 
-        // Load quest runs
+        // Load active quest status
         const [current, past] = await Promise.all([
           getCurrentRun(id),
           getPastRuns(id),
@@ -183,7 +183,7 @@ export function QuestDetailPage() {
       const past = await getPastRuns(id);
       setPastRuns(past);
     } catch (error) {
-      console.error('Error starting quest run:', error);
+      console.error('Error starting quest:', error);
     }
   };
 
@@ -540,7 +540,7 @@ export function QuestDetailPage() {
             onClick={handleStartRun}
             className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
           >
-            Start Quest Run
+            Start Quest
           </button>
         )}
         <button

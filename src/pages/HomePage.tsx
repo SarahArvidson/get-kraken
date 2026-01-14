@@ -23,6 +23,7 @@ import { useGoals } from "../hooks/useGoals";
 import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
 import { CyclingBorder } from "../components/CyclingBorder";
+import { GoalCreateModal } from "../components/GoalCreateModal";
 import type { Tag } from "../types";
 
 interface HomePageProps {
@@ -37,7 +38,8 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const rewardMetadata = useRewardMetadata();
   const { quests } = useQuests();
   const { shopItems } = useShopItems();
-  const { goals } = useGoals();
+  const { goals, createGoal, refresh: refreshGoals } = useGoals();
+  const [showCreateGoalModal, setShowCreateGoalModal] = useState(false);
   const {
     logs: activityLogs,
     getActivitiesForDate,
@@ -107,37 +109,73 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     }
   }, [quests]);
 
-  // Get recent milestones (last 5 quest_complete or reward_purchase from activity_logs)
+  // Get derived milestones (achievements, not raw logs)
   const recentMilestones = useMemo(() => {
-    return activityLogs
-      .filter(
-        (log) =>
-          log.action_type === "quest_complete" ||
-          log.action_type === "reward_purchase"
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
-      )
-      .slice(0, 5)
-      .map((log) => {
-        if (log.action_type === "quest_complete") {
-          return {
-            type: "quest_complete" as const,
-            quest_name: log.quest_name || "Quest",
-            date: log.logged_at,
-            quest_id: log.quest_id,
-          };
-        } else {
-          return {
-            type: "reward_purchase" as const,
-            reward_name: log.reward_name || "Reward",
-            date: log.logged_at,
-            reward_id: log.reward_id,
-          };
-        }
+    const milestones: Array<{ text: string; date: string }> = [];
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    // Count quest completions
+    const questCompletions = activityLogs.filter(
+      (log) => log.action_type === "quest_complete"
+    );
+    const questCompletionsThisWeek = questCompletions.filter((log) => {
+      const logDate = new Date(log.logged_at);
+      return logDate >= weekStart && logDate <= weekEnd;
+    });
+
+    // Calculate total sand dollars earned
+    const totalSandDollars = wallet?.total || 0;
+
+    // "First quest completed" milestone
+    if (questCompletions.length >= 1) {
+      const firstQuest = questCompletions[questCompletions.length - 1];
+      milestones.push({
+        text: "First quest completed",
+        date: firstQuest.logged_at,
       });
-  }, [activityLogs]);
+    }
+
+    // "500 sand dollars earned" milestone
+    if (totalSandDollars >= 500) {
+      // Find when we first hit 500 by looking at activity logs
+      let runningTotal = 0;
+      for (const log of activityLogs
+        .filter((l) => l.action_type === "quest_complete")
+        .sort((a, b) => new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime())) {
+        const quest = quests.find((q) => q.id === log.quest_id);
+        if (quest) {
+          runningTotal += quest.reward;
+          if (runningTotal >= 500) {
+            milestones.push({
+              text: "500 sand dollars earned",
+              date: log.logged_at,
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // "5 quests completed this week" milestone
+    if (questCompletionsThisWeek.length >= 5) {
+      const fifthQuest = questCompletionsThisWeek[4];
+      milestones.push({
+        text: "5 quests completed this week",
+        date: fifthQuest.logged_at,
+      });
+    }
+
+    // Sort by date, most recent first, and take last 5
+    return milestones
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [activityLogs, wallet, quests]);
 
   // Get tag color for a quest tag
   const getTagColorClass = (tag: Tag): string => {
@@ -269,9 +307,17 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         <div className="space-y-6">
           {/* My Goals */}
           <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              My Goals
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                My Goals
+              </h3>
+              <button
+                onClick={() => setShowCreateGoalModal(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors text-sm"
+              >
+                Create Goal
+              </button>
+            </div>
             {goals.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 No goals yet. Create your first goal!
@@ -294,7 +340,11 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                         </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
-                            <span>🪙</span>
+                            <img
+                              src="/sea-dollar.svg"
+                              alt="Sand dollar"
+                              className="w-3 h-3 inline-block"
+                            />
                             {goal.sand_dollars}
                           </span>
                           {goal.dollars && goal.dollars > 0 && (
@@ -316,32 +366,6 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               </div>
             )}
           </div>
-
-          {/* Recent Milestones */}
-          {recentMilestones.length > 0 && (
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                Recent Milestones
-              </h3>
-              <div className="space-y-2">
-                {recentMilestones.map((milestone, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <span className="text-gray-900 dark:text-gray-100 font-medium">
-                      {milestone.type === "quest_complete"
-                        ? `Completed: ${milestone.quest_name}`
-                        : `Earned: ${milestone.reward_name}`}
-                    </span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      {new Date(milestone.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Active Quests */}
           <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
@@ -373,6 +397,30 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               </div>
             )}
           </div>
+
+          {/* Recent Milestones */}
+          {recentMilestones.length > 0 && (
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Recent Milestones
+              </h3>
+              <div className="space-y-2">
+                {recentMilestones.map((milestone, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                      {milestone.text}
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {new Date(milestone.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -469,6 +517,26 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           </div>
         )}
       </div>
+
+      {/* Create Goal Modal */}
+      {showCreateGoalModal && (
+        <GoalCreateModal
+          isOpen={showCreateGoalModal}
+          onClose={() => setShowCreateGoalModal(false)}
+          onCreate={async (goalData) => {
+            await createGoal({
+              name: goalData.name,
+              description: goalData.description || undefined,
+              sand_dollars: goalData.sand_dollars,
+              dollars: goalData.dollars,
+              reward_item_id: goalData.reward_item_id,
+              share_mode: goalData.share_mode,
+            });
+            await refreshGoals();
+            setShowCreateGoalModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
