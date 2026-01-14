@@ -346,7 +346,7 @@ export function useQuests() {
         throw err;
       }
     },
-    [loadQuests]
+    [loadQuests, refreshOverrides]
   );
 
   // Restart a quest (set status to 'active' in user_quest_overrides, clear completed_at)
@@ -578,7 +578,7 @@ export function useQuests() {
         throw err;
       }
     },
-    [loadQuests]
+    [loadQuests, refreshOverrides]
   );
 
   // Get quest with logs for current user
