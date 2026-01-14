@@ -57,7 +57,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
 
   // Get active quests (quests with status = 'active')
   const activeQuests = useMemo(() => {
-    return quests.filter((q) => q.status === 'active');
+    return quests.filter((q) => q.status === "active");
   }, [quests]);
 
   // Get derived milestones (achievements, not raw logs)
