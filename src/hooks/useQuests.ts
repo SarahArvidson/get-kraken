@@ -388,7 +388,8 @@ export function useQuests() {
 
         console.log("restartQuest: successfully updated override", { questId, status: data.status });
 
-        // Immediately refresh quests
+        // Immediately refresh overrides first, then quests
+        await refreshOverrides();
         await loadQuests();
         
         // Return the merged quest
@@ -568,7 +569,8 @@ export function useQuests() {
           console.log("completeQuest: successfully updated override", { questId, status: updatedOverride?.status, completion_count: updatedOverride?.completion_count });
         }
 
-        // Immediately refresh quests to ensure state is synchronized
+        // Immediately refresh overrides first, then quests
+        await refreshOverrides();
         await loadQuests();
       } catch (err: any) {
         console.error("Error completing quest:", err);

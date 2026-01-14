@@ -272,7 +272,7 @@ export function useQuestOverrides() {
         tags: override.tags || baseQuest.tags,
         reward: override.reward !== null && override.reward !== undefined ? override.reward : baseQuest.reward,
         dollar_amount: override.dollar_amount !== null && override.dollar_amount !== undefined ? override.dollar_amount : baseQuest.dollar_amount,
-        // Lifecycle state comes from override (default 'idle' if not set)
+        // Lifecycle state comes from override (should always be set, but default 'idle' for safety)
         status: (override.status || 'idle') as 'idle' | 'active' | 'completed',
         // Reward rarity comes from override if set
         reward_rarity: override.reward_rarity || baseQuest.reward_rarity || null,

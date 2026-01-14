@@ -48,10 +48,10 @@ export interface UserQuestOverride {
   tags: Tag[] | null;
   reward: number | null;
   dollar_amount: number | null;
-  status: 'idle' | 'active' | 'completed' | null; // quest lifecycle status (per-user)
-  completion_count: number | null; // per-user completion count
+  status: 'idle' | 'active' | 'completed'; // quest lifecycle status (per-user, required with default 'idle')
+  completion_count: number; // per-user completion count (required with default 0)
   completed_at: string | null; // last completion timestamp
-  reward_rarity: 'common' | 'rare' | 'epic' | 'legendary' | null; // per-user reward rarity
+  reward_rarity: 'common' | 'rare' | 'epic' | 'legendary'; // per-user reward rarity (required with default 'common')
   created_at: string;
   updated_at: string;
 }
