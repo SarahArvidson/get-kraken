@@ -155,7 +155,7 @@ export function QuestDetailPage() {
       // Complete the quest (writes to quest_logs and updates wallet)
       await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
       
-      // If quest is active, mark the current run as completed
+      // If quest is active, mark it as completed
       if (isActive) {
         const current = await getCurrentRun(id);
         if (current) {
