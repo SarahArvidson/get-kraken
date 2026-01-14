@@ -85,7 +85,7 @@ export function useQuests() {
         });
 
       console.log('[loadQuests] Loaded', mergedQuests.length, 'quests');
-      console.log('[loadQuests] Active quests:', mergedQuests.filter(q => q.status === 'active').map(q => q.name));
+      console.log('[loadQuests] Active quests:', mergedQuests.filter((q: Quest) => q.status === 'active').map((q: Quest) => q.name));
       setQuests(mergedQuests);
       setError(null);
     } catch (err: any) {
