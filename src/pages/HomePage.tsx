@@ -384,20 +384,30 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                 No active quests. Start a quest to begin!
               </p>
             ) : (
-              <div className="space-y-2">
-                {activeQuests.map(({ quest }) => (
-                  <CyclingBorder key={quest.id} tags={quest.tags}>
-                    <div
-                      onClick={() => navigate(`/quests/${quest.id}`)}
-                      className="bg-white dark:bg-gray-800 p-3 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
-                    >
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        {quest.name}
+              <>
+                <div className="space-y-2">
+                  {activeQuests.map(({ quest }) => (
+                    <CyclingBorder key={quest.id} tags={quest.tags}>
+                      <div
+                        onClick={() => navigate(`/quests/${quest.id}`)}
+                        className="bg-white dark:bg-gray-800 p-3 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                      >
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                          {quest.name}
+                        </div>
                       </div>
-                    </div>
-                  </CyclingBorder>
-                ))}
-              </div>
+                    </CyclingBorder>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <button
+                    onClick={() => navigate("/quests/active")}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    View all active quests →
+                  </button>
+                </div>
+              </>
             )}
           </div>
 

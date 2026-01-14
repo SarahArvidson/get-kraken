@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
-import { useQuestRuns, type QuestRun } from "../hooks/useQuestRuns";
+import { useQuestRuns } from "../hooks/useQuestRuns";
 import { useQuestHabits } from "../hooks/useQuestHabits";
 import { useQuestTasks } from "../hooks/useQuestTasks";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
@@ -23,7 +23,7 @@ export function QuestDetailPage() {
   const navigate = useNavigate();
   const { quests, loading, getQuestWithLogs, updateQuest, completeQuest, deleteQuest } = useQuests();
   const { shopItems } = useShopItems();
-  const { getCurrentRun, getPastRuns, createRun, completeRun } = useQuestRuns();
+  const { getCurrentRun, createRun, completeRun } = useQuestRuns();
   const { habits, habitLogs, createHabit, deleteHabit, refresh: refreshHabits } = useQuestHabits(id || null);
   const { tasks, createTask, toggleTask, deleteTask } = useQuestTasks(id || null);
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
@@ -37,9 +37,9 @@ export function QuestDetailPage() {
   const [showProgressLogModal, setShowProgressLogModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
-  const [currentRun, setCurrentRun] = useState<QuestRun | null>(null);
-  const [pastRuns, setPastRuns] = useState<QuestRun[]>([]);
-  const [runsLoading, setRunsLoading] = useState(true);
+  const [isActive, setIsActive] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
 
   useEffect(() => {
     if (!id) {
@@ -49,7 +49,7 @@ export function QuestDetailPage() {
 
     const loadQuestDetail = async () => {
       setDetailLoading(true);
-      setRunsLoading(true);
+      setStatusLoading(true);
       try {
         // Find quest in current list
         const quest = quests.find((q) => q.id === id);
@@ -81,26 +81,26 @@ export function QuestDetailPage() {
           }
         }
 
-        // Load active quest status
-        const [current, past] = await Promise.all([
-          getCurrentRun(id),
-          getPastRuns(id),
-        ]);
-        setCurrentRun(current);
-        setPastRuns(past);
+        // Check quest status: active or completed
+        const current = await getCurrentRun(id);
+        const questWithLogs = await getQuestWithLogs(id);
+        const hasCompletions = questWithLogs ? questWithLogs.logs.length > 0 : false;
+        
+        setIsActive(current !== null);
+        setIsCompleted(hasCompletions && current === null);
       } catch (error) {
         console.error('Error loading quest detail:', error);
         navigate('/quests');
       } finally {
         setDetailLoading(false);
-        setRunsLoading(false);
+        setStatusLoading(false);
       }
     };
 
     if (!loading) {
       loadQuestDetail();
     }
-  }, [id, quests, loading, getQuestWithLogs, getCurrentRun, getPastRuns, navigate]);
+  }, [id, quests, loading, getQuestWithLogs, getCurrentRun, navigate]);
 
   const handleToggleStar = () => {
     if (!questDetail) return;
@@ -155,33 +155,30 @@ export function QuestDetailPage() {
       // Complete the quest (writes to quest_logs and updates wallet)
       await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
       
-      // If there's a current run, mark it as completed
-      if (currentRun) {
-        await completeRun(currentRun.id);
-        setCurrentRun(null);
+      // If quest is active, mark the current run as completed
+      if (isActive) {
+        const current = await getCurrentRun(id);
+        if (current) {
+          await completeRun(current.id);
+        }
       }
       
       setShowCompleteConfirm(false);
-      // Reload past runs to show the newly completed run
-      const past = await getPastRuns(id);
-      setPastRuns(past);
-      // Navigate back to quests list
-      navigate('/quests');
+      setIsActive(false);
+      setIsCompleted(true);
+      // Navigate back to active quests if it was active, otherwise quests list
+      navigate('/quests/active');
     } catch (error) {
       console.error('Error completing quest:', error);
     }
   };
 
-  const handleStartRun = async () => {
+  const handleStartQuest = async () => {
     if (!id) return;
     try {
       await createRun(id);
-      // Reload current run
-      const current = await getCurrentRun(id);
-      setCurrentRun(current);
-      // Reload past runs (in case the new run replaced something)
-      const past = await getPastRuns(id);
-      setPastRuns(past);
+      setIsActive(true);
+      setIsCompleted(false);
     } catch (error) {
       console.error('Error starting quest:', error);
     }
@@ -191,12 +188,8 @@ export function QuestDetailPage() {
     if (!id) return;
     try {
       await createRun(id);
-      // Reload current run
-      const current = await getCurrentRun(id);
-      setCurrentRun(current);
-      // Reload past runs (in case the new run replaced something)
-      const past = await getPastRuns(id);
-      setPastRuns(past);
+      setIsActive(true);
+      setIsCompleted(false);
     } catch (error) {
       console.error('Error restarting quest:', error);
     }
@@ -257,7 +250,7 @@ export function QuestDetailPage() {
       {/* Header with Back Button */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/quests')}
+          onClick={() => navigate(isActive ? '/quests/active' : '/quests')}
           className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors touch-manipulation"
           aria-label="Back to quests"
         >
@@ -436,43 +429,6 @@ export function QuestDetailPage() {
           </div>
         )}
       </div>
-
-
-      {/* Past Runs */}
-      {pastRuns.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Past Runs
-          </h3>
-          <div className="space-y-3">
-            {pastRuns.map((run) => (
-              <div
-                key={run.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                <div className="flex-1">
-                  <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                    Completed: {run.completed_at ? new Date(run.completed_at).toLocaleDateString() : 'N/A'}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Rewards: {questDetail.reward} <img src="/sea-dollar.svg" alt="Sand dollar" className="w-3 h-3 inline-block" />
-                    {questDetail.dollar_amount > 0 && (
-                      <> • ${questDetail.dollar_amount.toFixed(2)}</>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={handleRestartQuest}
-                  className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-                >
-                  Restart Quest
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Rewards Section - Visually Prominent */}
       <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-3xl p-6 shadow-xl">
         <h2 className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-4">
@@ -480,7 +436,7 @@ export function QuestDetailPage() {
         </h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🪙</span>
+            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
             <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
               {questDetail.reward}
             </span>
@@ -516,11 +472,11 @@ export function QuestDetailPage() {
         >
           Edit Quest
         </button>
-        {runsLoading ? (
+        {statusLoading ? (
           <div className="flex-1 px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold text-center">
             Loading...
           </div>
-        ) : currentRun ? (
+        ) : isActive ? (
           <>
             <button
               onClick={() => setShowProgressLogModal(true)}
@@ -532,12 +488,19 @@ export function QuestDetailPage() {
               onClick={() => setShowCompleteConfirm(true)}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
             >
-              End Quest and Claim Rewards
+              End Quest
             </button>
           </>
+        ) : isCompleted ? (
+          <button
+            onClick={handleRestartQuest}
+            className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+          >
+            Restart Quest
+          </button>
         ) : (
           <button
-            onClick={handleStartRun}
+            onClick={handleStartQuest}
             className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
           >
             Start Quest
