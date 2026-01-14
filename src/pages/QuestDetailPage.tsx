@@ -168,26 +168,48 @@ export function QuestDetailPage() {
   };
 
   const handleStartQuest = async () => {
+    console.log('[handleStartQuest] Button clicked');
+    
     if (!id) {
-      console.error('handleStartQuest: no quest id from URL params');
+      console.error('[handleStartQuest] ERROR: No quest id from URL params');
       return;
     }
     
-    // Log the quest id being passed
-    console.log('handleStartQuest: calling startQuest with quest_id:', id);
-    console.log('handleStartQuest: quest id type:', typeof id, 'value:', id);
+    // Log the quest id being passed - this is the base quest id from URL params
+    console.log('[handleStartQuest] Quest id from URL:', id, 'type:', typeof id);
+    
+    // Verify this is the base quest id, not an override id
+    const baseQuest = quests.find(q => q.id === id);
+    if (!baseQuest) {
+      console.warn('[handleStartQuest] WARNING: Quest not found in current quests list, id:', id);
+      console.log('[handleStartQuest] Available quest ids:', quests.map(q => q.id));
+    } else {
+      console.log('[handleStartQuest] Found base quest:', { 
+        id: baseQuest.id, 
+        name: baseQuest.name, 
+        currentStatus: baseQuest.status 
+      });
+    }
     
     try {
+      console.log('[handleStartQuest] Calling startQuest...');
       const result = await startQuest(id);
-      console.log('handleStartQuest: startQuest returned:', result);
+      console.log('[handleStartQuest] startQuest returned:', result);
       
-      // Update local status immediately
+      // Refresh quests to get updated merged state (this will update questStatus via useEffect)
+      console.log('[handleStartQuest] Refreshing quests...');
+      await refresh();
+      console.log('[handleStartQuest] Quests refreshed');
+      
+      // Also update local status immediately for instant UI feedback
+      console.log('[handleStartQuest] Setting local status to active');
       setQuestStatus('active');
       
-      // Refresh quests to get updated merged state
-      await refresh();
-    } catch (error) {
-      console.error('Error starting quest:', error);
+      console.log('[handleStartQuest] COMPLETE');
+    } catch (error: any) {
+      console.error('[handleStartQuest] ERROR:', error);
+      console.error('[handleStartQuest] Error details:', JSON.stringify(error, null, 2));
+      alert(`Failed to start quest: ${error.message || 'Unknown error'}`);
     }
   };
 

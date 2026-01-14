@@ -75,8 +75,17 @@ export function useQuests() {
       // to allow immediate quest loading without waiting for overrides to resolve
       const mergedQuests = (data || [])
         .filter((quest: Quest) => !isQuestHidden(quest.id))
-        .map((quest: Quest) => mergeQuestWithOverrides(quest));
+        .map((quest: Quest) => {
+          const merged = mergeQuestWithOverrides(quest);
+          // Log status for debugging
+          if (merged.status === 'active') {
+            console.log('[loadQuests] Found active quest:', merged.id, merged.name);
+          }
+          return merged;
+        });
 
+      console.log('[loadQuests] Loaded', mergedQuests.length, 'quests');
+      console.log('[loadQuests] Active quests:', mergedQuests.filter(q => q.status === 'active').map(q => q.name));
       setQuests(mergedQuests);
       setError(null);
     } catch (err: any) {
