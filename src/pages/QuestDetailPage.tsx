@@ -36,6 +36,7 @@ export function QuestDetailPage() {
   const [newHabitName, setNewHabitName] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
   const [questStatus, setQuestStatus] = useState<'idle' | 'active' | 'completed'>('idle');
+  const [activeProgressTab, setActiveProgressTab] = useState<'tasks' | 'habits' | 'log'>('log');
 
   useEffect(() => {
     if (!id) {
@@ -90,6 +91,17 @@ export function QuestDetailPage() {
     }
   }, [id, quests, loading, getQuestWithLogs, navigate]);
 
+  // Set default tab based on content when tasks/habits change
+  useEffect(() => {
+    if (tasks.length > 0) {
+      setActiveProgressTab('tasks');
+    } else if (habits.length > 0) {
+      setActiveProgressTab('habits');
+    } else {
+      setActiveProgressTab('log');
+    }
+  }, [tasks.length, habits.length]);
+
   const handleToggleStar = () => {
     if (!questDetail) return;
     const newStarred = !questDetail.isStarred;
@@ -119,6 +131,7 @@ export function QuestDetailPage() {
       await createHabit(newHabitName.trim());
       setNewHabitName("");
       setShowAddHabitModal(false);
+      setActiveProgressTab('habits');
     } catch (error) {
       console.error("Error adding habit:", error);
       alert("Failed to add habit. Please try again.");
@@ -131,6 +144,7 @@ export function QuestDetailPage() {
       await createTask(newTaskName.trim());
       setNewTaskName("");
       setShowAddTaskModal(false);
+      setActiveProgressTab('tasks');
     } catch (error) {
       console.error("Error adding task:", error);
       alert("Failed to add task. Please try again.");
@@ -314,103 +328,166 @@ export function QuestDetailPage() {
           </div>
         </div>
       </div>
-
-
-      {/* Tasks Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tasks</h3>
+      {/* Progress Card with Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        {/* Tab Header */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
           <button
-            onClick={() => setShowAddTaskModal(true)}
-            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
+            onClick={() => setActiveProgressTab('tasks')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeProgressTab === 'tasks'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
           >
-            + Add Task
+            Tasks
+          </button>
+          <button
+            onClick={() => setActiveProgressTab('habits')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeProgressTab === 'habits'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            Habits
+          </button>
+          <button
+            onClick={() => setActiveProgressTab('log')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeProgressTab === 'log'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-500'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            Log
           </button>
         </div>
-        {tasks.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">No tasks yet. Add one to get started!</p>
-        ) : (
-          <div className="space-y-2">
-            {tasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
-                <input
-                  type="checkbox"
-                  checked={task.completed}
-                  onChange={(e) => toggleTask(task.id, e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                />
-                <span className={`flex-1 ${task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
-                  {task.name}
-                </span>
+
+        {/* Tab Content */}
+        <div className="p-4">
+          {activeProgressTab === 'tasks' && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tasks</h3>
                 <button
-                  onClick={() => deleteTask(task.id)}
-                  className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                  aria-label="Delete task"
+                  onClick={() => setShowAddTaskModal(true)}
+                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
                 >
-                  ✕
+                  + Add Task
                 </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Habits Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Habits</h3>
-          <button
-            onClick={() => setShowAddHabitModal(true)}
-            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
-          >
-            + Add Habit
-          </button>
-        </div>
-        {habits.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">No habits yet. Add one to start tracking!</p>
-        ) : (
-          <div className="space-y-3">
-            {habits.map((habit) => {
-              const logs = habitLogs[habit.id] || [];
-              const lastLog = logs[0];
-              return (
-                <div
-                  key={habit.id}
-                  className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="text-gray-900 dark:text-gray-100 font-medium">
-                      {habit.name}
+              {tasks.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No tasks yet. Add one to get started!</p>
+              ) : (
+                <div className="space-y-2">
+                  {tasks.map((task) => (
+                    <div key={task.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={(e) => toggleTask(task.id, e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className={`flex-1 ${task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
+                        {task.name}
+                      </span>
+                      <button
+                        onClick={() => deleteTask(task.id)}
+                        className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        aria-label="Delete task"
+                      >
+                        ✕
+                      </button>
                     </div>
-                    {lastLog && (
-                      <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        Last: Difficulty {lastLog.difficulty}/10
-                        {lastLog.dollars_saved > 0 && (
-                          <span>, ${lastLog.dollars_saved} saved</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setLoggingHabitId(habit.id)}
-                      className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors touch-manipulation"
-                    >
-                      Log
-                    </button>
-                    <button
-                      onClick={() => deleteHabit(habit.id)}
-                      className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                      aria-label="Delete habit"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+
+          {activeProgressTab === 'habits' && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Habits</h3>
+                <button
+                  onClick={() => setShowAddHabitModal(true)}
+                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
+                >
+                  + Add Habit
+                </button>
+              </div>
+              {habits.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No habits yet. Add one to start tracking!</p>
+              ) : (
+                <div className="space-y-3">
+                  {habits.map((habit) => {
+                    const logs = habitLogs[habit.id] || [];
+                    const lastLog = logs[0];
+                    return (
+                      <div
+                        key={habit.id}
+                        className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="text-gray-900 dark:text-gray-100 font-medium">
+                            {habit.name}
+                          </div>
+                          {lastLog && (
+                            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                              Last: Difficulty {lastLog.difficulty}/10
+                              {lastLog.dollars_saved > 0 && (
+                                <span>, 💵 {lastLog.dollars_saved}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setLoggingHabitId(habit.id)}
+                            className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+                          >
+                            Log
+                          </button>
+                          <button
+                            onClick={() => deleteHabit(habit.id)}
+                            className="px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            aria-label="Delete habit"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeProgressTab === 'log' && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Log Progress</h3>
+              {questStatus === 'active' ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Track your progress by logging tasks and habits.
+                  </p>
+                  <button
+                    onClick={() => setShowProgressLogModal(true)}
+                    className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                  >
+                    Open Progress Log
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Start the quest to begin logging progress.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       {/* Rewards Section - Visually Prominent */}
       <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-3xl p-6 shadow-xl">
@@ -447,18 +524,15 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <button
-          onClick={() => setShowEditModal(true)}
-          className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors text-sm"
-        >
-          Edit Quest
-        </button>
+      {/* Lifecycle Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3">
         {questStatus === 'active' ? (
           <>
             <button
-              onClick={() => setShowProgressLogModal(true)}
+              onClick={() => {
+                setShowProgressLogModal(true);
+                setActiveProgressTab('log');
+              }}
               className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
             >
               Log Progress
@@ -485,6 +559,16 @@ export function QuestDetailPage() {
             Start Quest
           </button>
         )}
+      </div>
+
+      {/* Secondary Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors text-sm"
+        >
+          Edit Quest
+        </button>
         <button
           onClick={() => setShowAbandonConfirm(true)}
           className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
@@ -663,15 +747,17 @@ export function QuestDetailPage() {
         title="Complete Quest"
         message={(() => {
           if (!questDetail) return "Are you sure you want to complete this quest and claim the rewards?";
-          const rewardParts = [`${questDetail.reward} sand dollars`];
+          const rewardParts = [];
+          // Use image reference format for sand dollars (matches rewards display)
+          rewardParts.push(`${questDetail.reward} sand dollars`);
           if (questDetail.dollar_amount > 0) {
-            rewardParts.push(`$${questDetail.dollar_amount.toFixed(2)} saved`);
+            rewardParts.push(`💵 $${questDetail.dollar_amount.toFixed(2)}`);
           }
           const rewardItem = questDetail.associated_item_id
             ? shopItems.find((item) => item.id === questDetail.associated_item_id)
             : null;
           if (rewardItem) {
-            rewardParts.push(`Item: ${rewardItem.name}`);
+            rewardParts.push(`🎁 ${rewardItem.name}`);
           }
           return `Are you sure you want to complete "${questDetail.name}" and claim the rewards?\n\nRewards: ${rewardParts.join(", ")}`;
         })()}
