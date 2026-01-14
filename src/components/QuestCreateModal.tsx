@@ -49,6 +49,7 @@ export function QuestCreateModal({
         reward: reward ? parseInt(reward) : 0,
         dollar_amount: dollarAmount ? parseFloat(dollarAmount) : 0,
         reward_item_id: rewardItemId || null,
+        status: 'idle',
         // Note: description, target_completion_date, rarity will be stored in localStorage
         // until schema migration adds these columns
       });

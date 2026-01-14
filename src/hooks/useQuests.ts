@@ -266,6 +266,39 @@ export function useQuests() {
     [updateOverride, mergeQuestWithOverrides, quests]
   );
 
+  // Update quest status
+  const updateQuestStatus = useCallback(
+    async (questId: string, status: 'idle' | 'active' | 'completed') => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.supabase.auth.getUser();
+        if (!user) {
+          throw new Error("User must be authenticated");
+        }
+
+        const { error } = await supabase
+          .from("quests")
+          .update({
+            status,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", questId);
+
+        if (error) throw error;
+
+        // Update local state
+        setQuests((prev) =>
+          prev.map((q) => (q.id === questId ? { ...q, status } : q))
+        );
+      } catch (err: any) {
+        console.error("Error updating quest status:", err);
+        throw err;
+      }
+    },
+    []
+  );
+
   // Complete a quest (adds to log with user_id and atomically updates wallet)
   const completeQuest = useCallback(
     async (questId: string, reward: number, dollarAmount: number = 0) => {
@@ -711,6 +744,7 @@ export function useQuests() {
     error,
     createQuest,
     updateQuest,
+    updateQuestStatus,
     completeQuest,
     deleteQuest,
     getQuestWithLogs,

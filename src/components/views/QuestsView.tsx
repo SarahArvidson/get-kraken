@@ -103,6 +103,7 @@ export function QuestsView({
               await onCreateQuest({
                 ...questData,
                 dollar_amount: questData.dollar_amount ?? 0,
+                status: 'idle',
               });
               onShowToast("Quest created! 🎯", "success");
             }}

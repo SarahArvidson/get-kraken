@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useFilterState } from "../hooks/useFilterState";
 import { deriveQuestSummary } from "../utils/questDataMapping";
@@ -18,6 +18,7 @@ import type { QuestLog, Tag } from "../types";
 
 export function QuestsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { quests, loading, loadAllQuestLogs, createQuest } = useQuests();
   const { questSearchQuery, selectedQuestTag, setQuestSearchQuery, setSelectedQuestTag } = useFilterState();
   const [allQuestLogs, setAllQuestLogs] = useState<QuestLog[]>([]);
@@ -26,6 +27,9 @@ export function QuestsPage() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  
+  // Get status filter from URL
+  const statusFilter = searchParams.get('filter') || 'all';
 
   // Load quest logs on mount
   useEffect(() => {
@@ -66,6 +70,15 @@ export function QuestsPage() {
   const filteredQuests = useMemo(() => {
     let filtered = questSummaries;
 
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((quest) => {
+        const baseQuest = quests.find((q) => q.id === quest.id);
+        if (!baseQuest) return false;
+        return baseQuest.status === statusFilter;
+      });
+    }
+
     // Apply search filter
     if (debouncedSearchQuery.trim()) {
       const query = debouncedSearchQuery.toLowerCase();
@@ -85,7 +98,7 @@ export function QuestsPage() {
 
     // Sort A-Z
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }, [questSummaries, debouncedSearchQuery, selectedQuestTag]);
+  }, [questSummaries, debouncedSearchQuery, selectedQuestTag, statusFilter, quests]);
 
   // Group by first letter
   const groupedQuests = useMemo(() => {
@@ -175,6 +188,40 @@ export function QuestsPage() {
           aria-label="Create new quest"
         >
           Create Quest
+        </button>
+      </div>
+
+      {/* Status Filter Buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setSearchParams({ filter: 'all' })}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'all'
+              ? 'bg-amber-500 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setSearchParams({ filter: 'active' })}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'active'
+              ? 'bg-amber-500 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          }`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => setSearchParams({ filter: 'completed' })}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            statusFilter === 'completed'
+              ? 'bg-amber-500 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          }`}
+        >
+          Completed
         </button>
       </div>
 

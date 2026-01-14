@@ -10,7 +10,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { WalletDisplay } from "../components/WalletDisplay";
 import { useWallet } from "../hooks/useWallet";
 import { usePreferences } from "../hooks/usePreferences";
@@ -20,7 +20,6 @@ import { useRewardMetadata } from "../hooks/useRewardMetadata";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
 import { useGoals } from "../hooks/useGoals";
-import { supabase } from "../lib/supabase";
 import { TAG_COLORS } from "../utils/tags";
 import { CyclingBorder } from "../components/CyclingBorder";
 import { GoalCreateModal } from "../components/GoalCreateModal";
@@ -48,10 +47,6 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     questMetadata: questMetadata.metadata,
     rewardMetadata: rewardMetadata.metadata,
   });
-  const [activeQuests, setActiveQuests] = useState<
-    Array<{ quest: (typeof quests)[0]; runId: string }>
-  >([]);
-  const [activeQuestsLoading, setActiveQuestsLoading] = useState(true);
 
   const today = useMemo(() => new Date(), []);
   const days = Array.from({ length: 30 }, (_, i) => {
@@ -60,53 +55,9 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     return date;
   });
 
-  // Load active quests (quests with active quest_runs)
-  useEffect(() => {
-    const loadActiveQuests = async () => {
-      setActiveQuestsLoading(true);
-      try {
-        const {
-          data: { user },
-        } = await supabase.supabase.auth.getUser();
-        if (!user) {
-          setActiveQuests([]);
-          setActiveQuestsLoading(false);
-          return;
-        }
-
-        const { data: runs } = await supabase
-          .from("quest_runs")
-          .select("quest_id, id")
-          .eq("user_id", user.id)
-          .is("completed_at", null);
-
-        if (runs && runs.length > 0) {
-          const activeQuestIds = new Set(
-            runs.map((r: { quest_id: string }) => r.quest_id)
-          );
-          const activeQuestsList = quests
-            .filter((q) => activeQuestIds.has(q.id))
-            .map((quest) => {
-              const run = runs.find(
-                (r: { quest_id: string }) => r.quest_id === quest.id
-              );
-              return { quest, runId: run?.id || "" };
-            });
-          setActiveQuests(activeQuestsList);
-        } else {
-          setActiveQuests([]);
-        }
-      } catch (error) {
-        console.error("Error loading active quests:", error);
-        setActiveQuests([]);
-      } finally {
-        setActiveQuestsLoading(false);
-      }
-    };
-
-    if (quests.length > 0) {
-      loadActiveQuests();
-    }
+  // Get active quests (quests with status = 'active')
+  const activeQuests = useMemo(() => {
+    return quests.filter((q) => q.status === 'active');
   }, [quests]);
 
   // Get derived milestones (achievements, not raw logs)
@@ -375,39 +326,25 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
               Active Quests
             </h3>
-            {activeQuestsLoading ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Loading...
-              </p>
-            ) : activeQuests.length === 0 ? (
+            {activeQuests.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 No active quests. Start a quest to begin!
               </p>
             ) : (
-              <>
-                <div className="space-y-2">
-                  {activeQuests.map(({ quest }) => (
-                    <CyclingBorder key={quest.id} tags={quest.tags}>
-                      <div
-                        onClick={() => navigate(`/quests/${quest.id}`)}
-                        className="bg-white dark:bg-gray-800 p-3 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
-                      >
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
-                          {quest.name}
-                        </div>
+              <div className="space-y-2">
+                {activeQuests.map((quest) => (
+                  <CyclingBorder key={quest.id} tags={quest.tags}>
+                    <div
+                      onClick={() => navigate(`/quests/${quest.id}`)}
+                      className="bg-white dark:bg-gray-800 p-3 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                    >
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {quest.name}
                       </div>
-                    </CyclingBorder>
-                  ))}
-                </div>
-                <div className="mt-3">
-                  <button
-                    onClick={() => navigate("/quests/active")}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    View all active quests →
-                  </button>
-                </div>
-              </>
+                    </div>
+                  </CyclingBorder>
+                ))}
+              </div>
             )}
           </div>
 

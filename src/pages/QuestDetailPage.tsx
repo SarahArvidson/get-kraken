@@ -8,7 +8,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuests } from "../hooks/useQuests";
 import { useShopItems } from "../hooks/useShopItems";
-import { useQuestRuns } from "../hooks/useQuestRuns";
 import { useQuestHabits } from "../hooks/useQuestHabits";
 import { useQuestTasks } from "../hooks/useQuestTasks";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
@@ -21,9 +20,8 @@ import type { QuestDetail } from "../types/quests";
 export function QuestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { quests, loading, getQuestWithLogs, updateQuest, completeQuest, deleteQuest } = useQuests();
+  const { quests, loading, getQuestWithLogs, updateQuest, updateQuestStatus, completeQuest, deleteQuest, refresh } = useQuests();
   const { shopItems } = useShopItems();
-  const { getCurrentRun, createRun, completeRun } = useQuestRuns();
   const { habits, habitLogs, createHabit, deleteHabit, refresh: refreshHabits } = useQuestHabits(id || null);
   const { tasks, createTask, toggleTask, deleteTask } = useQuestTasks(id || null);
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
@@ -37,9 +35,7 @@ export function QuestDetailPage() {
   const [showProgressLogModal, setShowProgressLogModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
-  const [isActive, setIsActive] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(true);
+  const [questStatus, setQuestStatus] = useState<'idle' | 'active' | 'completed'>('idle');
 
   useEffect(() => {
     if (!id) {
@@ -49,10 +45,9 @@ export function QuestDetailPage() {
 
     const loadQuestDetail = async () => {
       setDetailLoading(true);
-      setStatusLoading(true);
       try {
         // Find quest in current list
-        const quest = quests.find((q) => q.id === id);
+        let quest = quests.find((q) => q.id === id);
         if (!quest) {
           // Try to load from database
           const questWithLogs = await getQuestWithLogs(id);
@@ -68,6 +63,7 @@ export function QuestDetailPage() {
             associated_item_id: questWithLogs.reward_item_id || undefined,
           });
           setQuestDetail(detail);
+          setQuestStatus(questWithLogs.status);
         } else {
           // Load logs
           const questWithLogs = await getQuestWithLogs(id);
@@ -79,28 +75,20 @@ export function QuestDetailPage() {
             });
             setQuestDetail(detail);
           }
+          setQuestStatus(quest.status);
         }
-
-        // Check quest status: active or completed
-        const current = await getCurrentRun(id);
-        const questWithLogs = await getQuestWithLogs(id);
-        const hasCompletions = questWithLogs ? questWithLogs.logs.length > 0 : false;
-        
-        setIsActive(current !== null);
-        setIsCompleted(hasCompletions && current === null);
       } catch (error) {
         console.error('Error loading quest detail:', error);
         navigate('/quests');
       } finally {
         setDetailLoading(false);
-        setStatusLoading(false);
       }
     };
 
     if (!loading) {
       loadQuestDetail();
     }
-  }, [id, quests, loading, getQuestWithLogs, getCurrentRun, navigate]);
+  }, [id, quests, loading, getQuestWithLogs, navigate]);
 
   const handleToggleStar = () => {
     if (!questDetail) return;
@@ -152,22 +140,13 @@ export function QuestDetailPage() {
   const handleCompleteQuest = async () => {
     if (!id || !questDetail) return;
     try {
-      // Complete the quest (writes to quest_logs and updates wallet)
+      // Complete the quest (writes to quest_logs, updates wallet, and sets status to 'completed')
       await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
-      
-      // If quest is active, mark it as completed
-      if (isActive) {
-        const current = await getCurrentRun(id);
-        if (current) {
-          await completeRun(current.id);
-        }
-      }
-      
+      setQuestStatus('completed');
       setShowCompleteConfirm(false);
-      setIsActive(false);
-      setIsCompleted(true);
-      // Navigate back to active quests if it was active, otherwise quests list
-      navigate('/quests/active');
+      // Refresh quest list to update status
+      await refresh();
+      navigate('/quests');
     } catch (error) {
       console.error('Error completing quest:', error);
     }
@@ -176,9 +155,10 @@ export function QuestDetailPage() {
   const handleStartQuest = async () => {
     if (!id) return;
     try {
-      await createRun(id);
-      setIsActive(true);
-      setIsCompleted(false);
+      await updateQuestStatus(id, 'active');
+      setQuestStatus('active');
+      // Refresh quest list
+      await refresh();
     } catch (error) {
       console.error('Error starting quest:', error);
     }
@@ -187,9 +167,10 @@ export function QuestDetailPage() {
   const handleRestartQuest = async () => {
     if (!id) return;
     try {
-      await createRun(id);
-      setIsActive(true);
-      setIsCompleted(false);
+      await updateQuestStatus(id, 'active');
+      setQuestStatus('active');
+      // Refresh quest list
+      await refresh();
     } catch (error) {
       console.error('Error restarting quest:', error);
     }
@@ -250,7 +231,7 @@ export function QuestDetailPage() {
       {/* Header with Back Button */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate(isActive ? '/quests/active' : '/quests')}
+          onClick={() => navigate(questStatus === 'active' ? '/quests?filter=active' : '/quests')}
           className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors touch-manipulation"
           aria-label="Back to quests"
         >
@@ -472,11 +453,7 @@ export function QuestDetailPage() {
         >
           Edit Quest
         </button>
-        {statusLoading ? (
-          <div className="flex-1 px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold text-center">
-            Loading...
-          </div>
-        ) : isActive ? (
+        {questStatus === 'active' ? (
           <>
             <button
               onClick={() => setShowProgressLogModal(true)}
@@ -491,7 +468,7 @@ export function QuestDetailPage() {
               End Quest
             </button>
           </>
-        ) : isCompleted ? (
+        ) : questStatus === 'completed' ? (
           <button
             onClick={handleRestartQuest}
             className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
