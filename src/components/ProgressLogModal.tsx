@@ -231,10 +231,10 @@ export function ProgressLogModal({
         aria-label="Log Progress"
       >
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6 space-y-6">
+          <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Log Progress
@@ -248,13 +248,10 @@ export function ProgressLogModal({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form id="progress-log-form" onSubmit={handleSubmit} className="space-y-6">
               {/* Tasks Section */}
               {tasks.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Tasks
-                  </h3>
                   <div className="space-y-2">
                     {tasks
                       .filter((task) => !task.completed)
@@ -286,9 +283,6 @@ export function ProgressLogModal({
               {/* Habits Section */}
               {habits.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                    Habits
-                  </h3>
                   <div className="space-y-4">
                     {habits.map((habit) => (
                       <div
@@ -350,24 +344,25 @@ export function ProgressLogModal({
                   </p>
                 )}
 
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? "Saving..." : "Save Progress"}
-                </button>
-              </div>
             </form>
+          </div>
+          {/* Buttons - Fixed at bottom */}
+          <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="progress-log-form"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? "Saving..." : "Save Progress"}
+            </button>
           </div>
         </div>
       </div>

@@ -399,11 +399,10 @@ export function QuestDetailPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-4">
+        <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto p-4">
           {activeProgressTab === 'tasks' && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tasks</h3>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-end">
                 <button
                   onClick={() => setShowAddTaskModal(true)}
                   className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
@@ -441,9 +440,8 @@ export function QuestDetailPage() {
           )}
 
           {activeProgressTab === 'habits' && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Habits</h3>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-end">
                 <button
                   onClick={() => setShowAddHabitModal(true)}
                   className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors touch-manipulation"
@@ -464,11 +462,11 @@ export function QuestDetailPage() {
                         className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                       >
                         <div className="flex-1">
-                          <div className="text-gray-900 dark:text-gray-100 font-medium">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {habit.name}
                           </div>
                           {lastLog && (
-                            <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               Last: Difficulty {lastLog.difficulty}/10
                               {lastLog.dollars_saved > 0 && (
                                 <span>, 💵 {lastLog.dollars_saved}</span>
@@ -500,10 +498,9 @@ export function QuestDetailPage() {
           )}
 
           {activeProgressTab === 'log' && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Log Progress</h3>
+            <div className="flex flex-col gap-3">
               {questStatus === 'active' ? (
-                <div className="space-y-3">
+                <>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Track your progress by logging tasks and habits.
                   </p>
@@ -513,7 +510,7 @@ export function QuestDetailPage() {
                   >
                     Open Progress Log
                   </button>
-                </div>
+                </>
               ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Start the quest to begin logging progress.
