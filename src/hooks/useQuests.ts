@@ -403,7 +403,7 @@ export function useQuests() {
         throw err;
       }
     },
-    [loadQuests, quests, mergeQuestWithOverrides]
+    [loadQuests, refreshOverrides, quests, mergeQuestWithOverrides]
   );
 
   // Complete a quest (adds to log with user_id and atomically updates wallet)
