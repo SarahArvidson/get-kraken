@@ -12,8 +12,8 @@ import { useQuestHabits } from "../hooks/useQuestHabits";
 import { useQuestTasks } from "../hooks/useQuestTasks";
 import { useActivityLogs } from "../hooks/useActivityLogs";
 import { useQuestMetadata } from "../hooks/useQuestMetadata";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils/questDataMapping";
-import { HabitLogModal } from "../components/HabitLogModal";
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ProgressLogModal } from "../components/ProgressLogModal";
@@ -30,9 +30,9 @@ export function QuestDetailPage() {
   const { logs: allActivityLogs, loadActivityLogs } = useActivityLogs({
     questMetadata: questMetadata.metadata,
   });
+  const { userId: currentUserId } = useCurrentUser();
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
-  const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -122,28 +122,17 @@ export function QuestDetailPage() {
       ? Math.round((completedTasksCount / totalTasksCount) * 100) 
       : 0;
 
-    // Calculate from habit logs
-    Object.values(habitLogs).forEach(logs => {
-      logs.forEach(log => {
-        totalRealDollars += log.dollars_saved || 0;
-      });
-    });
-
-    // Calculate from activity logs (quest completions and habit logs)
+    // Calculate from activity logs (all progress for this quest)
     questActivityLogs.forEach(log => {
       if (log.action_type === 'quest_complete') {
-        // Quest completions add to sand dollars and real dollars
-        // Note: We'll need to get sand dollars from quest reward
+        // Quest completions add to sand dollars (from quest reward) and real dollars
+        totalSandDollars += questDetail?.reward || 0;
         totalRealDollars += log.dollars_saved || 0;
       } else if (log.action_type === 'habit_log') {
-        // Habit logs add to real dollars
+        // Habit logs add to real dollars only
         totalRealDollars += log.dollars_saved || 0;
       }
     });
-
-    // Sand dollars from quest completions
-    const questCompletions = questActivityLogs.filter(log => log.action_type === 'quest_complete').length;
-    totalSandDollars = questCompletions * (questDetail?.reward || 0);
 
     return {
       totalSandDollars,
@@ -152,7 +141,7 @@ export function QuestDetailPage() {
       completedTasksCount,
       totalTasksCount,
     };
-  }, [questActivityLogs, habitLogs, tasks, questDetail]);
+  }, [questActivityLogs, tasks, questDetail]);
 
   const handleToggleStar = () => {
     if (!questDetail) return;
@@ -161,21 +150,6 @@ export function QuestDetailPage() {
     setQuestDetail({ ...questDetail, isStarred: newStarred });
   };
 
-  const handleHabitLogComplete = async () => {
-    if (!id) return;
-    // Refresh habits to show updated logs
-    await refreshHabits();
-    // Reload quest detail to show updated logs
-    const questWithLogs = await getQuestWithLogs(id);
-    if (questWithLogs && questDetail) {
-      const userCompletionCount = questWithLogs.logs.length;
-      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-        associated_item_id: questWithLogs.reward_item_id || undefined,
-      });
-      setQuestDetail(detail);
-    }
-  };
 
   const handleAddHabit = async () => {
     if (!newHabitName.trim()) return;
@@ -465,50 +439,38 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Description */}
-      {questDetail.description && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <p className="text-gray-700 dark:text-gray-300">{questDetail.description}</p>
-        </div>
-      )}
-
-      {/* Metadata Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Created Date */}
-        {questDetail.created_at && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Created</div>
-            <div className="text-gray-900 dark:text-gray-100">
-              {new Date(questDetail.created_at).toLocaleDateString()}
-            </div>
-          </div>
+      {/* Lifecycle Action Buttons - Clear State at Top */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {questStatus === 'active' ? (
+          <>
+            <button
+              onClick={() => setShowProgressLogModal(true)}
+              className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+            >
+              Log Progress
+            </button>
+            <button
+              onClick={() => setShowCompleteConfirm(true)}
+              className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+            >
+              End Quest
+            </button>
+          </>
+        ) : questStatus === 'completed' ? (
+          <button
+            onClick={handleRestartQuest}
+            className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+          >
+            Restart Quest
+          </button>
+        ) : (
+          <button
+            onClick={handleStartQuest}
+            className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+          >
+            Start Quest
+          </button>
         )}
-
-        {/* Target Completion Date */}
-        {questDetail.target_completion_date && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Target Date</div>
-            <div className="text-gray-900 dark:text-gray-100">
-              {new Date(questDetail.target_completion_date).toLocaleDateString()}
-            </div>
-          </div>
-        )}
-
-        {/* Rarity */}
-        {questDetail.rarity && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Rarity</div>
-            <div className="text-gray-900 dark:text-gray-100 capitalize">{questDetail.rarity}</div>
-          </div>
-        )}
-
-        {/* Completion Count */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Completed</div>
-          <div className="text-gray-900 dark:text-gray-100">
-            {questDetail.userCompletionCount} time{questDetail.userCompletionCount !== 1 ? 's' : ''}
-          </div>
-        </div>
       </div>
       {/* Progress Dashboard - Unified Single Area */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
@@ -553,7 +515,7 @@ export function QuestDetailPage() {
             </div>
           )}
 
-          {/* Inline Actions - Lightweight */}
+          {/* Inline Actions - Lightweight, Single Entry Point */}
           {questStatus === 'active' && (
             <div className="flex flex-wrap gap-2 mb-6">
               <button
@@ -562,22 +524,6 @@ export function QuestDetailPage() {
               >
                 Log Progress
               </button>
-              {tasks.length > 0 && (
-                <button
-                  onClick={() => setShowProgressLogModal(true)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
-                >
-                  Check off Tasks
-                </button>
-              )}
-              {habits.length > 0 && (
-                <button
-                  onClick={() => setShowProgressLogModal(true)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
-                >
-                  Log Habit
-                </button>
-              )}
             </div>
           )}
 
@@ -645,12 +591,6 @@ export function QuestDetailPage() {
                           </div>
                         )}
                       </div>
-                      <button
-                        onClick={() => setLoggingHabitId(habit.id)}
-                        className="px-3 py-1.5 text-xs bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
-                      >
-                        Log
-                      </button>
                     </div>
                   );
                 })}
@@ -681,13 +621,18 @@ export function QuestDetailPage() {
                           : 'Activity logged'}
                       </div>
                       <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {log.difficulty && (
-                          <span>Difficulty: {log.difficulty}/10</span>
+                        {log.user_id === currentUserId ? (
+                          <span className="text-gray-600 dark:text-gray-300">You</span>
+                        ) : (
+                          <span>User</span>
+                        )}
+                        {log.difficulty && log.difficulty > 0 && (
+                          <span>• Difficulty: {log.difficulty}/10</span>
                         )}
                         {log.dollars_saved && log.dollars_saved > 0 && (
-                          <span>💵 {log.dollars_saved}</span>
+                          <span>• 💵 {log.dollars_saved}</span>
                         )}
-                        <span>{getTimeAgo(new Date(log.logged_at))}</span>
+                        <span>• {getTimeAgo(new Date(log.logged_at))}</span>
                       </div>
                     </div>
                   </div>
@@ -714,21 +659,6 @@ export function QuestDetailPage() {
         </button>
       </div>
 
-      {/* Habit Logging Modal */}
-      {loggingHabitId && (() => {
-        const habit = habits.find((h) => h.id === loggingHabitId);
-        if (!habit) return null;
-        return (
-          <HabitLogModal
-            isOpen={!!loggingHabitId}
-            onClose={() => setLoggingHabitId(null)}
-            habitId={habit.id}
-            habitName={habit.name}
-            questId={id || ""}
-            onLogComplete={handleHabitLogComplete}
-          />
-        );
-      })()}
 
       {/* Add Habit Modal */}
       {showAddHabitModal && (
