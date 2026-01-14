@@ -300,29 +300,15 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         <div className="space-y-6">
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
+            <div
+              className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-white dark:hover:bg-gray-800 transition-colors"
+              onClick={() => navigate("/quests")}
+            >
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Active Quests
               </div>
               <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {tideChartMetrics.activeQuests}
-              </div>
-            </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                Completed This Week
-              </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                {tideChartMetrics.completedThisWeek}
-              </div>
-            </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                Current Streak
-              </div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                {tideChartMetrics.streak}{" "}
-                {tideChartMetrics.streak === 1 ? "day" : "days"}
               </div>
             </div>
           </div>

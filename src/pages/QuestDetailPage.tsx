@@ -15,6 +15,7 @@ import { deriveQuestSummary, deriveQuestDetail, setQuestStarred } from "../utils
 import { HabitLogModal } from "../components/HabitLogModal";
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { ProgressLogModal } from "../components/ProgressLogModal";
 import type { QuestDetail } from "../types/quests";
 
 export function QuestDetailPage() {
@@ -33,6 +34,7 @@ export function QuestDetailPage() {
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showProgressLogModal, setShowProgressLogModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
   const [currentRun, setCurrentRun] = useState<QuestRun | null>(null);
@@ -170,6 +172,21 @@ export function QuestDetailPage() {
     }
   };
 
+  const handleStartRun = async () => {
+    if (!id) return;
+    try {
+      await createRun(id);
+      // Reload current run
+      const current = await getCurrentRun(id);
+      setCurrentRun(current);
+      // Reload past runs (in case the new run replaced something)
+      const past = await getPastRuns(id);
+      setPastRuns(past);
+    } catch (error) {
+      console.error('Error starting quest run:', error);
+    }
+  };
+
   const handleRestartQuest = async () => {
     if (!id) return;
     try {
@@ -182,6 +199,22 @@ export function QuestDetailPage() {
       setPastRuns(past);
     } catch (error) {
       console.error('Error restarting quest:', error);
+    }
+  };
+
+  const handleProgressLogComplete = async () => {
+    if (!id) return;
+    // Refresh habits to show updated logs
+    await refreshHabits();
+    // Reload quest detail to show updated logs
+    const questWithLogs = await getQuestWithLogs(id);
+    if (questWithLogs && questDetail) {
+      const userCompletionCount = questWithLogs.logs.length;
+      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+        associated_item_id: questWithLogs.reward_item_id || undefined,
+      });
+      setQuestDetail(detail);
     }
   };
 
@@ -306,33 +339,6 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Associated Item */}
-      {questDetail.associated_item_id && (() => {
-        const linkedItem = shopItems.find((item) => item.id === questDetail.associated_item_id);
-        return (
-          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-blue-600 dark:text-blue-400">🔗</span>
-              <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                Associated Reward
-              </div>
-            </div>
-            <div className="text-gray-900 dark:text-gray-100 mb-2">
-              {linkedItem ? (
-                <>This quest is linked to <strong>{linkedItem.name}</strong></>
-              ) : (
-                <>This quest is linked to a reward item. View it in the Rewards library.</>
-              )}
-            </div>
-            <button
-              onClick={() => navigate(`/rewards/${questDetail.associated_item_id}`)}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              View Reward →
-            </button>
-          </div>
-        );
-      })()}
 
       {/* Tasks Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
@@ -431,32 +437,6 @@ export function QuestDetailPage() {
         )}
       </div>
 
-      {/* Current Run */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-          Current Run
-        </h3>
-        {runsLoading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
-        ) : currentRun ? (
-          <div className="space-y-3">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              <div>Started: {new Date(currentRun.started_at).toLocaleDateString()}</div>
-              <div>Progress logs: {questDetail.logs.filter(log => new Date(log.completed_at) >= new Date(currentRun.started_at)).length}</div>
-            </div>
-            <button
-              onClick={() => setShowCompleteConfirm(true)}
-              className="w-full px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
-            >
-              End Quest and Claim Rewards
-            </button>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No active run. Start by completing the quest.
-          </p>
-        )}
-      </div>
 
       {/* Past Runs */}
       {pastRuns.length > 0 && (
@@ -500,7 +480,7 @@ export function QuestDetailPage() {
         </h2>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-6 h-6 inline-block" />
+            <span className="text-2xl">🪙</span>
             <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
               {questDetail.reward}
             </span>
@@ -509,17 +489,22 @@ export function QuestDetailPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">💵</span>
               <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
-                ${questDetail.dollar_amount.toFixed(2)} saved
+                ${questDetail.dollar_amount.toFixed(2)}
               </span>
             </div>
           )}
-          {questDetail.rarity && (
-            <div className="mt-4 pt-4 border-t border-amber-800/30">
-              <div className="text-sm text-amber-900 dark:text-amber-100 opacity-75">
-                Rarity: {questDetail.rarity}
+          {questDetail.associated_item_id && (() => {
+            const linkedItem = shopItems.find((item) => item.id === questDetail.associated_item_id);
+            if (!linkedItem) return null;
+            return (
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎁</span>
+                <span className="text-xl font-semibold text-amber-900 dark:text-amber-100">
+                  {linkedItem.name}
+                </span>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
@@ -531,12 +516,33 @@ export function QuestDetailPage() {
         >
           Edit Quest
         </button>
-        <button
-          onClick={() => setShowCompleteConfirm(true)}
-          className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
-        >
-          End Quest and Claim Rewards
-        </button>
+        {runsLoading ? (
+          <div className="flex-1 px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold text-center">
+            Loading...
+          </div>
+        ) : currentRun ? (
+          <>
+            <button
+              onClick={() => setShowProgressLogModal(true)}
+              className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+            >
+              Log Progress
+            </button>
+            <button
+              onClick={() => setShowCompleteConfirm(true)}
+              className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+            >
+              End Quest and Claim Rewards
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleStartRun}
+            className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+          >
+            Start Quest Run
+          </button>
+        )}
         <button
           onClick={() => setShowAbandonConfirm(true)}
           className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
@@ -672,6 +678,17 @@ export function QuestDetailPage() {
           </div>
         </>
       )}
+
+      {/* Progress Logging Modal */}
+      <ProgressLogModal
+        isOpen={showProgressLogModal}
+        onClose={() => setShowProgressLogModal(false)}
+        questId={id || ""}
+        tasks={tasks}
+        habits={habits}
+        onToggleTask={toggleTask}
+        onProgressComplete={handleProgressLogComplete}
+      />
 
       {/* Edit Quest Modal */}
       {baseQuest && (
