@@ -23,7 +23,7 @@ export function RewardCreateModal({
 }: RewardCreateModalProps) {
   const [name, setName] = useState("");
   const [tags, setTags] = useState<ShopTag[]>([]);
-  const [price, setPrice] = useState(20);
+  const [price, setPrice] = useState("20");
   const [dollarAmount, setDollarAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function RewardCreateModal({
       // Reset form
       setName("");
       setTags([]);
-      setPrice(20);
+      setPrice("20");
       setDollarAmount("");
       onClose();
     } catch (err: any) {

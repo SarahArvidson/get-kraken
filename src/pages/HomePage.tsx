@@ -35,7 +35,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const preferences = usePreferences();
   const questMetadata = useQuestMetadata();
   const rewardMetadata = useRewardMetadata();
-  const { quests, refresh: refreshQuests } = useQuests();
+  const { quests } = useQuests();
   const { shopItems } = useShopItems();
   const { goals, createGoal, refresh: refreshGoals } = useGoals();
   const [showCreateGoalModal, setShowCreateGoalModal] = useState(false);

@@ -471,11 +471,18 @@ export function useQuests() {
           if (updateError) throw updateError;
         }
 
+        // Get current quest to increment completion_count
+        const { data: currentQuest } = await supabase
+          .from("quests")
+          .select("completion_count")
+          .eq("id", questId)
+          .single();
+
         // Update quest status to 'completed' and increment completion_count
         const { data: updatedQuest, error: questUpdateError } = await supabase
           .from("quests")
           .update({
-            completion_count: supabase.raw("completion_count + 1"),
+            completion_count: (currentQuest?.completion_count || 0) + 1,
             status: 'completed',
             updated_at: new Date().toISOString(),
           })
@@ -804,7 +811,8 @@ export function useQuests() {
     error,
     createQuest,
     updateQuest,
-    updateQuestStatus,
+    startQuest,
+    restartQuest,
     completeQuest,
     deleteQuest,
     getQuestWithLogs,
