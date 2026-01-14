@@ -254,11 +254,17 @@ export function useQuestOverrides() {
     };
   }, [loadOverrides]);
 
-  // Merge base quest with user overrides
+  // Merge base quest with user overrides (including lifecycle state)
   const mergeQuestWithOverrides = useCallback(
     (baseQuest: Quest): Quest => {
       const override = overrides[baseQuest.id];
-      if (!override) return baseQuest;
+      if (!override) {
+        // No override: use base quest with default status 'idle'
+        return {
+          ...baseQuest,
+          status: 'idle' as const,
+        };
+      }
 
       return {
         ...baseQuest,
@@ -266,6 +272,10 @@ export function useQuestOverrides() {
         tags: override.tags || baseQuest.tags,
         reward: override.reward !== null && override.reward !== undefined ? override.reward : baseQuest.reward,
         dollar_amount: override.dollar_amount !== null && override.dollar_amount !== undefined ? override.dollar_amount : baseQuest.dollar_amount,
+        // Lifecycle state comes from override (default 'idle' if not set)
+        status: (override.status || 'idle') as 'idle' | 'active' | 'completed',
+        // Reward rarity comes from override if set
+        reward_rarity: override.reward_rarity || baseQuest.reward_rarity || null,
       };
     },
     [overrides]

@@ -270,7 +270,7 @@ export function useQuests() {
     [updateOverride, mergeQuestWithOverrides, quests]
   );
 
-  // Start a quest (set status to 'active')
+  // Start a quest (set status to 'active' in user_quest_overrides)
   const startQuest = useCallback(
     async (questId: string): Promise<Quest | null> => {
       try {
@@ -281,39 +281,51 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
-        // Update quest status in database
+        // Upsert into user_quest_overrides with status='active'
         const { data, error } = await supabase
-          .from("quests")
-          .update({
+          .from("user_quest_overrides")
+          .upsert({
+            user_id: user.id,
+            quest_id: questId,
             status: 'active',
             updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,quest_id',
           })
-          .eq("id", questId)
           .select()
           .single();
 
         if (error) {
-          console.error("Error updating quest status:", error);
+          console.error("Error starting quest (override upsert):", error);
+          console.error("Supabase error details:", JSON.stringify(error, null, 2));
           throw error;
         }
 
         if (!data) {
-          throw new Error("Quest not found or update failed");
+          console.error("startQuest: upsert returned no data");
+          throw new Error("Failed to start quest: no data returned");
         }
+
+        console.log("startQuest: successfully updated override", { questId, status: data.status });
 
         // Immediately refresh quests to ensure state is synchronized
         await loadQuests();
         
-        return data;
+        // Return the merged quest
+        const baseQuest = quests.find(q => q.id === questId);
+        if (baseQuest) {
+          return mergeQuestWithOverrides(baseQuest);
+        }
+        return null;
       } catch (err: any) {
         console.error("Error starting quest:", err);
         throw err;
       }
     },
-    [loadQuests]
+    [loadQuests, quests, mergeQuestWithOverrides]
   );
 
-  // Restart a quest (set status to 'active')
+  // Restart a quest (set status to 'active' in user_quest_overrides, clear completed_at)
   const restartQuest = useCallback(
     async (questId: string): Promise<Quest | null> => {
       try {
@@ -324,30 +336,49 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        // Update user_quest_overrides
         const { data, error } = await supabase
-          .from("quests")
-          .update({
+          .from("user_quest_overrides")
+          .upsert({
+            user_id: user.id,
+            quest_id: questId,
             status: 'active',
+            completed_at: null, // Clear completion timestamp but keep history
             updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,quest_id',
           })
-          .eq("id", questId)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error restarting quest (override upsert):", error);
+          console.error("Supabase error details:", JSON.stringify(error, null, 2));
+          throw error;
+        }
 
-        // Update local state and refresh
-        setQuests((prev) =>
-          prev.map((q) => (q.id === questId ? { ...q, status: 'active' } : q))
-        );
+        if (!data) {
+          console.error("restartQuest: upsert returned no data");
+          throw new Error("Failed to restart quest: no data returned");
+        }
+
+        console.log("restartQuest: successfully updated override", { questId, status: data.status });
+
+        // Immediately refresh quests
         await loadQuests();
-        return data;
+        
+        // Return the merged quest
+        const baseQuest = quests.find(q => q.id === questId);
+        if (baseQuest) {
+          return mergeQuestWithOverrides(baseQuest);
+        }
+        return null;
       } catch (err: any) {
         console.error("Error restarting quest:", err);
         throw err;
       }
     },
-    [loadQuests]
+    [loadQuests, quests, mergeQuestWithOverrides]
   );
 
   // Complete a quest (adds to log with user_id and atomically updates wallet)
@@ -481,36 +512,40 @@ export function useQuests() {
           if (updateError) throw updateError;
         }
 
-        // Get current quest to increment completion_count
-        const { data: currentQuest } = await supabase
-          .from("quests")
+        // Get current override to increment completion_count
+        const { data: currentOverride } = await supabase
+          .from("user_quest_overrides")
           .select("completion_count")
-          .eq("id", questId)
-          .single();
+          .eq("user_id", user.id)
+          .eq("quest_id", questId)
+          .maybeSingle();
 
-        // Update quest status to 'completed' and increment completion_count
-        const { data: updatedQuest, error: questUpdateError } = await supabase
-          .from("quests")
-          .update({
-            completion_count: (currentQuest?.completion_count || 0) + 1,
+        // Update user_quest_overrides: set status='completed', increment completion_count, set completed_at
+        const { data: updatedOverride, error: overrideUpdateError } = await supabase
+          .from("user_quest_overrides")
+          .upsert({
+            user_id: user.id,
+            quest_id: questId,
             status: 'completed',
+            completion_count: (currentOverride?.completion_count || 0) + 1,
+            completed_at: completedAt,
             updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,quest_id',
           })
-          .eq("id", questId)
           .select()
           .single();
 
-        if (questUpdateError) throw questUpdateError;
-
-        // Update local state and refresh
-        if (updatedQuest) {
-          setQuests((prev) =>
-            prev.map((q) => (q.id === questId ? { ...q, status: 'completed', completion_count: updatedQuest.completion_count } : q))
-          );
-          await loadQuests();
+        if (overrideUpdateError) {
+          console.error("Error updating quest override status to completed:", overrideUpdateError);
+          console.error("Supabase error details:", JSON.stringify(overrideUpdateError, null, 2));
+          // Don't throw, as the core completion (log + wallet) already happened
+        } else {
+          console.log("completeQuest: successfully updated override", { questId, status: updatedOverride?.status, completion_count: updatedOverride?.completion_count });
         }
 
-        return updatedQuest || null;
+        // Immediately refresh quests to ensure state is synchronized
+        await loadQuests();
       } catch (err: any) {
         console.error("Error completing quest:", err);
         setError(err.message || "Failed to complete quest");

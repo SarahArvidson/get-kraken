@@ -70,11 +70,12 @@ export function QuestsPage() {
   const filteredQuests = useMemo(() => {
     let filtered = questSummaries;
 
-    // Apply status filter
+    // Apply status filter (uses effective status from merged quests)
     if (statusFilter !== 'all') {
       filtered = filtered.filter((quest) => {
         const baseQuest = quests.find((q) => q.id === quest.id);
         if (!baseQuest) return false;
+        // Use effective status from merged quest (comes from override or defaults to 'idle')
         return baseQuest.status === statusFilter;
       });
     }
