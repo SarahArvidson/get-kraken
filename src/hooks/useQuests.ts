@@ -240,6 +240,10 @@ export function useQuests() {
             overrideUpdates.reward = updates.reward;
           if (updates.dollar_amount !== undefined)
             overrideUpdates.dollar_amount = updates.dollar_amount;
+          if (updates.reward_item_id !== undefined)
+            overrideUpdates.reward_item_id = updates.reward_item_id;
+          if (updates.reward_rarity !== undefined)
+            overrideUpdates.reward_rarity = updates.reward_rarity;
 
           await updateOverride(id, overrideUpdates);
           // Update local state optimistically - merge override with base quest

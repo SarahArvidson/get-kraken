@@ -169,11 +169,9 @@ export function QuestDetailPage() {
   const handleStartQuest = async () => {
     if (!id) return;
     try {
-      const updated = await startQuest(id);
-      if (updated) {
-        setQuestStatus('active');
-        await refresh();
-      }
+      await startQuest(id);
+      setQuestStatus('active');
+      await refresh();
     } catch (error) {
       console.error('Error starting quest:', error);
     }

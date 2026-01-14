@@ -21,6 +21,7 @@ export interface Quest {
   dollar_amount: number; // real dollars saved per completion
   completion_count: number;
   reward_item_id?: string | null; // associated reward item (optional)
+  reward_rarity?: 'common' | 'rare' | 'epic' | 'legendary' | null; // reward rarity (optional)
   status: 'idle' | 'active' | 'completed'; // quest lifecycle status
   created_by?: string | null; // user ID who created this quest (null for seeded quests, optional for backwards compatibility)
   created_at: string;

@@ -29,6 +29,7 @@ export function QuestEditModal({
   const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
   const [rewardItemId, setRewardItemId] = useState<string>("");
+  const [rewardRarity, setRewardRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +41,7 @@ export function QuestEditModal({
       setReward(quest.reward ? quest.reward.toString() : "10");
       setDollarAmount(quest.dollar_amount ? quest.dollar_amount.toString() : "");
       setRewardItemId(quest.reward_item_id || "");
-      // Note: description, target_completion_date, rarity would come from localStorage or overrides
-      // For now, we'll just use the base quest fields
+      setRewardRarity(quest.reward_rarity || '');
     }
   }, [quest, isOpen]);
 
@@ -62,6 +62,7 @@ export function QuestEditModal({
         reward: reward ? parseInt(reward) || 0 : 0,
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
         reward_item_id: rewardItemId || null,
+        reward_rarity: rewardRarity || null,
       });
       
       onClose();
@@ -226,6 +227,24 @@ export function QuestEditModal({
                       {item.name}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Reward Rarity (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Reward Rarity (Optional)
+                </label>
+                <select
+                  value={rewardRarity}
+                  onChange={(e) => setRewardRarity(e.target.value as 'common' | 'rare' | 'epic' | 'legendary' | '')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                >
+                  <option value="">None</option>
+                  <option value="common">Common</option>
+                  <option value="rare">Rare</option>
+                  <option value="epic">Epic</option>
+                  <option value="legendary">Legendary</option>
                 </select>
               </div>
 
