@@ -20,6 +20,7 @@ export function useQuests() {
     isQuestHidden,
     updateOverride,
     hideQuest: hideQuestForUser,
+    refresh: refreshOverrides,
   } = useQuestOverrides();
 
   // Load all quests
@@ -274,6 +275,8 @@ export function useQuests() {
   const startQuest = useCallback(
     async (questId: string): Promise<Quest | null> => {
       try {
+        console.log('startQuest: called with questId:', questId);
+        
         const {
           data: { user },
         } = await supabase.supabase.auth.getUser();
@@ -281,19 +284,32 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        // Log the exact payload being sent to Supabase
+        const payload = {
+          user_id: user.id,
+          quest_id: questId,
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        };
+        console.log('startQuest: upsert payload:', JSON.stringify(payload, null, 2));
+
         // Upsert into user_quest_overrides with status='active'
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from("user_quest_overrides")
-          .upsert({
-            user_id: user.id,
-            quest_id: questId,
-            status: 'active',
-            updated_at: new Date().toISOString(),
-          }, {
+          .upsert(payload, {
             onConflict: 'user_id,quest_id',
           })
           .select()
           .single();
+
+        // Log the Supabase response
+        console.log('startQuest: Supabase response:', {
+          data,
+          error,
+          count,
+          hasData: !!data,
+          errorDetails: error ? JSON.stringify(error, null, 2) : null,
+        });
 
         if (error) {
           console.error("Error starting quest (override upsert):", error);
@@ -306,23 +322,22 @@ export function useQuests() {
           throw new Error("Failed to start quest: no data returned");
         }
 
-        console.log("startQuest: successfully updated override", { questId, status: data.status });
+        console.log("startQuest: successfully updated override", { questId, status: data.status, overrideId: data.id });
 
-        // Immediately refresh quests to ensure state is synchronized
+        // Immediately refresh overrides first, then quests
+        await refreshOverrides();
+        
+        // Then refresh quests to get updated merged state
         await loadQuests();
         
-        // Return the merged quest
-        const baseQuest = quests.find(q => q.id === questId);
-        if (baseQuest) {
-          return mergeQuestWithOverrides(baseQuest);
-        }
+        // Return null - component will refresh and get updated quest from state
         return null;
       } catch (err: any) {
         console.error("Error starting quest:", err);
         throw err;
       }
     },
-    [loadQuests, quests, mergeQuestWithOverrides]
+    [loadQuests]
   );
 
   // Restart a quest (set status to 'active' in user_quest_overrides, clear completed_at)

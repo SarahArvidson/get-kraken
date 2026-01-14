@@ -76,7 +76,8 @@ export function QuestDetailPage() {
             });
             setQuestDetail(detail);
           }
-          setQuestStatus(quest.status);
+          // Use effective status from merged quest (comes from override or defaults to 'idle')
+          setQuestStatus(quest.status || 'idle');
         }
       } catch (error) {
         console.error('Error loading quest detail:', error);
@@ -167,10 +168,23 @@ export function QuestDetailPage() {
   };
 
   const handleStartQuest = async () => {
-    if (!id) return;
+    if (!id) {
+      console.error('handleStartQuest: no quest id from URL params');
+      return;
+    }
+    
+    // Log the quest id being passed
+    console.log('handleStartQuest: calling startQuest with quest_id:', id);
+    console.log('handleStartQuest: quest id type:', typeof id, 'value:', id);
+    
     try {
-      await startQuest(id);
+      const result = await startQuest(id);
+      console.log('handleStartQuest: startQuest returned:', result);
+      
+      // Update local status immediately
       setQuestStatus('active');
+      
+      // Refresh quests to get updated merged state
       await refresh();
     } catch (error) {
       console.error('Error starting quest:', error);
