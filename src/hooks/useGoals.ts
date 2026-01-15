@@ -96,22 +96,38 @@ export function useGoals() {
         is_completed?: boolean;
       }
     ): Promise<void> => {
+      console.log('[updateGoal] Starting update for goal:', goalId, 'with updates:', JSON.stringify(updates, null, 2));
       if (!userId) throw new Error("User must be authenticated");
 
       try {
-        const { error: updateError } = await supabase
+        // NEVER touch logs or derived fields - only PATCH provided fields
+        // Remove any fields that shouldn't be updated directly
+        const safeUpdates = { ...updates };
+        // Goals don't have completion_count or logs, but ensure we never add them
+        delete (safeUpdates as any).completion_count;
+        delete (safeUpdates as any).progress_logs;
+
+        console.log('[updateGoal] Safe updates to apply:', JSON.stringify(safeUpdates, null, 2));
+
+        const { error: updateError, data } = await supabase
           .from("goals")
           .update({
-            ...updates,
+            ...safeUpdates,
             updated_at: new Date().toISOString(),
           })
           .eq("id", goalId)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select();
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('[updateGoal] Error updating goal:', updateError);
+          throw updateError;
+        }
+        console.log('[updateGoal] Successfully updated goal, rows affected:', data?.length || 0);
         await loadGoals();
+        console.log('[updateGoal] Goals reloaded successfully');
       } catch (err: any) {
-        console.error("Error updating goal:", err);
+        console.error("[updateGoal] Error updating goal:", err);
         throw err;
       }
     },

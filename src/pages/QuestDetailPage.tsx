@@ -548,17 +548,27 @@ export function QuestDetailPage() {
           onClose={() => setShowEditModal(false)}
           quest={baseQuest}
           onUpdate={async (id, updates) => {
-            await updateQuest(id, updates);
-            setShowEditModal(false);
-            // Reload quest detail
-            const questWithLogs = await getQuestWithLogs(id);
-            if (questWithLogs) {
-              const userCompletionCount = questWithLogs.logs.length;
-              const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-              const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-                associated_item_id: questWithLogs.reward_item_id || undefined,
-              });
-              setQuestDetail(detail);
+            console.log('[QuestDetailPage] Updating quest:', id, 'with updates:', updates);
+            try {
+              await updateQuest(id, updates);
+              setShowEditModal(false);
+              // Refresh quest detail without hard reload
+              await refresh();
+              // Reload quest detail after a brief delay to allow state to settle
+              setTimeout(async () => {
+                const questWithLogs = await getQuestWithLogs(id);
+                if (questWithLogs) {
+                  const userCompletionCount = questWithLogs.logs.length;
+                  const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+                  const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+                    associated_item_id: questWithLogs.reward_item_id || undefined,
+                  });
+                  setQuestDetail(detail);
+                }
+              }, 100);
+            } catch (err) {
+              console.error('[QuestDetailPage] Error updating quest:', err);
+              // Keep modal open on error so user can retry
             }
           }}
         />

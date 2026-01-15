@@ -156,12 +156,26 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        console.log('[updateQuest] Starting update for quest:', id, 'with updates:', JSON.stringify(updates, null, 2));
+
         // NEVER delete progress logs - completion_count is derived from logs, not editable
-        // Remove completion_count from updates if present (it's read-only)
-        if (updates.completion_count !== undefined) {
-          const { completion_count, ...restUpdates } = updates;
-          updates = restUpdates;
-        }
+        // NEVER write lifecycle or rarity to quests table - they belong only in user_quest_overrides
+        // NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
+        // Separate quest fields (name, tags, reward, dollar_amount) from override fields (status, reward_rarity, reward_item_id)
+        const {
+          completion_count, // derived, read-only - remove from updates
+          status, // lifecycle - belongs ONLY in overrides
+          reward_rarity, // per-user rarity - belongs ONLY in overrides
+          reward_item_id, // reward item - store in overrides for consistency (all users can customize)
+          ...questFields // name, tags, reward, dollar_amount, description - can go in quests table for user-created quests
+        } = updates;
+
+        console.log('[updateQuest] Filtered quest fields:', JSON.stringify(questFields, null, 2));
+        console.log('[updateQuest] Override fields (status, reward_rarity, reward_item_id):', {
+          status,
+          reward_rarity,
+          reward_item_id,
+        });
 
         // First, check if the quest exists and if the user created it
         const { data: existingQuest, error: fetchError } = await supabase
@@ -175,59 +189,64 @@ export function useQuests() {
           throw new Error("Quest not found");
         }
 
-        // If user created it, update the base quest
+        // Build override updates (lifecycle and rarity always go to overrides)
+        const overrideUpdates: any = {};
+        if (status !== undefined) overrideUpdates.status = status;
+        if (reward_rarity !== undefined) overrideUpdates.reward_rarity = reward_rarity;
+        if (reward_item_id !== undefined) overrideUpdates.reward_item_id = reward_item_id;
+        // For seeded quests, also store name/tags/reward in overrides
+        // For user-created quests, store them in quests table but ALSO allow overrides
+        if (updates.name !== undefined) overrideUpdates.name = updates.name;
+        if (updates.tags !== undefined) overrideUpdates.tags = updates.tags;
+        if (updates.reward !== undefined) overrideUpdates.reward = updates.reward;
+        if (updates.dollar_amount !== undefined) overrideUpdates.dollar_amount = updates.dollar_amount;
+
+        console.log('[updateQuest] Override updates to apply:', JSON.stringify(overrideUpdates, null, 2));
+
+        // If user created it, update the base quest (quests table) ONLY with questFields (no lifecycle/rarity)
         // Note: created_by can be null (seeded quests) or a different user's ID
-        if (existingQuest.created_by === user.id) {
+        if (existingQuest.created_by === user.id && Object.keys(questFields).length > 0) {
+          console.log('[updateQuest] User-created quest: updating quests table with quest fields only');
           const { data, error: updateError } = await supabase
             .from("quests")
             .update({
-              ...updates,
+              ...questFields,
               updated_at: new Date().toISOString(),
             })
             .eq("id", id)
             .select()
             .maybeSingle();
 
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error('[updateQuest] Error updating quests table:', updateError);
+            throw updateError;
+          }
           if (!data) {
-            // Update returned 0 rows - likely RLS blocked it or quest was deleted
+            console.error('[updateQuest] Update returned 0 rows - RLS blocked or quest deleted');
             throw new Error("Quest update was blocked or quest not found");
           }
+          console.log('[updateQuest] Successfully updated quests table');
           setQuests((prev) => {
             const updated = prev.map((q) => (q.id === id ? data : q));
             return updated.sort((a, b) => a.name.localeCompare(b.name));
           });
-          return data;
-        } else {
-          // Seeded quest - update user override and patch local state
-          const overrideUpdates: any = {};
-          if (updates.name !== undefined) overrideUpdates.name = updates.name;
-          if (updates.tags !== undefined) overrideUpdates.tags = updates.tags;
-          if (updates.reward !== undefined)
-            overrideUpdates.reward = updates.reward;
-          if (updates.dollar_amount !== undefined)
-            overrideUpdates.dollar_amount = updates.dollar_amount;
-          if (updates.reward_item_id !== undefined)
-            overrideUpdates.reward_item_id = updates.reward_item_id;
-          if (updates.reward_rarity !== undefined)
-            overrideUpdates.reward_rarity = updates.reward_rarity;
-
-          await updateOverride(id, overrideUpdates);
-          // Update local state optimistically - merge override with base quest
-          setQuests((prev) => {
-            const existing = prev.find((q) => q.id === id);
-            if (!existing) return prev;
-            const merged = mergeQuestWithOverrides({ ...existing, ...updates });
-            return prev
-              .map((q) => (q.id === id ? merged : q))
-              .sort((a, b) => a.name.localeCompare(b.name));
-          });
-          // Return the updated quest from state
-          const updated = quests.find((q) => q.id === id);
-          return updated
-            ? mergeQuestWithOverrides({ ...updated, ...updates })
-            : null;
         }
+
+        // ALWAYS update override (for both user-created and seeded quests) if override fields exist
+        if (Object.keys(overrideUpdates).length > 0) {
+          console.log('[updateQuest] Updating user_quest_overrides with override fields');
+          await updateOverride(id, overrideUpdates);
+          console.log('[updateQuest] Successfully updated user_quest_overrides');
+        }
+
+        // Refresh quests state to get merged view
+        await loadQuests();
+
+        // Return the merged quest from state
+        const updated = quests.find((q) => q.id === id);
+        const merged = updated ? mergeQuestWithOverrides(updated) : null;
+        console.log('[updateQuest] Returning merged quest:', merged ? merged.id : null);
+        return merged;
       } catch (err: any) {
         console.error("Error updating quest:", err);
         setError(err.message || "Failed to update quest");
@@ -288,16 +307,18 @@ export function useQuests() {
           throw new Error("Failed to start quest: no data returned");
         }
 
-        console.log("startQuest: successfully updated override", { questId, status: data.status, overrideId: data.id });
+          console.log("[startQuest] Successfully updated override", { questId, status: data.status, overrideId: data.id });
 
-        // Immediately refresh overrides first, then quests
-        await refreshOverrides();
-        
-        // Then refresh quests to get updated merged state
-        await loadQuests();
-        
-        // Return null - component will refresh and get updated quest from state
-        return null;
+                  // Immediately refresh overrides first, then quests
+                  await refreshOverrides();
+                  console.log("[startQuest] Refreshed overrides");
+                  
+                  // Then refresh quests to get updated merged state
+                  await loadQuests();
+                  console.log("[startQuest] Refreshed quests");
+                  
+                  // Return null - component will refresh and get updated quest from state
+                  return null;
       } catch (err: any) {
         console.error("Error starting quest:", err);
         throw err;
@@ -417,6 +438,12 @@ export function useQuests() {
           );
         }
 
+        console.log('[completeQuest] Starting quest completion for quest:', questId, {
+          reward,
+          dollarAmount,
+          userId: user.id,
+        });
+
         // Dual-write: Also insert into activity_logs for calendar/timeline
         // This is best-effort - if it fails, the primary action (quest_log + wallet update) still succeeds
         try {
@@ -523,12 +550,14 @@ export function useQuests() {
           console.error("Supabase error details:", JSON.stringify(overrideUpdateError, null, 2));
           // Don't throw, as the core completion (log + wallet) already happened
         } else {
-          console.log("completeQuest: successfully updated override", { questId, status: updatedOverride?.status, completion_count: updatedOverride?.completion_count });
+          console.log("[completeQuest] Successfully updated override", { questId, status: updatedOverride?.status, completion_count: updatedOverride?.completion_count });
         }
 
         // Immediately refresh overrides first, then quests
         await refreshOverrides();
+        console.log("[completeQuest] Refreshed overrides");
         await loadQuests();
+        console.log("[completeQuest] Refreshed quests - completion complete");
       } catch (err: any) {
         console.error("Error completing quest:", err);
         setError(err.message || "Failed to complete quest");

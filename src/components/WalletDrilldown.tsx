@@ -34,16 +34,21 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
   }, [isOpen]);
 
   const loadTransactionHistory = async () => {
+    console.log('[WalletDrilldown] Loading transaction history...');
     setLoadingLogs(true);
     try {
       const [quests, shops] = await Promise.all([
         loadAllQuestLogs(),
         loadAllShopLogs(),
       ]);
+      console.log('[WalletDrilldown] Loaded quest logs:', quests.length, 'shop logs:', shops.length);
       setQuestLogs(quests);
       setShopLogs(shops);
     } catch (err) {
-      console.error("Error loading transaction history:", err);
+      console.error("[WalletDrilldown] Error loading transaction history:", err);
+      // Still set empty arrays to avoid blank screen
+      setQuestLogs([]);
+      setShopLogs([]);
     } finally {
       setLoadingLogs(false);
     }
@@ -51,6 +56,12 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
 
   // OverlayContainer handles body scroll and early return, so remove duplicate logic
   if (!isOpen) return null;
+
+  console.log('[WalletDrilldown] Rendering with wallet:', wallet, 'loading:', walletLoading, 'logs:', {
+    questLogs: questLogs.length,
+    shopLogs: shopLogs.length,
+    loadingLogs,
+  });
 
   const total = wallet?.total ?? 0;
   const dollarTotal = wallet?.dollar_total ?? 0;
