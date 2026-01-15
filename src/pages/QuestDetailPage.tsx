@@ -565,8 +565,9 @@ export function QuestDetailPage() {
                   <input
                     type="checkbox"
                     checked={task.completed}
-                    onChange={(e) => toggleTask(task.id, e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+                    readOnly
+                    disabled
+                    className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed"
                   />
                   <span className={`flex-1 ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
                     {task.name}
@@ -625,32 +626,21 @@ export function QuestDetailPage() {
                   <div key={habit.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-gray-900 dark:text-gray-100">{habit.name}</span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setProgressLogMode('habit');
-                            setShowProgressLogModal(true);
-                          }}
-                          className="px-3 py-1 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 transition-colors"
-                        >
-                          Log
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (window.confirm(`Delete habit "${habit.name}"?`)) {
-                              try {
-                                await deleteHabit(habit.id);
-                              } catch (err) {
-                                console.error("Error deleting habit:", err);
-                                alert("Failed to delete habit");
-                              }
+                      <button
+                        onClick={async () => {
+                          if (window.confirm(`Delete habit "${habit.name}"?`)) {
+                            try {
+                              await deleteHabit(habit.id);
+                            } catch (err) {
+                              console.error("Error deleting habit:", err);
+                              alert("Failed to delete habit");
                             }
-                          }}
-                          className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                          }
+                        }}
+                        className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
+                      >
+                        Delete
+                      </button>
                     </div>
                     {lastLog && (
                       <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -696,7 +686,11 @@ export function QuestDetailPage() {
         questId={id || ""}
         tasks={tasks}
         habits={habits}
-        onToggleTask={toggleTask}
+        onToggleTask={async (taskId: string, completed: boolean) => {
+          // Task completion is now only done through ProgressLogModal
+          // This handler is required by the modal but tasks are toggled within the modal
+          await toggleTask(taskId, completed);
+        }}
         onProgressComplete={handleProgressLogComplete}
         mode={progressLogMode}
       />
