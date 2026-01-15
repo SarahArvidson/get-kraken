@@ -37,7 +37,9 @@ export function QuestDetailPage() {
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showProgressLogModal, setShowProgressLogModal] = useState(false);
-  const [questStatus, setQuestStatus] = useState<'idle' | 'active' | 'completed'>('idle');
+  // Quest status is derived from merged quest list - single source of truth
+  const baseQuest = id ? quests.find((q) => q.id === id) : null;
+  const questStatus = baseQuest?.status || 'idle';
 
   useEffect(() => {
     if (!id) {
@@ -65,7 +67,7 @@ export function QuestDetailPage() {
             associated_item_id: questWithLogs.reward_item_id || undefined,
           });
           setQuestDetail(detail);
-          setQuestStatus(questWithLogs.status);
+          // Status comes from merged quest list, not from getQuestWithLogs
         } else {
           // Load logs
           const questWithLogs = await getQuestWithLogs(id);
@@ -77,8 +79,7 @@ export function QuestDetailPage() {
             });
             setQuestDetail(detail);
           }
-          // Use effective status from merged quest (comes from override or defaults to 'idle')
-          setQuestStatus(quest.status || 'idle');
+          // Status comes from merged quest list (quest.status), not local state
         }
       } catch (error) {
         console.error('Error loading quest detail:', error);
@@ -157,9 +158,8 @@ export function QuestDetailPage() {
     try {
       // Complete the quest (writes to quest_logs, updates wallet, and sets status to 'completed')
       await completeQuest(id, questDetail.reward, questDetail.dollar_amount || 0);
-      setQuestStatus('completed');
       setShowCompleteConfirm(false);
-      // Refresh quest list to update status
+      // completeQuest already calls loadQuests() internally
       await refresh();
       navigate('/quests');
     } catch (error) {
@@ -178,43 +178,25 @@ export function QuestDetailPage() {
     // Log the quest id being passed - this is the base quest id from URL params
     console.log('[handleStartQuest] Quest id from URL:', id, 'type:', typeof id);
     
-    // Verify this is the base quest id, not an override id
-    const baseQuest = quests.find(q => q.id === id);
-    if (!baseQuest) {
+    // Verify quest exists in list
+    const questInList = quests.find(q => q.id === id);
+    if (!questInList) {
       console.warn('[handleStartQuest] WARNING: Quest not found in current quests list, id:', id);
       console.log('[handleStartQuest] Available quest ids:', quests.map(q => q.id));
     } else {
-      console.log('[handleStartQuest] Found base quest:', { 
-        id: baseQuest.id, 
-        name: baseQuest.name, 
-        currentStatus: baseQuest.status 
+      console.log('[handleStartQuest] Found quest:', { 
+        id: questInList.id, 
+        name: questInList.name, 
+        currentStatus: questInList.status 
       });
     }
     
     try {
       console.log('[handleStartQuest] Calling startQuest...');
-      const result = await startQuest(id);
-      console.log('[handleStartQuest] startQuest returned:', result);
-      
-      // Refresh quests to get updated merged state
-      console.log('[handleStartQuest] Refreshing quests...');
+      await startQuest(id);
+      // startQuest already calls loadQuests() internally, so just refresh to ensure UI updates
       await refresh();
-      console.log('[handleStartQuest] Quests refreshed');
-      
-      // Read status from refreshed quest (startQuest already updated overrides and loaded quests)
-      // Get fresh quest data to read effective status
-      const refreshedQuest = await getQuestWithLogs(id);
-      if (refreshedQuest) {
-        const effectiveStatus = refreshedQuest.status || 'active';
-        console.log('[handleStartQuest] Setting status from refreshed quest:', effectiveStatus);
-        setQuestStatus(effectiveStatus);
-      } else {
-        // Fallback: set to active since startQuest succeeded
-        console.log('[handleStartQuest] Setting status to active (fallback)');
-        setQuestStatus('active');
-      }
-      
-      console.log('[handleStartQuest] COMPLETE');
+      console.log('[handleStartQuest] COMPLETE - UI will re-render from quests list');
     } catch (error: any) {
       console.error('[handleStartQuest] ERROR:', error);
       console.error('[handleStartQuest] Error details:', JSON.stringify(error, null, 2));
@@ -225,11 +207,9 @@ export function QuestDetailPage() {
   const handleRestartQuest = async () => {
     if (!id) return;
     try {
-      const updated = await restartQuest(id);
-      if (updated) {
-        setQuestStatus('active');
-        await refresh();
-      }
+      await restartQuest(id);
+      // restartQuest already calls loadQuests() internally
+      await refresh();
     } catch (error) {
       console.error('Error restarting quest:', error);
     }
@@ -283,8 +263,7 @@ export function QuestDetailPage() {
     }
   };
 
-  // Get the base quest for editing
-  const baseQuest = quests.find((q) => q.id === id) || null;
+  // baseQuest is already declared above for status derivation - reuse it for editing
 
   if (detailLoading || loading) {
     return (
@@ -563,6 +542,7 @@ export function QuestDetailPage() {
               await updateQuest(id, updates);
               setShowEditModal(false);
               // Update local quest detail state directly without triggering useEffect reload
+              // Status comes from merged quest list (baseQuest.status), not from getQuestWithLogs
               const questWithLogs = await getQuestWithLogs(id);
               if (questWithLogs) {
                 const userCompletionCount = questWithLogs.logs.length;
@@ -571,8 +551,6 @@ export function QuestDetailPage() {
                   associated_item_id: questWithLogs.reward_item_id || undefined,
                 });
                 setQuestDetail(detail);
-                // Update status from refreshed quest
-                setQuestStatus(questWithLogs.status || 'idle');
               }
             } catch (err) {
               console.error('[QuestDetailPage] Error updating quest:', err);

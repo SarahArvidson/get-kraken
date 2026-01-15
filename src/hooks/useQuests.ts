@@ -308,13 +308,9 @@ export function useQuests() {
 
           console.log("[startQuest] Successfully updated override", { questId, status: data.status, overrideId: data.id });
 
-                  // Immediately refresh overrides first, then quests
-                  await refreshOverrides();
-                  console.log("[startQuest] Refreshed overrides");
-                  
-                  // Then refresh quests to get updated merged state
+                  // Refresh quests to get updated merged state (this is the single source of truth)
                   await loadQuests();
-                  console.log("[startQuest] Refreshed quests");
+                  console.log("[startQuest] Refreshed quests - UI will re-render from quests list");
                   
                   // Return null - component will refresh and get updated quest from state
                   return null;
@@ -365,8 +361,7 @@ export function useQuests() {
 
         console.log("restartQuest: successfully updated override", { questId, status: data.status });
 
-        // Immediately refresh overrides first, then quests
-        await refreshOverrides();
+        // Refresh quests to get updated merged state (single source of truth)
         await loadQuests();
         
         // Return the merged quest
