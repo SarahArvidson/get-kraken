@@ -239,7 +239,13 @@ export function ProgressLogModal({
           <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Log Progress
+                {mode === "habit"
+                  ? "Log a Habit"
+                  : mode === "task"
+                  ? "Complete Tasks"
+                  : mode === "note"
+                  ? "Add a Note"
+                  : "Log Progress"}
               </h2>
               <button
                 onClick={onClose}
