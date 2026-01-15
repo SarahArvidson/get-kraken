@@ -1,32 +1,33 @@
 /**
- * Get Kraken v2 - Habit Logging Modal
+ * Get Kraken v2 - Task Logging Modal
  * 
- * Modal for logging habit difficulty and money saved
+ * Modal for logging task completion with difficulty and money saved
  */
 
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { saveLastHabitLog } from "../utils/questDataMapping";
 import { logDualWriteError } from "../utils/dualWriteLogger";
 import { playCoinSound } from "../utils/sound";
 
-interface HabitLogModalProps {
+interface TaskLogModalProps {
   isOpen: boolean;
   onClose: () => void;
-  habitId: string;
-  habitName: string;
+  taskId: string;
+  taskName: string;
   questId: string;
   onLogComplete: () => void;
+  onToggleTask: (taskId: string, completed: boolean) => Promise<void>;
 }
 
-export function HabitLogModal({
+export function TaskLogModal({
   isOpen,
   onClose,
-  habitId,
-  habitName,
+  taskId,
+  taskName,
   questId,
+  onToggleTask,
   onLogComplete,
-}: HabitLogModalProps) {
+}: TaskLogModalProps) {
   const [difficulty, setDifficulty] = useState(5);
   const [savedMoney, setSavedMoney] = useState(false);
   const [dollarAmount, setDollarAmount] = useState("");
@@ -44,27 +45,14 @@ export function HabitLogModal({
         if (!user) return;
         setUserId(user.id);
 
-        // Try to load from localStorage first (format: getkraken:habit-autofill:{userId}:{habitId})
-        const storageKey = `getkraken:habit-autofill:${user.id}:${habitId}`;
+        // Try to load from localStorage (format: getkraken:task-autofill:{userId}:{taskId})
+        const storageKey = `getkraken:task-autofill:${user.id}:${taskId}`;
         const stored = localStorage.getItem(storageKey);
         if (stored) {
           const autofill = JSON.parse(stored);
           setDifficulty(autofill.difficulty || 5);
           setSavedMoney(autofill.saved_money || false);
           setDollarAmount(autofill.dollars_saved?.toString() || "");
-        } else {
-          // Fallback to old format for compatibility
-          try {
-            const oldStored = localStorage.getItem(`habit_last_log_${habitId}`);
-            if (oldStored) {
-              const oldFormat = JSON.parse(oldStored);
-              setDifficulty(oldFormat.difficulty);
-              setSavedMoney(oldFormat.saved_money);
-              setDollarAmount(oldFormat.dollars_saved?.toString() || "");
-            }
-          } catch (error) {
-            // Ignore errors in fallback
-          }
         }
       } catch (error) {
         console.error('Error loading autofill:', error);
@@ -72,7 +60,7 @@ export function HabitLogModal({
     };
 
     loadAutofill();
-  }, [isOpen, habitId]);
+  }, [isOpen, taskId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +70,8 @@ export function HabitLogModal({
     try {
       const dollarValue = savedMoney && dollarAmount ? parseFloat(dollarAmount) : 0;
 
-      // Save autofill values to localStorage (new format)
-      const storageKey = `getkraken:habit-autofill:${userId}:${habitId}`;
+      // Save autofill values to localStorage
+      const storageKey = `getkraken:task-autofill:${userId}:${taskId}`;
       localStorage.setItem(
         storageKey,
         JSON.stringify({
@@ -93,31 +81,12 @@ export function HabitLogModal({
         })
       );
 
-      // Also save in old format for compatibility
-      saveLastHabitLog(habitId, {
-        difficulty,
-        saved_money: savedMoney,
-        dollars_saved: dollarValue || undefined,
-      });
+      // Mark task as completed
+      await onToggleTask(taskId, true);
 
-      // Insert into habit_logs (primary table)
-      const { error: logError } = await supabase
-        .from("habit_logs")
-        .insert({
-          habit_id: habitId,
-          user_id: userId,
-          difficulty,
-          dollars_saved: dollarValue || 0,
-          logged_at: new Date().toISOString(),
-        });
-
-      if (logError) {
-        console.error('Error creating habit log:', logError);
-        throw logError;
-      }
-
-      // Dual-write: Also insert into activity_logs for calendar/timeline
-      // This is best-effort - if it fails, the primary action (habit_logs) still succeeds
+      // Log to activity_logs (tasks don't have a separate table, so we log as activity)
+      // Use habit_log action_type since it supports difficulty and dollars_saved
+      // quest_id links it to the quest, and we don't set habit_id
       try {
         const now = new Date().toISOString();
         const { error: activityLogError } = await supabase
@@ -125,30 +94,32 @@ export function HabitLogModal({
           .insert({
             user_id: userId,
             quest_id: questId || null,
-            habit_id: habitId,
-            action_type: 'habit_log',
+            habit_id: null, // Tasks don't have habit_id
+            action_type: 'habit_log', // Reuse habit_log type for task logging
             difficulty: difficulty,
             dollars_saved: dollarValue > 0 ? dollarValue : null,
             logged_at: now,
           });
 
         if (activityLogError) {
+          console.error('Error creating activity log for task:', activityLogError);
           logDualWriteError(
-            'habit_log',
+            'task_log',
             'activity_logs',
             activityLogError,
             userId,
-            { questId, habitId, difficulty, dollarValue }
+            { questId, taskId, difficulty, dollarValue }
           );
-          // Don't throw - activity logging is best effort, existing habit_logs still work
+          // Don't throw - activity logging is best effort
         }
       } catch (error) {
+        console.error('Exception creating activity log for task:', error);
         logDualWriteError(
-          'habit_log',
+          'task_log',
           'activity_logs',
           error,
           userId,
-          { questId, habitId, difficulty, dollarValue }
+          { questId, taskId, difficulty, dollarValue }
         );
         // Don't throw - activity logging is best effort
       }
@@ -167,8 +138,8 @@ export function HabitLogModal({
       setSavedMoney(false);
       setDollarAmount("");
     } catch (error) {
-      console.error('Error logging habit:', error);
-      alert('Failed to log habit. Please try again.');
+      console.error('Error logging task:', error);
+      alert('Failed to log task. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -190,7 +161,7 @@ export function HabitLogModal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
-        aria-label={`Log habit: ${habitName}`}
+        aria-label={`Log task: ${taskName}`}
       >
         <div
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-6"
@@ -198,7 +169,7 @@ export function HabitLogModal({
         >
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Log Habit: {habitName}
+              Complete Task: {taskName}
             </h2>
             <button
               onClick={onClose}
@@ -288,7 +259,7 @@ export function HabitLogModal({
                 disabled={loading}
                 className="flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? "Logging..." : "Log Habit"}
+                {loading ? "Logging..." : "Complete Task"}
               </button>
             </div>
           </form>

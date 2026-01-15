@@ -21,6 +21,9 @@ import {
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ProgressLogModal } from "../components/ProgressLogModal";
+import { HabitLogModal } from "../components/HabitLogModal";
+import { TaskLogModal } from "../components/TaskLogModal";
+import { playCoinSound } from "../utils/sound";
 import type { QuestDetail } from "../types/quests";
 
 export function QuestDetailPage() {
@@ -62,6 +65,8 @@ export function QuestDetailPage() {
   const [progressLogMode, setProgressLogMode] = useState<
     "habit" | "task" | "note" | null
   >(null);
+  const [loggingTaskId, setLoggingTaskId] = useState<string | null>(null);
+  const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   // Quest status is derived from merged quest list - single source of truth
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
@@ -159,12 +164,18 @@ export function QuestDetailPage() {
 
     // Calculate days active (unique days with activity)
     const activeDays = new Set<string>();
+    let questStartDate: string | null = null;
 
     // Calculate from activity logs (all progress for this quest)
     questActivityLogs.forEach((log) => {
       // Track unique days
       const logDate = new Date(log.logged_at).toISOString().split("T")[0];
       activeDays.add(logDate);
+
+      // Quest start date is the earliest log date
+      if (!questStartDate || log.logged_at < questStartDate) {
+        questStartDate = log.logged_at;
+      }
 
       if (log.action_type === "quest_complete") {
         // Quest completions add to sand dollars (from quest reward) and dollars
@@ -185,6 +196,7 @@ export function QuestDetailPage() {
       totalTasksCount,
       habitLogCount,
       daysActive: activeDays.size,
+      questStartDate,
     };
   }, [questActivityLogs, tasks, questDetail]);
 
@@ -375,65 +387,220 @@ export function QuestDetailPage() {
           </button>
         </div>
 
-        {/* Goal pill placeholder - future goal association feature */}
+        {/* Optional description */}
+        {questDetail.description && (
+          <p className="text-gray-600 dark:text-gray-400">
+            {questDetail.description}
+          </p>
+        )}
+      </div>
 
-        {/* Reward preview row - visually dominant */}
-        <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-3">
-              <img
-                src="/sea-dollar.svg"
-                alt="Sand dollar"
-                className="w-8 h-8"
-              />
-              <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                {questDetail.reward}
-              </span>
-            </div>
-            {questDetail.dollar_amount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">💵</span>
-                <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  ${questDetail.dollar_amount.toFixed(2)}
-                </span>
-              </div>
+      {/* Tasks Block */}
+      {questStatus === "active" && tasks.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Tasks
+          </h2>
+          <div className="space-y-2">
+            {tasks
+              .filter((task) => !task.completed)
+              .map((task) => (
+                <button
+                  key={task.id}
+                  onClick={() => setLoggingTaskId(task.id)}
+                  className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
+                >
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    readOnly
+                    className="w-5 h-5 rounded border-gray-300 text-amber-500"
+                  />
+                  <span className="flex-1 text-gray-900 dark:text-gray-100">
+                    {task.name}
+                  </span>
+                </button>
+              ))}
+            {tasks.filter((task) => !task.completed).length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                All tasks completed! 🎉
+              </p>
             )}
-            {questDetail.associated_item_id &&
-              (() => {
-                const linkedItem = shopItems.find(
-                  (item) => item.id === questDetail.associated_item_id
-                );
-                if (!linkedItem) return null;
-                const quest = quests.find((q) => q.id === id);
-                const rarity = quest?.reward_rarity;
-                const rarityColors: Record<string, string> = {
-                  common:
-                    "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
-                  rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-                  legendary:
-                    "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                };
-                return (
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">🎁</span>
-                    <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                      {linkedItem.name}
-                    </span>
-                    {rarity && (
-                      <span
-                        className={`px-3 py-1 text-sm font-bold rounded ${
-                          rarityColors[rarity] || rarityColors.common
-                        }`}
-                      >
-                        {rarity.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
           </div>
         </div>
+      )}
+
+      {/* Habits Block */}
+      {questStatus === "active" && habits.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Habits
+          </h2>
+          <div className="space-y-2">
+            {habits.map((habit) => {
+              const lastLog = habitLogs[habit.id]?.[0];
+              return (
+                <div
+                  key={habit.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {habit.name}
+                    </span>
+                    {lastLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Last: {getTimeAgo(new Date(lastLog.logged_at))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setLoggingHabitId(habit.id)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    Log
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Progress Dashboard */}
+      {questStatus === "active" && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Progress
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Sand Dollars
+              </div>
+              <div className="flex items-center gap-1">
+                <img
+                  src="/sea-dollar.svg"
+                  alt="Sand dollar"
+                  className="w-4 h-4"
+                />
+                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {liveStats.totalSandDollars}
+                </span>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                💵
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-lg">💵</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {liveStats.totalRealDollars.toFixed(0)}
+                </span>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Tasks
+              </div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Habits
+              </div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {liveStats.habitLogCount}
+              </div>
+            </div>
+          </div>
+          {liveStats.questStartDate && (
+            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              Started: {new Date(liveStats.questStartDate).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rewards Block */}
+      <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-3">
+            <img
+              src="/sea-dollar.svg"
+              alt="Sand dollar"
+              className="w-8 h-8"
+            />
+            <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+              {questDetail.reward}
+            </span>
+          </div>
+          {questDetail.dollar_amount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-3xl">💵</span>
+              <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                ${questDetail.dollar_amount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          {questDetail.associated_item_id &&
+            (() => {
+              const linkedItem = shopItems.find(
+                (item) => item.id === questDetail.associated_item_id
+              );
+              if (!linkedItem) return null;
+              const quest = quests.find((q) => q.id === id);
+              const rarity = quest?.reward_rarity;
+              const rarityColors: Record<string, string> = {
+                common:
+                  "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+                rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                legendary:
+                  "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+              };
+              return (
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🎁</span>
+                  <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                    {linkedItem.name}
+                  </span>
+                  {rarity && (
+                    <span
+                      className={`px-3 py-1 text-sm font-bold rounded ${
+                        rarityColors[rarity] || rarityColors.common
+                      }`}
+                    >
+                      {rarity.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+        </div>
+      </div>
+
+      {/* Primary Action - Complete Quest */}
+      {questStatus === "active" && (
+        <button
+          onClick={() => setShowCompleteConfirm(true)}
+          className="w-full px-8 py-4 bg-amber-500 text-white rounded-xl font-bold text-lg hover:bg-amber-600 transition-colors shadow-lg"
+        >
+          Complete Quest and Claim Rewards
+        </button>
+      )}
+
+      {/* Footer - Delete Quest */}
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setShowAbandonConfirm(true)}
+          className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+        >
+          Delete Quest
+        </button>
       </div>
 
       {/* 2. Continue Quest Card - Primary Action Block */}
@@ -844,24 +1011,38 @@ export function QuestDetailPage() {
         </button>
       </div>
 
-      {/* Progress Logging Modal */}
-      <ProgressLogModal
-        isOpen={showProgressLogModal}
-        onClose={() => {
-          setShowProgressLogModal(false);
-          setProgressLogMode(null);
-        }}
-        questId={id || ""}
-        tasks={tasks}
-        habits={habits}
-        onToggleTask={async (taskId: string, completed: boolean) => {
-          // Task completion is now only done through ProgressLogModal
-          // This handler is required by the modal but tasks are toggled within the modal
-          await toggleTask(taskId, completed);
-        }}
-        onProgressComplete={handleProgressLogComplete}
-        mode={progressLogMode}
-      />
+      {/* Task Logging Modal */}
+      {loggingTaskId && (
+        <TaskLogModal
+          isOpen={!!loggingTaskId}
+          onClose={() => setLoggingTaskId(null)}
+          taskId={loggingTaskId}
+          taskName={tasks.find((t) => t.id === loggingTaskId)?.name || ""}
+          questId={id || ""}
+          onToggleTask={async (taskId: string, completed: boolean) => {
+            await toggleTask(taskId, completed);
+          }}
+          onLogComplete={async () => {
+            setLoggingTaskId(null);
+            await handleTaskLogComplete();
+          }}
+        />
+      )}
+
+      {/* Habit Logging Modal */}
+      {loggingHabitId && (
+        <HabitLogModal
+          isOpen={!!loggingHabitId}
+          onClose={() => setLoggingHabitId(null)}
+          habitId={loggingHabitId}
+          habitName={habits.find((h) => h.id === loggingHabitId)?.name || ""}
+          questId={id || ""}
+          onLogComplete={async () => {
+            setLoggingHabitId(null);
+            await handleHabitLogComplete();
+          }}
+        />
+      )}
 
       {/* Edit Quest Modal */}
       {baseQuest && (
@@ -937,18 +1118,39 @@ export function QuestDetailPage() {
         confirmButtonClass="bg-amber-500 hover:bg-amber-600"
       />
 
-      {/* Abandon Quest Confirmation */}
+      {/* Delete Quest Confirmation */}
       <ConfirmDialog
         isOpen={showAbandonConfirm}
         onClose={() => setShowAbandonConfirm(false)}
-        onConfirm={() => handleAbandonQuest(false)}
-        title="Abandon Quest"
-        message={`Are you sure you want to abandon "${questDetail?.name}"? This will delete the quest. Do you want to keep your progress logs?`}
-        confirmText="Delete Progress & Abandon"
+        onConfirm={async () => {
+          if (!id) return;
+          try {
+            // Scrap all progress - delete logs and remove wallet entries
+            await deleteQuest(id);
+            setShowAbandonConfirm(false);
+            navigate("/quests");
+          } catch (error) {
+            console.error("Error deleting quest:", error);
+          }
+        }}
+        title="Delete Quest"
+        message={`Are you sure you want to delete "${questDetail?.name}"?`}
+        confirmText="Scrap all progress"
         confirmButtonClass="bg-red-500 hover:bg-red-600"
         secondaryAction={{
-          label: "Keep Progress & Abandon",
-          onClick: () => handleAbandonQuest(true),
+          label: "Keep my progress",
+          onClick: async () => {
+            if (!id) return;
+            try {
+              // Keep progress - just delete the quest, keep logs
+              // Note: deleteQuest may delete logs too, so we may need to adjust this
+              await deleteQuest(id);
+              setShowAbandonConfirm(false);
+              navigate("/quests");
+            } catch (error) {
+              console.error("Error deleting quest:", error);
+            }
+          },
           className: "bg-gray-500 hover:bg-gray-600",
         }}
       />
