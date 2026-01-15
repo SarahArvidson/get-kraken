@@ -20,10 +20,8 @@ import {
 } from "../utils/questDataMapping";
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { ProgressLogModal } from "../components/ProgressLogModal";
 import { HabitLogModal } from "../components/HabitLogModal";
 import { TaskLogModal } from "../components/TaskLogModal";
-import { playCoinSound } from "../utils/sound";
 import type { QuestDetail } from "../types/quests";
 
 export function QuestDetailPage() {
@@ -61,10 +59,6 @@ export function QuestDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [showProgressLogModal, setShowProgressLogModal] = useState(false);
-  const [progressLogMode, setProgressLogMode] = useState<
-    "habit" | "task" | "note" | null
-  >(null);
   const [loggingTaskId, setLoggingTaskId] = useState<string | null>(null);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   // Quest status is derived from merged quest list - single source of truth
@@ -289,11 +283,24 @@ export function QuestDetailPage() {
     }
   };
 
-  const handleProgressLogComplete = async () => {
+  const handleTaskLogComplete = async () => {
     if (!id) return;
-    // Refresh habits to show updated logs
+    await loadActivityLogs();
+    // Refresh tasks to show updated state
+    const questWithLogs = await getQuestWithLogs(id);
+    if (questWithLogs && questDetail) {
+      const userCompletionCount = questWithLogs.logs.length;
+      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+        associated_item_id: questWithLogs.reward_item_id || undefined,
+      });
+      setQuestDetail(detail);
+    }
+  };
+
+  const handleHabitLogComplete = async () => {
+    if (!id) return;
     await refreshHabits();
-    // Reload activity logs to update live stats and feed
     await loadActivityLogs();
     // Reload quest detail to show updated logs
     const questWithLogs = await getQuestWithLogs(id);
@@ -320,21 +327,6 @@ export function QuestDetailPage() {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
-  };
-
-  const handleAbandonQuest = async (keepProgress: boolean) => {
-    if (!id) return;
-    try {
-      if (!keepProgress) {
-        // Delete quest logs if user wants to delete progress
-        // This would require additional logic to delete logs
-      }
-      await deleteQuest(id);
-      setShowAbandonConfirm(false);
-      navigate("/quests");
-    } catch (error) {
-      console.error("Error abandoning quest:", error);
-    }
   };
 
   // baseQuest is already declared above for status derivation - reuse it for editing
@@ -674,11 +666,7 @@ export function QuestDetailPage() {
                         )}
                       </div>
                       <button
-                        onClick={() => {
-                          setProgressLogMode("habit");
-                          // Store which habit to log
-                          setShowProgressLogModal(true);
-                        }}
+                        onClick={() => setLoggingHabitId(habit.id)}
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
                       >
                         Log
@@ -690,18 +678,6 @@ export function QuestDetailPage() {
             </div>
           )}
 
-          {/* Add Progress Note */}
-          <div>
-            <button
-              onClick={() => {
-                setProgressLogMode("note");
-                setShowProgressLogModal(true);
-              }}
-              className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              Add a Progress Note
-            </button>
-          </div>
         </div>
       )}
 
