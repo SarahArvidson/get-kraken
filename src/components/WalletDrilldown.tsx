@@ -49,18 +49,7 @@ export function WalletDrilldown({ isOpen, onClose }: WalletDrilldownProps) {
     }
   };
 
-  // Prevent body scroll when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
+  // OverlayContainer handles body scroll and early return, so remove duplicate logic
   if (!isOpen) return null;
 
   const total = wallet?.total ?? 0;

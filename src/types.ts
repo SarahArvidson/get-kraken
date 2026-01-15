@@ -48,6 +48,7 @@ export interface UserQuestOverride {
   tags: Tag[] | null;
   reward: number | null;
   dollar_amount: number | null;
+  reward_item_id: string | null; // associated reward item (per-user override)
   status: 'idle' | 'active' | 'completed'; // quest lifecycle status (per-user, required with default 'idle')
   completion_count: number; // per-user completion count (required with default 0)
   completed_at: string | null; // last completion timestamp

@@ -156,52 +156,9 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
-        // Handle completion_count - single mutation: set count directly via log adjustment
+        // NEVER delete progress logs - completion_count is derived from logs, not editable
+        // Remove completion_count from updates if present (it's read-only)
         if (updates.completion_count !== undefined) {
-          const targetCount = updates.completion_count;
-
-          // Get current count
-          const { count: currentCount } = await supabase
-            .from("quest_logs")
-            .select("*", { count: "exact", head: true })
-            .eq("quest_id", id)
-            .eq("user_id", user.id);
-
-          const difference = targetCount - (currentCount || 0);
-
-          if (difference > 0) {
-            // Add log entries
-            const newLogs = Array.from({ length: difference }, () => ({
-              quest_id: id,
-              user_id: user.id,
-              completed_at: new Date().toISOString(),
-            }));
-            const { error: logError } = await supabase
-              .from("quest_logs")
-              .insert(newLogs);
-            if (logError) throw logError;
-          } else if (difference < 0) {
-            // Remove oldest log entries
-            const { data: logsToDelete } = await supabase
-              .from("quest_logs")
-              .select("id")
-              .eq("quest_id", id)
-              .eq("user_id", user.id)
-              .order("completed_at", { ascending: true })
-              .limit(Math.abs(difference));
-
-            if (logsToDelete && logsToDelete.length > 0) {
-              const idsToDelete = logsToDelete.map(
-                (log: { id: string }) => log.id
-              );
-              const { error: deleteError } = await supabase
-                .from("quest_logs")
-                .delete()
-                .in("id", idsToDelete);
-              if (deleteError) throw deleteError;
-            }
-          }
-          // Remove completion_count from updates since we handled it via logs
           const { completion_count, ...restUpdates } = updates;
           updates = restUpdates;
         }

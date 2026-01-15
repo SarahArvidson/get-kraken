@@ -50,8 +50,9 @@ export function GoalEditModal({
       return;
     }
 
-    if (!sandDollars || parseInt(sandDollars) <= 0) {
-      setError("Sand dollar amount must be greater than 0");
+    // Zero values are valid - only block negative values
+    if (sandDollars && parseInt(sandDollars) < 0) {
+      setError("Sand dollar amount cannot be negative");
       return;
     }
 
