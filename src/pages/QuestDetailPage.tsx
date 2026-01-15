@@ -32,6 +32,8 @@ export function QuestDetailPage() {
     loading,
     getQuestWithLogs,
     updateQuest,
+    startQuest,
+    restartQuest,
     completeQuest,
     deleteQuest,
     refresh,
@@ -43,9 +45,7 @@ export function QuestDetailPage() {
     createHabit,
     habitLogs,
   } = useQuestHabits(id || null);
-  const { tasks, toggleTask, createTask } = useQuestTasks(
-    id || null
-  );
+  const { tasks, toggleTask, createTask } = useQuestTasks(id || null);
   const questMetadata = useQuestMetadata();
   const { logs: allActivityLogs, loadActivityLogs } = useActivityLogs({
     questMetadata: questMetadata.metadata,
@@ -198,6 +198,26 @@ export function QuestDetailPage() {
     setQuestDetail({ ...questDetail, isStarred: newStarred });
   };
 
+  const handleStartQuest = async () => {
+    if (!id) return;
+    try {
+      await startQuest(id);
+      await refresh();
+    } catch (error) {
+      console.error("Error starting quest:", error);
+    }
+  };
+
+  const handleRestartQuest = async () => {
+    if (!id) return;
+    try {
+      await restartQuest(id);
+      await refresh();
+    } catch (error) {
+      console.error("Error restarting quest:", error);
+    }
+  };
+
   const handleCompleteQuest = async () => {
     if (!id || !questDetail) return;
     try {
@@ -215,7 +235,6 @@ export function QuestDetailPage() {
       console.error("Error completing quest:", error);
     }
   };
-
 
   const handleTaskLogComplete = async () => {
     if (!id) return;
@@ -353,19 +372,40 @@ export function QuestDetailPage() {
             <div className="space-y-2">
               {tasks
                 .filter((task) => !task.completed)
-                .map((task) => (
-                  <button
-                    key={task.id}
-                    onClick={() => setLoggingTaskId(task.id)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
-                  >
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {task.name}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                .map((task) => {
+                  // Find last task completion log (tasks are logged as habit_log with habit_id: null)
+                  const lastTaskLog = questActivityLogs
+                    .filter((log) => {
+                      return (
+                        log.quest_id === id &&
+                        log.action_type === "habit_log" &&
+                        log.habit_id === null
+                      );
+                    })
+                    .sort(
+                      (a, b) =>
+                        new Date(b.logged_at).getTime() -
+                        new Date(a.logged_at).getTime()
+                    )[0];
+                  return (
+                    <button
+                      key={task.id}
+                      onClick={() => setLoggingTaskId(task.id)}
+                      className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
+                    >
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {task.name}
+                        </span>
+                        {lastTaskLog && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               {tasks.filter((task) => !task.completed).length === 0 && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic">
                   All tasks completed! 🎉
@@ -502,11 +542,7 @@ export function QuestDetailPage() {
         </h2>
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <div className="flex items-center gap-3">
-            <img
-              src="/sea-dollar.svg"
-              alt="Sand dollar"
-              className="w-8 h-8"
-            />
+            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-8 h-8" />
             <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
               {questDetail.reward}
             </span>
@@ -625,6 +661,30 @@ export function QuestDetailPage() {
 
       {/* Footer Actions */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+        {questStatus === "idle" && (
+          <button
+            onClick={handleStartQuest}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+          >
+            Start Quest
+          </button>
+        )}
+        {questStatus === "active" && (
+          <button
+            onClick={() => setShowCompleteConfirm(true)}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+          >
+            End Quest
+          </button>
+        )}
+        {questStatus === "completed" && (
+          <button
+            onClick={handleRestartQuest}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+          >
+            Restart Quest
+          </button>
+        )}
         <button
           onClick={() => setShowAbandonConfirm(true)}
           className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
@@ -719,8 +779,8 @@ export function QuestDetailPage() {
           if (!questDetail)
             return "Are you sure you want to complete this quest and claim the rewards?";
           const rewardParts = [];
-          // Use image reference format for sand dollars (matches rewards display)
-          rewardParts.push(`${questDetail.reward} sand dollars`);
+          // Use emoji-only format (matches rewards display)
+          rewardParts.push(`${questDetail.reward} 🪙`);
           if (questDetail.dollar_amount > 0) {
             rewardParts.push(`💵 $${questDetail.dollar_amount.toFixed(2)}`);
           }
