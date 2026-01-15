@@ -388,74 +388,157 @@ export function QuestDetailPage() {
       </div>
 
       {/* Tasks Block */}
-      {questStatus === "active" && tasks.length > 0 && (
+      {questStatus === "active" && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Tasks
-          </h2>
-          <div className="space-y-2">
-            {tasks
-              .filter((task) => !task.completed)
-              .map((task) => (
-                <button
-                  key={task.id}
-                  onClick={() => setLoggingTaskId(task.id)}
-                  className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
-                >
-                  <input
-                    type="checkbox"
-                    checked={false}
-                    readOnly
-                    className="w-5 h-5 rounded border-gray-300 text-amber-500"
-                  />
-                  <span className="flex-1 text-gray-900 dark:text-gray-100">
-                    {task.name}
-                  </span>
-                </button>
-              ))}
-            {tasks.filter((task) => !task.completed).length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                All tasks completed! 🎉
-              </p>
-            )}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Tasks
+            </h2>
+            <button
+              onClick={async () => {
+                const name = prompt("Enter task name:");
+                if (name && name.trim() && id) {
+                  try {
+                    await createTask(name.trim());
+                  } catch (err) {
+                    console.error("Error creating task:", err);
+                    alert("Failed to create task");
+                  }
+                }
+              }}
+              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Add Task
+            </button>
           </div>
+          {tasks.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No tasks yet. Add your first task!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tasks
+                .filter((task) => !task.completed)
+                .map((task) => (
+                  <button
+                    key={task.id}
+                    onClick={() => setLoggingTaskId(task.id)}
+                    className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      readOnly
+                      className="w-5 h-5 rounded border-gray-300 text-amber-500"
+                    />
+                    <span className="flex-1 text-gray-900 dark:text-gray-100">
+                      {task.name}
+                    </span>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete task "${task.name}"?`)) {
+                          try {
+                            await deleteTask(task.id);
+                          } catch (err) {
+                            console.error("Error deleting task:", err);
+                            alert("Failed to delete task");
+                          }
+                        }
+                      }}
+                      className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
+                    >
+                      Delete
+                    </button>
+                  </button>
+                ))}
+              {tasks.filter((task) => !task.completed).length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  All tasks completed! 🎉
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {/* Habits Block */}
-      {questStatus === "active" && habits.length > 0 && (
+      {questStatus === "active" && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Habits
-          </h2>
-          <div className="space-y-2">
-            {habits.map((habit) => {
-              const lastLog = habitLogs[habit.id]?.[0];
-              return (
-                <div
-                  key={habit.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {habit.name}
-                    </span>
-                    {lastLog && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Last: {getTimeAgo(new Date(lastLog.logged_at))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setLoggingHabitId(habit.id)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                  >
-                    Log
-                  </button>
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Habits
+            </h2>
+            <button
+              onClick={async () => {
+                const name = prompt("Enter habit name:");
+                if (name && name.trim() && id) {
+                  try {
+                    await createHabit(name.trim());
+                  } catch (err) {
+                    console.error("Error creating habit:", err);
+                    alert("Failed to create habit");
+                  }
+                }
+              }}
+              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Add Habit
+            </button>
           </div>
+          {habits.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No habits yet. Add your first habit!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {habits.map((habit) => {
+                const lastLog = habitLogs[habit.id]?.[0];
+                return (
+                  <div
+                    key={habit.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {habit.name}
+                      </span>
+                      {lastLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setLoggingHabitId(habit.id)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                      >
+                        Log
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (
+                            window.confirm(`Delete habit "${habit.name}"?`)
+                          ) {
+                            try {
+                              await deleteHabit(habit.id);
+                            } catch (err) {
+                              console.error("Error deleting habit:", err);
+                              alert("Failed to delete habit");
+                            }
+                          }
+                        }}
+                        className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -517,9 +600,12 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Rewards Block */}
+      {/* Rewards Card */}
       <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center gap-6 flex-wrap">
+        <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 text-center">
+          Rewards
+        </h2>
+        <div className="flex items-center justify-center gap-6 flex-wrap">
           <div className="flex items-center gap-3">
             <img
               src="/sea-dollar.svg"
@@ -595,154 +681,7 @@ export function QuestDetailPage() {
         </button>
       </div>
 
-      {/* 2. Continue Quest Card - Primary Action Block */}
-      {questStatus === "active" && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Continue Quest
-          </h2>
-
-          {/* Tasks - Functional checkboxes */}
-          {tasks.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                Tasks
-              </h3>
-              <div className="space-y-2">
-                {tasks
-                  .filter((task) => !task.completed)
-                  .map((task) => (
-                    <label
-                      key={task.id}
-                      className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border border-gray-200 dark:border-gray-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={async (e) => {
-                          await toggleTask(task.id, e.target.checked);
-                          // Refresh to show updated state
-                          await refresh();
-                          await loadActivityLogs();
-                        }}
-                        className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                      />
-                      <span className="flex-1 text-gray-900 dark:text-gray-100">
-                        {task.name}
-                      </span>
-                    </label>
-                  ))}
-                {tasks.filter((task) => !task.completed).length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                    All tasks completed! 🎉
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Habits - Log buttons */}
-          {habits.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                Habits
-              </h3>
-              <div className="space-y-2">
-                {habits.map((habit) => {
-                  const lastLog = habitLogs[habit.id]?.[0];
-                  return (
-                    <div
-                      key={habit.id}
-                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {habit.name}
-                        </span>
-                        {lastLog && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Last: {getTimeAgo(new Date(lastLog.logged_at))}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setLoggingHabitId(habit.id)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                      >
-                        Log
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
-
-      {/* 3. Live Progress Dashboard - Read-only */}
-      {questStatus === "active" && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Progress
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Sand Dollars
-              </div>
-              <div className="flex items-center gap-1">
-                <img
-                  src="/sea-dollar.svg"
-                  alt="Sand dollar"
-                  className="w-4 h-4"
-                />
-                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {liveStats.totalSandDollars}
-                </span>
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                💵 Earned
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-lg">💵</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {liveStats.totalRealDollars.toFixed(0)}
-                </span>
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Habit Logs
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {liveStats.habitLogCount}
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Tasks
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Days Active
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {liveStats.daysActive}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Activity Feed - Read-only History */}
+      {/* Activity Feed - Read-only History */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         <div className="p-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -799,157 +738,7 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* 5. Quest Structure - Edit Only */}
-      {questStatus === "active" && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Quest Structure
-          </h2>
-
-          {/* Tasks */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Tasks
-              </h3>
-              <button
-                onClick={async () => {
-                  const name = prompt("Enter task name:");
-                  if (name && name.trim() && id) {
-                    try {
-                      await createTask(name.trim());
-                    } catch (err) {
-                      console.error("Error creating task:", err);
-                      alert("Failed to create task");
-                    }
-                  }
-                }}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Add Task
-              </button>
-            </div>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                No tasks yet. Add your first task!
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={task.completed}
-                      readOnly
-                      disabled
-                      className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed"
-                    />
-                    <span
-                      className={`flex-1 ${
-                        task.completed
-                          ? "line-through text-gray-500 dark:text-gray-400"
-                          : "text-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      {task.name}
-                    </span>
-                    <button
-                      onClick={async () => {
-                        if (window.confirm(`Delete task "${task.name}"?`)) {
-                          try {
-                            await deleteTask(task.id);
-                          } catch (err) {
-                            console.error("Error deleting task:", err);
-                            alert("Failed to delete task");
-                          }
-                        }
-                      }}
-                      className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Habits */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Habits
-              </h3>
-              <button
-                onClick={async () => {
-                  const name = prompt("Enter habit name:");
-                  if (name && name.trim() && id) {
-                    try {
-                      await createHabit(name.trim());
-                    } catch (err) {
-                      console.error("Error creating habit:", err);
-                      alert("Failed to create habit");
-                    }
-                  }
-                }}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Add Habit
-              </button>
-            </div>
-            {habits.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                No habits yet. Add your first habit!
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {habits.map((habit) => {
-                  const lastLog = habitLogs[habit.id]?.[0];
-                  return (
-                    <div
-                      key={habit.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {habit.name}
-                        </span>
-                        {lastLog && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Last: {getTimeAgo(new Date(lastLog.logged_at))}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={async () => {
-                          if (
-                            window.confirm(`Delete habit "${habit.name}"?`)
-                          ) {
-                            try {
-                              await deleteHabit(habit.id);
-                            } catch (err) {
-                              console.error("Error deleting habit:", err);
-                              alert("Failed to delete habit");
-                            }
-                          }
-                        }}
-                        className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 6. Quest Lifecycle Footer - Last Section */}
+      {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         {questStatus === "active" ? (
           <button
