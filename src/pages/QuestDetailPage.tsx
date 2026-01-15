@@ -340,13 +340,13 @@ export function QuestDetailPage() {
         )}
       </div>
 
-      {/* Tasks Block */}
-      {questStatus === "active" && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Tasks
-            </h2>
+      {/* Tasks Block - Show for all statuses */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Tasks
+          </h2>
+          {questStatus === "active" && (
             <button
               onClick={async () => {
                 const name = prompt("Enter task name:");
@@ -363,66 +363,82 @@ export function QuestDetailPage() {
             >
               Add Task
             </button>
-          </div>
-          {tasks.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No tasks yet. Add your first task!
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {tasks
-                .filter((task) => !task.completed)
-                .map((task) => {
-                  // Find last task completion log (tasks are logged as habit_log with habit_id: null)
-                  const lastTaskLog = questActivityLogs
-                    .filter((log) => {
-                      return (
-                        log.quest_id === id &&
-                        log.action_type === "habit_log" &&
-                        log.habit_id === null
-                      );
-                    })
-                    .sort(
-                      (a, b) =>
-                        new Date(b.logged_at).getTime() -
-                        new Date(a.logged_at).getTime()
-                    )[0];
-                  return (
-                    <button
-                      key={task.id}
-                      onClick={() => setLoggingTaskId(task.id)}
-                      className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
-                    >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {task.name}
-                        </span>
-                        {lastTaskLog && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              {tasks.filter((task) => !task.completed).length === 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                  All tasks completed! 🎉
-                </p>
-              )}
-            </div>
           )}
         </div>
-      )}
+        {tasks.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No tasks yet. {questStatus === "active" && "Add your first task!"}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {tasks
+              .filter((task) => !task.completed)
+              .map((task) => {
+                // Find last task completion log (tasks are logged as habit_log with habit_id: null)
+                const lastTaskLog = questActivityLogs
+                  .filter((log) => {
+                    return (
+                      log.quest_id === id &&
+                      log.action_type === "habit_log" &&
+                      log.habit_id === null
+                    );
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date(b.logged_at).getTime() -
+                      new Date(a.logged_at).getTime()
+                  )[0];
+                return questStatus === "active" ? (
+                  <button
+                    key={task.id}
+                    onClick={() => setLoggingTaskId(task.id)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {task.name}
+                      </span>
+                      {lastTaskLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ) : (
+                  <div
+                    key={task.id}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75"
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {task.name}
+                      </span>
+                      {lastTaskLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            {tasks.filter((task) => !task.completed).length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                All tasks completed! 🎉
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Habits Block */}
-      {questStatus === "active" && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Habits
-            </h2>
+      {/* Habits Block - Show for all statuses */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Habits
+          </h2>
+          {questStatus === "active" && (
             <button
               onClick={async () => {
                 const name = prompt("Enter habit name:");
@@ -439,101 +455,103 @@ export function QuestDetailPage() {
             >
               Add Habit
             </button>
-          </div>
-          {habits.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No habits yet. Add your first habit!
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {habits.map((habit) => {
-                const lastLog = habitLogs[habit.id]?.[0];
-                return (
-                  <div
-                    key={habit.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {habit.name}
-                      </span>
-                      {lastLog && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Last: {getTimeAgo(new Date(lastLog.logged_at))}
-                        </div>
-                      )}
-                    </div>
+          )}
+        </div>
+        {habits.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No habits yet. {questStatus === "active" && "Add your first habit!"}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {habits.map((habit) => {
+              const lastLog = habitLogs[habit.id]?.[0];
+              return (
+                <div
+                  key={habit.id}
+                  className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${
+                    questStatus !== "active" ? "opacity-75" : ""
+                  }`}
+                >
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {habit.name}
+                    </span>
+                    {lastLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Last: {getTimeAgo(new Date(lastLog.logged_at))}
+                      </div>
+                    )}
+                  </div>
+                  {questStatus === "active" && (
                     <button
                       onClick={() => setLoggingHabitId(habit.id)}
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
                     >
                       Log
                     </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      {/* Progress Dashboard */}
-      {questStatus === "active" && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Progress
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Sand Dollars
-              </div>
-              <div className="flex items-center gap-1">
-                <img
-                  src="/sea-dollar.svg"
-                  alt="Sand dollar"
-                  className="w-4 h-4"
-                />
-                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {liveStats.totalSandDollars}
-                </span>
-              </div>
+      {/* Progress Dashboard - Show for all statuses */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          Progress
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="flex items-center gap-1 mb-1">
+              <img
+                src="/sea-dollar.svg"
+                alt="Sand dollar"
+                className="w-4 h-4"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {liveStats.totalSandDollars}
+              </span>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                💵
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-lg">💵</span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  {liveStats.totalRealDollars.toFixed(0)}
-                </span>
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Tasks
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Habits
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {liveStats.habitLogCount}
-              </div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {liveStats.totalSandDollars}
             </div>
           </div>
-          {liveStats.questStartDate && (
-            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              Started: {new Date(liveStats.questStartDate).toLocaleDateString()}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-lg">💵</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {liveStats.totalRealDollars.toFixed(0)}
+              </span>
             </div>
-          )}
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {liveStats.totalRealDollars.toFixed(0)}
+            </div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              Tasks
+            </div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
+            </div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              Habits
+            </div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {liveStats.habitLogCount}
+            </div>
+          </div>
         </div>
-      )}
+        {liveStats.questStartDate && (
+          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Started: {new Date(liveStats.questStartDate).toLocaleDateString()}
+          </div>
+        )}
+      </div>
 
       {/* Rewards Card */}
       <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
@@ -592,14 +610,22 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Primary Action - Complete Quest */}
+      {/* Primary Action - End Quest and Claim Rewards */}
       {questStatus === "active" && (
-        <button
-          onClick={() => setShowCompleteConfirm(true)}
-          className="w-full px-8 py-4 bg-amber-500 text-white rounded-xl font-bold text-lg hover:bg-amber-600 transition-colors shadow-lg"
-        >
-          Complete Quest and Claim Rewards
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={() => setShowCompleteConfirm(true)}
+            className="w-full px-8 py-5 bg-amber-500 text-white rounded-xl font-bold text-xl hover:bg-amber-600 transition-colors shadow-xl"
+          >
+            End Quest and Claim Rewards
+          </button>
+          <button
+            onClick={() => setShowAbandonConfirm(true)}
+            className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          >
+            Abandon quest
+          </button>
+        </div>
       )}
 
       {/* Activity Feed - Read-only History */}
@@ -659,7 +685,7 @@ export function QuestDetailPage() {
         </div>
       </div>
 
-      {/* Footer Actions */}
+      {/* Footer Actions - Lifecycle buttons */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
         {questStatus === "idle" && (
           <button
@@ -667,14 +693,6 @@ export function QuestDetailPage() {
             className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
           >
             Start Quest
-          </button>
-        )}
-        {questStatus === "active" && (
-          <button
-            onClick={() => setShowCompleteConfirm(true)}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-          >
-            End Quest
           </button>
         )}
         {questStatus === "completed" && (
@@ -685,12 +703,14 @@ export function QuestDetailPage() {
             Restart Quest
           </button>
         )}
-        <button
-          onClick={() => setShowAbandonConfirm(true)}
-          className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-        >
-          Delete Quest
-        </button>
+        {questStatus !== "active" && (
+          <button
+            onClick={() => setShowAbandonConfirm(true)}
+            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+          >
+            Delete Quest
+          </button>
+        )}
       </div>
 
       {/* Task Logging Modal */}
@@ -779,8 +799,8 @@ export function QuestDetailPage() {
           if (!questDetail)
             return "Are you sure you want to complete this quest and claim the rewards?";
           const rewardParts = [];
-          // Use emoji-only format (matches rewards display)
-          rewardParts.push(`${questDetail.reward} 🪙`);
+          // Use emoji/icon format - just use text for dialog since React components don't work in strings
+          rewardParts.push(`${questDetail.reward} sand dollars`);
           if (questDetail.dollar_amount > 0) {
             rewardParts.push(`💵 $${questDetail.dollar_amount.toFixed(2)}`);
           }

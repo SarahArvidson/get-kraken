@@ -1,10 +1,10 @@
 /**
- * Get Kraken v2 - Home Page
+ * Get Kraken v3.0 - Home Page
  *
- * Vertical layout from top to bottom:
- * - Header row (icon, title/subtitle, hamburger)
- * - Treasure chest card (full width, clickable → wallet drilldown)
- * - Two large cards row (Quests 50%, Rewards 50%)
+ * Dashboard-first layout:
+ * - Header row (icon, title/subtitle, hamburger) - handled by Header component
+ * - Treasure chest card (less prominent, full width, clickable → wallet drilldown)
+ * - Two large cards row (Quests 50%, Rewards 50%) - more prominent with previews
  * - Tide Chart section (full width, progress summary)
  * - Calendar preview section (full width, clickable → full calendar)
  */
@@ -23,6 +23,7 @@ import { useGoals } from "../hooks/useGoals";
 import { TAG_COLORS } from "../utils/tags";
 import { CyclingBorder } from "../components/CyclingBorder";
 import { GoalCreateModal } from "../components/GoalCreateModal";
+import { SEA_DOLLAR_ICON_PATH } from "../constants";
 import type { Tag } from "../types";
 
 interface HomePageProps {
@@ -59,6 +60,44 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
   const activeQuests = useMemo(() => {
     return quests.filter((q) => q.status === "active");
   }, [quests]);
+
+  // Get completed quests count
+  const completedQuestsCount = useMemo(() => {
+    return quests.filter((q) => q.status === "completed").length;
+  }, [quests]);
+
+  // Get recent quest completion (most recent)
+  const recentQuestCompletion = useMemo(() => {
+    const completions = activityLogs
+      .filter((log) => log.action_type === "quest_complete")
+      .sort(
+        (a, b) =>
+          new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+      );
+    if (completions.length === 0) return null;
+    const log = completions[0];
+    const quest = quests.find((q) => q.id === log.quest_id);
+    return quest ? { quest, date: log.logged_at } : null;
+  }, [activityLogs, quests]);
+
+  // Get recent reward purchase (most recent)
+  const recentRewardPurchase = useMemo(() => {
+    const purchases = activityLogs
+      .filter((log) => log.action_type === "reward_purchase")
+      .sort(
+        (a, b) =>
+          new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+      );
+    if (purchases.length === 0) return null;
+    const log = purchases[0];
+    const reward = shopItems.find((item) => item.id === log.reward_id);
+    return reward ? { reward, date: log.logged_at } : null;
+  }, [activityLogs, shopItems]);
+
+  // Get total rewards available
+  const totalRewardsCount = useMemo(() => {
+    return shopItems.length;
+  }, [shopItems]);
 
   // Get derived milestones (achievements, not raw logs)
   const recentMilestones = useMemo(() => {
@@ -179,12 +218,25 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
     });
   };
 
+  // Calculate days active this month
+  const daysActiveThisMonth = useMemo(() => {
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const activeDays = new Set<string>();
+    activityLogs.forEach((log) => {
+      const logDate = new Date(log.logged_at);
+      if (logDate >= thisMonth) {
+        activeDays.add(logDate.toISOString().split("T")[0]);
+      }
+    });
+    return activeDays.size;
+  }, [activityLogs, today]);
+
   return (
     <div className="space-y-6">
-      {/* Treasure Chest Card - Full Width, Clickable */}
+      {/* Treasure Chest Card - Less Prominent, Full Width, Clickable */}
       <div
         onClick={onOpenWalletDrilldown}
-        className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+        className="cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99]"
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -195,19 +247,21 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         }}
         aria-label="Open wallet details"
       >
-        <WalletDisplay
-          wallet={wallet}
-          loading={walletLoading}
-          showDollarAmounts={preferences.showDollarAmounts}
-        />
+        <div className="bg-gradient-to-br from-amber-300 to-amber-500 dark:from-amber-600 dark:to-amber-700 rounded-2xl p-4 shadow-md">
+          <WalletDisplay
+            wallet={wallet}
+            loading={walletLoading}
+            showDollarAmounts={preferences.showDollarAmounts}
+          />
+        </div>
       </div>
 
-      {/* Two Large Cards Row - Quests and Rewards */}
+      {/* Two Large Cards Row - Quests and Rewards (More Prominent) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {/* Quests Card */}
         <div
           onClick={() => navigate("/quests")}
-          className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[200px] sm:min-h-[300px] flex items-center justify-center touch-manipulation"
+          className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] flex flex-col justify-between touch-manipulation"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -218,20 +272,43 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           }}
           aria-label="Go to Quests"
         >
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Quests
             </h2>
-            <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-              Tap to explore
-            </p>
+            <div className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+              {activeQuests.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{activeQuests.length}</span>
+                  <span>
+                    active quest{activeQuests.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+              {completedQuestsCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{completedQuestsCount}</span>
+                  <span>
+                    quest{completedQuestsCount !== 1 ? "s" : ""} completed
+                  </span>
+                </div>
+              )}
+              {recentQuestCompletion && (
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 pt-2 border-t border-blue-300 dark:border-blue-700">
+                  Last: {recentQuestCompletion.quest.name}
+                </div>
+              )}
+            </div>
           </div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mt-4">
+            Tap to explore →
+          </p>
         </div>
 
         {/* Rewards Card */}
         <div
           onClick={() => navigate("/rewards")}
-          className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[200px] sm:min-h-[300px] flex items-center justify-center touch-manipulation"
+          className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] flex flex-col justify-between touch-manipulation"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -242,14 +319,29 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           }}
           aria-label="Go to Rewards"
         >
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Rewards
             </h2>
-            <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
-              Tap to explore
-            </p>
+            <div className="space-y-2 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+              {totalRewardsCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{totalRewardsCount}</span>
+                  <span>
+                    reward{totalRewardsCount !== 1 ? "s" : ""} available
+                  </span>
+                </div>
+              )}
+              {recentRewardPurchase && (
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 pt-2 border-t border-purple-300 dark:border-purple-700">
+                  Last: {recentRewardPurchase.reward.name}
+                </div>
+              )}
+            </div>
           </div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mt-4">
+            Tap to explore →
+          </p>
         </div>
       </div>
 
@@ -295,7 +387,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <img
-                              src="/sea-dollar.svg"
+                              src={SEA_DOLLAR_ICON_PATH}
                               alt="Sand dollar"
                               className="w-3 h-3 inline-block"
                             />
@@ -332,7 +424,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
               </p>
             ) : (
               <div className="space-y-2">
-                {activeQuests.map((quest) => (
+                {activeQuests.slice(0, 3).map((quest) => (
                   <CyclingBorder key={quest.id} tags={quest.tags}>
                     <div
                       onClick={() => navigate(`/quests/${quest.id}`)}
@@ -344,6 +436,14 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                     </div>
                   </CyclingBorder>
                 ))}
+                {activeQuests.length > 3 && (
+                  <button
+                    onClick={() => navigate("/quests?filter=active")}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    View all {activeQuests.length} active quests →
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -389,9 +489,17 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         aria-label="Go to Calendar"
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Calendar
-          </h2>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Calendar
+            </h2>
+            {daysActiveThisMonth > 0 && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {daysActiveThisMonth} day{daysActiveThisMonth !== 1 ? "s" : ""}{" "}
+                active this month
+              </p>
+            )}
+          </div>
           <span className="text-gray-600 dark:text-gray-300">→</span>
         </div>
 
@@ -463,7 +571,6 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                 );
               })}
             </div>
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-2"></div>
           </div>
         )}
       </div>
