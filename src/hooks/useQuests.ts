@@ -158,9 +158,8 @@ export function useQuests() {
 
         console.log('[updateQuest] Starting update for quest:', id, 'with updates:', JSON.stringify(updates, null, 2));
 
-        // NEVER delete progress logs - completion_count is derived from logs, not editable
-        // NEVER write lifecycle or rarity to quests table - they belong only in user_quest_overrides
-        // NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
+        // GUARD: NEVER delete or modify logs - this function only updates quest metadata
+        // GUARD: NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
         // Separate quest fields (name, tags, reward, dollar_amount) from override fields (status, reward_rarity, reward_item_id)
         const {
           completion_count, // derived, read-only - remove from updates

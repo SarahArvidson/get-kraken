@@ -100,12 +100,15 @@ export function useGoals() {
       if (!userId) throw new Error("User must be authenticated");
 
       try {
-        // NEVER touch logs or derived fields - only PATCH provided fields
+        // GUARD: NEVER touch logs or derived fields - only PATCH provided fields
         // Remove any fields that shouldn't be updated directly
         const safeUpdates = { ...updates };
         // Goals don't have completion_count or logs, but ensure we never add them
         delete (safeUpdates as any).completion_count;
         delete (safeUpdates as any).progress_logs;
+        delete (safeUpdates as any).quest_logs;
+        delete (safeUpdates as any).habit_logs;
+        delete (safeUpdates as any).activity_logs;
 
         console.log('[updateGoal] Safe updates to apply:', JSON.stringify(safeUpdates, null, 2));
 

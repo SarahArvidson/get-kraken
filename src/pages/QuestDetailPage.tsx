@@ -91,7 +91,8 @@ export function QuestDetailPage() {
     if (!loading) {
       loadQuestDetail();
     }
-  }, [id, quests, loading, getQuestWithLogs, navigate]);
+    // Only depend on id and loading, NOT quests - prevents flash loops when quests update
+  }, [id, loading, getQuestWithLogs, navigate]);
 
   // Load activity logs when quest loads
   useEffect(() => {
@@ -195,14 +196,23 @@ export function QuestDetailPage() {
       const result = await startQuest(id);
       console.log('[handleStartQuest] startQuest returned:', result);
       
-      // Refresh quests to get updated merged state (this will update questStatus via useEffect)
+      // Refresh quests to get updated merged state
       console.log('[handleStartQuest] Refreshing quests...');
       await refresh();
       console.log('[handleStartQuest] Quests refreshed');
       
-      // Also update local status immediately for instant UI feedback
-      console.log('[handleStartQuest] Setting local status to active');
-      setQuestStatus('active');
+      // Read status from refreshed quest (startQuest already updated overrides and loaded quests)
+      // Get fresh quest data to read effective status
+      const refreshedQuest = await getQuestWithLogs(id);
+      if (refreshedQuest) {
+        const effectiveStatus = refreshedQuest.status || 'active';
+        console.log('[handleStartQuest] Setting status from refreshed quest:', effectiveStatus);
+        setQuestStatus(effectiveStatus);
+      } else {
+        // Fallback: set to active since startQuest succeeded
+        console.log('[handleStartQuest] Setting status to active (fallback)');
+        setQuestStatus('active');
+      }
       
       console.log('[handleStartQuest] COMPLETE');
     } catch (error: any) {
@@ -552,20 +562,18 @@ export function QuestDetailPage() {
             try {
               await updateQuest(id, updates);
               setShowEditModal(false);
-              // Refresh quest detail without hard reload
-              await refresh();
-              // Reload quest detail after a brief delay to allow state to settle
-              setTimeout(async () => {
-                const questWithLogs = await getQuestWithLogs(id);
-                if (questWithLogs) {
-                  const userCompletionCount = questWithLogs.logs.length;
-                  const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-                  const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-                    associated_item_id: questWithLogs.reward_item_id || undefined,
-                  });
-                  setQuestDetail(detail);
-                }
-              }, 100);
+              // Update local quest detail state directly without triggering useEffect reload
+              const questWithLogs = await getQuestWithLogs(id);
+              if (questWithLogs) {
+                const userCompletionCount = questWithLogs.logs.length;
+                const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
+                const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
+                  associated_item_id: questWithLogs.reward_item_id || undefined,
+                });
+                setQuestDetail(detail);
+                // Update status from refreshed quest
+                setQuestStatus(questWithLogs.status || 'idle');
+              }
             } catch (err) {
               console.error('[QuestDetailPage] Error updating quest:', err);
               // Keep modal open on error so user can retry
