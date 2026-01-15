@@ -32,8 +32,6 @@ export function QuestDetailPage() {
     loading,
     getQuestWithLogs,
     updateQuest,
-    startQuest,
-    restartQuest,
     completeQuest,
     deleteQuest,
     refresh,
@@ -43,10 +41,9 @@ export function QuestDetailPage() {
     habits,
     refresh: refreshHabits,
     createHabit,
-    deleteHabit,
     habitLogs,
   } = useQuestHabits(id || null);
-  const { tasks, toggleTask, createTask, deleteTask } = useQuestTasks(
+  const { tasks, toggleTask, createTask } = useQuestTasks(
     id || null
   );
   const questMetadata = useQuestMetadata();
@@ -219,69 +216,6 @@ export function QuestDetailPage() {
     }
   };
 
-  const handleStartQuest = async () => {
-    console.log("[handleStartQuest] Button clicked");
-
-    if (!id) {
-      console.error("[handleStartQuest] ERROR: No quest id from URL params");
-      return;
-    }
-
-    // Log the quest id being passed - this is the base quest id from URL params
-    console.log(
-      "[handleStartQuest] Quest id from URL:",
-      id,
-      "type:",
-      typeof id
-    );
-
-    // Verify quest exists in list
-    const questInList = quests.find((q) => q.id === id);
-    if (!questInList) {
-      console.warn(
-        "[handleStartQuest] WARNING: Quest not found in current quests list, id:",
-        id
-      );
-      console.log(
-        "[handleStartQuest] Available quest ids:",
-        quests.map((q) => q.id)
-      );
-    } else {
-      console.log("[handleStartQuest] Found quest:", {
-        id: questInList.id,
-        name: questInList.name,
-        currentStatus: questInList.status,
-      });
-    }
-
-    try {
-      console.log("[handleStartQuest] Calling startQuest...");
-      await startQuest(id);
-      // startQuest already calls loadQuests() internally, so just refresh to ensure UI updates
-      await refresh();
-      console.log(
-        "[handleStartQuest] COMPLETE - UI will re-render from quests list"
-      );
-    } catch (error: any) {
-      console.error("[handleStartQuest] ERROR:", error);
-      console.error(
-        "[handleStartQuest] Error details:",
-        JSON.stringify(error, null, 2)
-      );
-      alert(`Failed to start quest: ${error.message || "Unknown error"}`);
-    }
-  };
-
-  const handleRestartQuest = async () => {
-    if (!id) return;
-    try {
-      await restartQuest(id);
-      // restartQuest already calls loadQuests() internally
-      await refresh();
-    } catch (error) {
-      console.error("Error restarting quest:", error);
-    }
-  };
 
   const handleTaskLogComplete = async () => {
     if (!id) return;
@@ -423,33 +357,13 @@ export function QuestDetailPage() {
                   <button
                     key={task.id}
                     onClick={() => setLoggingTaskId(task.id)}
-                    className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
                   >
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      readOnly
-                      className="w-5 h-5 rounded border-gray-300 text-amber-500"
-                    />
-                    <span className="flex-1 text-gray-900 dark:text-gray-100">
-                      {task.name}
-                    </span>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`Delete task "${task.name}"?`)) {
-                          try {
-                            await deleteTask(task.id);
-                          } catch (err) {
-                            console.error("Error deleting task:", err);
-                            alert("Failed to delete task");
-                          }
-                        }
-                      }}
-                      className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {task.name}
+                      </span>
+                    </div>
                   </button>
                 ))}
               {tasks.filter((task) => !task.completed).length === 0 && (
@@ -509,31 +423,12 @@ export function QuestDetailPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setLoggingHabitId(habit.id)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                      >
-                        Log
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (
-                            window.confirm(`Delete habit "${habit.name}"?`)
-                          ) {
-                            try {
-                              await deleteHabit(habit.id);
-                            } catch (err) {
-                              console.error("Error deleting habit:", err);
-                              alert("Failed to delete habit");
-                            }
-                          }
-                        }}
-                        className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setLoggingHabitId(habit.id)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      Log
+                    </button>
                   </div>
                 );
               })}
@@ -671,16 +566,6 @@ export function QuestDetailPage() {
         </button>
       )}
 
-      {/* Footer - Delete Quest */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setShowAbandonConfirm(true)}
-          className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-        >
-          Delete Quest
-        </button>
-      </div>
-
       {/* Activity Feed - Read-only History */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         <div className="p-6">
@@ -739,40 +624,12 @@ export function QuestDetailPage() {
       </div>
 
       {/* Footer Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-        {questStatus === "active" ? (
-          <button
-            onClick={() => setShowCompleteConfirm(true)}
-            className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-          >
-            End Quest
-          </button>
-        ) : questStatus === "completed" ? (
-          <button
-            onClick={handleRestartQuest}
-            className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-          >
-            Restart Quest
-          </button>
-        ) : (
-          <button
-            onClick={handleStartQuest}
-            className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-          >
-            Start Quest
-          </button>
-        )}
-        <button
-          onClick={() => setShowEditModal(true)}
-          className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors text-sm"
-        >
-          Edit Quest
-        </button>
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
         <button
           onClick={() => setShowAbandonConfirm(true)}
-          className="px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors text-sm"
+          className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
         >
-          Abandon and Delete
+          Delete Quest
         </button>
       </div>
 
