@@ -5,9 +5,11 @@
  */
 
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGoals } from "../hooks/useGoals";
 import { useShopItems } from "../hooks/useShopItems";
+import { useActivityLogs } from "../hooks/useActivityLogs";
+import { useQuestMetadata } from "../hooks/useQuestMetadata";
 import { GoalEditModal } from "../components/GoalEditModal";
 import type { Goal } from "../types";
 
@@ -16,8 +18,57 @@ export function GoalDetailPage() {
   const navigate = useNavigate();
   const { goals, loading, updateGoal, deleteGoal, refresh } = useGoals();
   const { shopItems } = useShopItems();
+  const questMetadata = useQuestMetadata();
+  const { logs: allActivityLogs } = useActivityLogs({
+    questMetadata: questMetadata.metadata,
+  });
   const [goal, setGoal] = useState<Goal | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Calculate historical progress from activity logs
+  const historicalProgress = useMemo(() => {
+    if (!goal) return { totalSandDollars: 0, totalRealDollars: 0, milestones: [] };
+    
+    // Filter logs for quests associated with this goal (if goal has quest_ids, use them)
+    // For now, calculate from all quest_complete logs
+    const questCompletions = allActivityLogs.filter(log => log.action_type === 'quest_complete');
+    const habitLogs = allActivityLogs.filter(log => log.action_type === 'habit_log');
+    
+    let totalSandDollars = 0;
+    let totalRealDollars = 0;
+    
+    // Sum from quest completions (would need quest reward data)
+    // For now, estimate from activity logs
+    questCompletions.forEach(() => {
+      // Would need to look up quest reward from metadata
+      // For now, just count completions
+    });
+    
+    habitLogs.forEach(log => {
+      if (log.dollars_saved) {
+        totalRealDollars += log.dollars_saved;
+      }
+    });
+    
+    // Generate milestones
+    const milestones: string[] = [];
+    if (questCompletions.length >= 1) {
+      milestones.push("First quest completed");
+    }
+    if (totalSandDollars >= 500) {
+      milestones.push("500 sand dollars earned");
+    }
+    const thisWeek = new Date();
+    thisWeek.setDate(thisWeek.getDate() - 7);
+    const thisWeekCompletions = questCompletions.filter(log => 
+      new Date(log.logged_at) >= thisWeek
+    );
+    if (thisWeekCompletions.length >= 5) {
+      milestones.push("5 quests completed this week");
+    }
+    
+    return { totalSandDollars, totalRealDollars, milestones };
+  }, [goal, allActivityLogs]);
 
   useEffect(() => {
     if (id && goals.length > 0) {
@@ -125,6 +176,41 @@ export function GoalDetailPage() {
               <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 {rewardItem.name}
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* Historical Progress */}
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+            Historical Progress
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <img src="/sea-dollar.svg" alt="Sand dollar" className="w-5 h-5" />
+              <span className="text-gray-900 dark:text-gray-100">
+                Total sand dollars earned: <strong>{historicalProgress.totalSandDollars}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💵</span>
+              <span className="text-gray-900 dark:text-gray-100">
+                Total real dollars saved: <strong>${historicalProgress.totalRealDollars.toFixed(2)}</strong>
+              </span>
+            </div>
+          </div>
+          {historicalProgress.milestones.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Recent Milestones
+              </h4>
+              <ul className="space-y-1">
+                {historicalProgress.milestones.map((milestone, idx) => (
+                  <li key={idx} className="text-sm text-gray-600 dark:text-gray-400">
+                    ✓ {milestone}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

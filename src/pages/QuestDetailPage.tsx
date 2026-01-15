@@ -24,8 +24,8 @@ export function QuestDetailPage() {
   const navigate = useNavigate();
   const { quests, loading, getQuestWithLogs, updateQuest, startQuest, restartQuest, completeQuest, deleteQuest, refresh } = useQuests();
   const { shopItems } = useShopItems();
-  const { habits, refresh: refreshHabits } = useQuestHabits(id || null);
-  const { tasks, toggleTask } = useQuestTasks(id || null);
+  const { habits, refresh: refreshHabits, createHabit, deleteHabit, habitLogs } = useQuestHabits(id || null);
+  const { tasks, toggleTask, createTask, deleteTask } = useQuestTasks(id || null);
   const questMetadata = useQuestMetadata();
   const { logs: allActivityLogs, loadActivityLogs } = useActivityLogs({
     questMetadata: questMetadata.metadata,
@@ -37,6 +37,7 @@ export function QuestDetailPage() {
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [showProgressLogModal, setShowProgressLogModal] = useState(false);
+  const [progressLogMode, setProgressLogMode] = useState<'habit' | 'task' | 'note' | null>(null);
   // Quest status is derived from merged quest list - single source of truth
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || 'idle';
@@ -327,12 +328,6 @@ export function QuestDetailPage() {
         {questStatus === 'active' ? (
           <>
             <button
-              onClick={() => setShowProgressLogModal(true)}
-              className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-            >
-              Log Progress
-            </button>
-            <button
               onClick={() => setShowCompleteConfirm(true)}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
             >
@@ -455,6 +450,44 @@ export function QuestDetailPage() {
             </div>
           )}
 
+          {/* Continue Quest - Contextual Actions */}
+          {questStatus === 'active' && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Continue Quest
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => {
+                    setProgressLogMode('habit');
+                    setShowProgressLogModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Log a Habit
+                </button>
+                <button
+                  onClick={() => {
+                    setProgressLogMode('task');
+                    setShowProgressLogModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Complete a Task
+                </button>
+                <button
+                  onClick={() => {
+                    setProgressLogMode('note');
+                    setShowProgressLogModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Add a Progress Note
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Activity Feed - Read-only History */}
@@ -501,6 +534,140 @@ export function QuestDetailPage() {
         </div>
       </div>
 
+      {/* Tasks Section */}
+      {questStatus === 'active' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tasks</h2>
+            <button
+              onClick={async () => {
+                const name = prompt("Enter task name:");
+                if (name && name.trim() && id) {
+                  try {
+                    await createTask(name.trim());
+                  } catch (err) {
+                    console.error("Error creating task:", err);
+                    alert("Failed to create task");
+                  }
+                }
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+            >
+              Add Task
+            </button>
+          </div>
+          {tasks.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No tasks yet. Add your first task!</p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={(e) => toggleTask(task.id, e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+                  />
+                  <span className={`flex-1 ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                    {task.name}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      if (window.confirm(`Delete task "${task.name}"?`)) {
+                        try {
+                          await deleteTask(task.id);
+                        } catch (err) {
+                          console.error("Error deleting task:", err);
+                          alert("Failed to delete task");
+                        }
+                      }
+                    }}
+                    className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Habits Section */}
+      {questStatus === 'active' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Habits</h2>
+            <button
+              onClick={async () => {
+                const name = prompt("Enter habit name:");
+                if (name && name.trim() && id) {
+                  try {
+                    await createHabit(name.trim());
+                  } catch (err) {
+                    console.error("Error creating habit:", err);
+                    alert("Failed to create habit");
+                  }
+                }
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+            >
+              Add Habit
+            </button>
+          </div>
+          {habits.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No habits yet. Add your first habit!</p>
+          ) : (
+            <div className="space-y-3">
+              {habits.map((habit) => {
+                const lastLog = habitLogs[habit.id]?.[0];
+                return (
+                  <div key={habit.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{habit.name}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setProgressLogMode('habit');
+                            setShowProgressLogModal(true);
+                          }}
+                          className="px-3 py-1 bg-blue-500 text-white rounded text-sm font-medium hover:bg-blue-600 transition-colors"
+                        >
+                          Log
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm(`Delete habit "${habit.name}"?`)) {
+                              try {
+                                await deleteHabit(habit.id);
+                              } catch (err) {
+                                console.error("Error deleting habit:", err);
+                                alert("Failed to delete habit");
+                              }
+                            }
+                          }}
+                          className="px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    {lastLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        Last logged: Difficulty {lastLog.difficulty}/10
+                        {lastLog.dollars_saved > 0 && ` • 💵 ${lastLog.dollars_saved}`}
+                        {' • '}
+                        {getTimeAgo(new Date(lastLog.logged_at))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Secondary Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         <button
@@ -522,12 +689,16 @@ export function QuestDetailPage() {
       {/* Progress Logging Modal */}
       <ProgressLogModal
         isOpen={showProgressLogModal}
-        onClose={() => setShowProgressLogModal(false)}
+        onClose={() => {
+          setShowProgressLogModal(false);
+          setProgressLogMode(null);
+        }}
         questId={id || ""}
         tasks={tasks}
         habits={habits}
         onToggleTask={toggleTask}
         onProgressComplete={handleProgressLogComplete}
+        mode={progressLogMode}
       />
 
       {/* Edit Quest Modal */}

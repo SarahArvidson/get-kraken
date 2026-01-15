@@ -19,6 +19,7 @@ interface ProgressLogModalProps {
   habits: QuestHabit[];
   onToggleTask: (taskId: string, completed: boolean) => Promise<void>;
   onProgressComplete: () => void;
+  mode?: 'habit' | 'task' | 'note' | null; // Intent mode for contextual opening
 }
 
 export function ProgressLogModal({
@@ -29,6 +30,7 @@ export function ProgressLogModal({
   habits,
   onToggleTask,
   onProgressComplete,
+  mode = null,
 }: ProgressLogModalProps) {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [habitLogs, setHabitLogs] = useState<Record<string, { difficulty: number; dollarsSaved: number }>>({});
@@ -249,8 +251,8 @@ export function ProgressLogModal({
             </div>
 
             <form id="progress-log-form" onSubmit={handleSubmit} className="space-y-6">
-              {/* Tasks Section */}
-              {tasks.length > 0 && (
+              {/* Tasks Section - Show if mode is 'task' or null (all modes) */}
+              {tasks.length > 0 && (mode === 'task' || mode === null) && (
                 <div>
                   <div className="space-y-2">
                     {tasks
@@ -280,8 +282,8 @@ export function ProgressLogModal({
                 </div>
               )}
 
-              {/* Habits Section */}
-              {habits.length > 0 && (
+              {/* Habits Section - Show if mode is 'habit' or null (all modes) */}
+              {habits.length > 0 && (mode === 'habit' || mode === null) && (
                 <div>
                   <div className="space-y-4">
                     {habits.map((habit) => (
