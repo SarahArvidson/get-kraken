@@ -77,10 +77,10 @@ export function RewardCreateModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-start justify-center p-1 sm:p-4 md:p-6 lg:p-8 pt-24 sm:pt-28 md:pt-32 lg:pt-36">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-1 sm:p-4 md:p-6 lg:p-8">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[90vh] flex flex-col relative z-[101]"
-          style={{ margin: 0 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[calc(100vh-8rem)] sm:max-h-[90vh] flex flex-col relative z-[101] mt-24 sm:mt-32 md:mt-36 lg:mt-40"
+          style={{ marginLeft: 0, marginRight: 0, marginBottom: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
