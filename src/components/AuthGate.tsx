@@ -243,7 +243,7 @@ export function AuthGate({ children }: AuthGateProps) {
             >
               {isSubmitting 
                 ? (authMode === "signin" ? "Signing in..." : "Creating account...")
-                : (authMode === "signin" ? "Sign In" : "Sign Up")
+                : (authMode === "signin" ? "Log In" : "Create Account")
               }
             </Button>
 
