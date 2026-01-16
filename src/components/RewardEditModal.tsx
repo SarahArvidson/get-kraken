@@ -89,13 +89,14 @@ export function RewardEditModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-start justify-center p-0 sm:p-4 md:p-6 lg:p-8">
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-1 sm:p-4 md:p-6 lg:p-8">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[calc(100vh-7rem)] sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-20 sm:mt-32 md:mt-36 lg:mt-40 mb-4 sm:mb-0 mx-1 sm:mx-0"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[calc(100vh-7rem)] sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-20 sm:mt-32 md:mt-36 lg:mt-40 mb-4 sm:mb-0"
+          style={{ margin: 0, boxSizing: 'border-box', maxWidth: 'calc(100vw - 0.5rem)' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex-shrink-0 p-3 sm:p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Edit Reward
@@ -112,7 +113,7 @@ export function RewardEditModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6" style={{ boxSizing: 'border-box' }}>
               {/* Name (Required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
