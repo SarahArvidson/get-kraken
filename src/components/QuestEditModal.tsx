@@ -22,7 +22,7 @@ export function QuestEditModal({
   quest,
   onUpdate,
 }: QuestEditModalProps) {
-  const { shopItems, createShopItem, loadShopItems } = useShopItems();
+  const { shopItems, createShopItem, refresh } = useShopItems();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
@@ -81,7 +81,7 @@ export function QuestEditModal({
           });
           finalRewardItemId = newItem.id;
           // Refresh shop items list so the new item appears in dropdowns
-          await loadShopItems();
+          await refresh();
         } catch (err: any) {
           setError(`Failed to create reward item: ${err.message}`);
           setIsSubmitting(false);

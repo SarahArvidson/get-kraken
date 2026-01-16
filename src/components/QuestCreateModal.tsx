@@ -22,7 +22,7 @@ export function QuestCreateModal({
   onClose,
   onCreate,
 }: QuestCreateModalProps) {
-  const { shopItems, createShopItem, loadShopItems } = useShopItems();
+  const { shopItems, createShopItem, refresh } = useShopItems();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
@@ -31,7 +31,6 @@ export function QuestCreateModal({
   const [rewardItemId, setRewardItemId] = useState<string>("");
   const [newRewardItemName, setNewRewardItemName] = useState("");
   const [showNewRewardItemInput, setShowNewRewardItemInput] = useState(false);
-  const [targetDate, setTargetDate] = useState("");
   const [rarity, setRarity] = useState<
     "common" | "rare" | "epic" | "legendary" | ""
   >("");
@@ -64,7 +63,7 @@ export function QuestCreateModal({
           });
           finalRewardItemId = newItem.id;
           // Refresh shop items list so the new item appears in dropdowns  
-          await loadShopItems();
+          await refresh();
         } catch (err: any) {
           setError(`Failed to create reward item: ${err.message}`);
           setIsSubmitting(false);
@@ -94,7 +93,6 @@ export function QuestCreateModal({
       setRewardItemId("");
       setNewRewardItemName("");
       setShowNewRewardItemInput(false);
-      setTargetDate("");
       setRarity("");
       setIncludeTasks(false);
       setIncludeHabits(false);
