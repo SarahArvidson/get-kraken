@@ -226,6 +226,13 @@ body::before {
     -webkit-overflow-scrolling: touch;
   }
   
+  /* Override margin for quest/reward edit/create modals at small screens only */
+  @media only screen and (max-width: 374px) {
+    .quest-reward-modal-content {
+      margin: 0 !important;
+    }
+  }
+  
   /* Optimize input fields - 16px font prevents iOS zoom on focus */
   input[type="text"],
   input[type="number"],

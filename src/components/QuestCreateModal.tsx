@@ -124,8 +124,7 @@ export function QuestCreateModal({
       {/* Modal */}
       <div className="fixed inset-0 z-[100] flex items-start justify-center p-0 sm:p-4 md:p-6 lg:p-8">
         <div
-          className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl w-full sm:w-full max-w-3xl max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-16 sm:mt-32 md:mt-36 lg:mt-40 mb-2 sm:mb-0"
-          style={{ marginLeft: 0, marginRight: 0, marginTop: '4rem', marginBottom: '0.5rem' }}
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl w-full sm:w-full max-w-3xl max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-16 sm:mt-32 md:mt-36 lg:mt-40 mb-2 sm:mb-0"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -146,7 +145,7 @@ export function QuestCreateModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ minWidth: 0 }}>
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
               {/* Name (Required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
