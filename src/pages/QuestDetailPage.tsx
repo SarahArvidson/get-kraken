@@ -306,31 +306,34 @@ export function QuestDetailPage() {
         </button>
       </div>
 
-      {/* 1. Quest Identity Header - Centered and Prominent */}
-      <div className="space-y-4 text-center">
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={handleToggleStar}
-            className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-            aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
-          >
-            {questDetail.isStarred ? "⭐" : "☆"}
-          </button>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
+      {/* 1. Quest Identity Header - Centered Title, Right-Justified Actions */}
+      <div className="space-y-4">
+        <div className="flex items-center">
+          <div className="flex-1"></div>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">
             {questDetail.name}
           </h1>
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-            aria-label="Edit quest"
-          >
-            Edit
-          </button>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+              aria-label="Edit quest"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleToggleStar}
+              className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+              aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
+            >
+              {questDetail.isStarred ? "⭐" : "☆"}
+            </button>
+          </div>
         </div>
 
         {/* Optional description */}
         {questDetail.description && (
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-center">
             {questDetail.description}
           </p>
         )}
@@ -645,9 +648,6 @@ export function QuestDetailPage() {
       {/* Rewards and Complete Button - Success Zone */}
       {questStatus === "active" && (
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 text-center">
-            Your Rewards
-          </h2>
           <div className="flex items-center justify-center gap-6 flex-wrap mb-6">
             <div className="flex items-center gap-3">
               <img
@@ -706,7 +706,7 @@ export function QuestDetailPage() {
             onClick={() => setShowCompleteConfirm(true)}
             className="w-full px-8 py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-xl hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
           >
-            Complete Quest
+            Complete Quest and Claim These Rewards
           </button>
         </div>
       )}
