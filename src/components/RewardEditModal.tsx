@@ -89,9 +89,9 @@ export function RewardEditModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12">
+      <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12 pt-20 sm:pt-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col relative z-[101]"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[calc(100vh-6rem)] sm:max-h-[90vh] flex flex-col relative z-[101] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
