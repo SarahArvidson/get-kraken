@@ -182,7 +182,6 @@ export function useQuests() {
           status, // lifecycle - belongs ONLY in overrides
           reward_rarity, // per-user rarity - belongs ONLY in overrides
           reward_item_id, // reward item - store in overrides for consistency (all users can customize)
-          description, // UI-only field, not in database schema - remove from updates
           ...questFields // name, tags, reward, dollar_amount - can go in quests table for user-created quests
         } = updates;
 
