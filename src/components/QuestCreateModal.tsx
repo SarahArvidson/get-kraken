@@ -1,6 +1,6 @@
 /**
  * Get Kraken v2 - Quest Create Modal
- * 
+ *
  * Modal for creating new quests
  */
 
@@ -12,7 +12,9 @@ import { useShopItems } from "../hooks/useShopItems";
 interface QuestCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (quest: Omit<Quest, "id" | "created_at" | "updated_at" | "completion_count">) => Promise<void>;
+  onCreate: (
+    quest: Omit<Quest, "id" | "created_at" | "updated_at" | "completion_count">
+  ) => Promise<void>;
 }
 
 export function QuestCreateModal({
@@ -28,7 +30,9 @@ export function QuestCreateModal({
   const [dollarAmount, setDollarAmount] = useState("");
   const [rewardItemId, setRewardItemId] = useState<string>("");
   const [targetDate, setTargetDate] = useState("");
-  const [rarity, setRarity] = useState<"common" | "rare" | "epic" | "legendary" | "">("common");
+  const [rarity, setRarity] = useState<
+    "common" | "rare" | "epic" | "legendary" | ""
+  >("common");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +53,10 @@ export function QuestCreateModal({
         reward: reward ? parseInt(reward) || 0 : 0,
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
         reward_item_id: rewardItemId || null,
-        status: 'idle',
-        // Note: description, target_completion_date, rarity will be stored in localStorage
-        // until schema migration adds these columns
-      });
-      
+        status: "idle",
+        ...(description.trim() && ({ description: description.trim() } as any)),
+      } as any);
+
       // Reset form
       setName("");
       setDescription("");
@@ -173,11 +176,11 @@ export function QuestCreateModal({
                   inputMode="numeric"
                   value={reward}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     setReward(value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === '.' || e.key === ',') {
+                    if (e.key === "." || e.key === ",") {
                       e.preventDefault();
                     }
                   }}
@@ -196,11 +199,11 @@ export function QuestCreateModal({
                   inputMode="numeric"
                   value={dollarAmount}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     setDollarAmount(value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === '.' || e.key === ',') {
+                    if (e.key === "." || e.key === ",") {
                       e.preventDefault();
                     }
                   }}
@@ -260,7 +263,9 @@ export function QuestCreateModal({
 
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
                 </div>
               )}
 

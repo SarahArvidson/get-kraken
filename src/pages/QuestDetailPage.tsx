@@ -89,6 +89,7 @@ export function QuestDetailPage() {
           );
           const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
             associated_item_id: questWithLogs.reward_item_id || undefined,
+            description: (questWithLogs as any).description || undefined,
           });
           setQuestDetail(detail);
           // Status comes from merged quest list, not from getQuestWithLogs
@@ -103,6 +104,7 @@ export function QuestDetailPage() {
               questWithLogs.logs,
               {
                 associated_item_id: quest.reward_item_id || undefined,
+                description: (questWithLogs as any).description || undefined,
               }
             );
             setQuestDetail(detail);
@@ -323,13 +325,22 @@ export function QuestDetailPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex-1">
             {questDetail.name}
           </h1>
-          <button
-            onClick={handleToggleStar}
-            className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-            aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
-          >
-            {questDetail.isStarred ? "⭐" : "☆"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+              aria-label="Edit quest"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleToggleStar}
+              className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+              aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
+            >
+              {questDetail.isStarred ? "⭐" : "☆"}
+            </button>
+          </div>
         </div>
 
         {/* Optional description */}
@@ -777,6 +788,8 @@ export function QuestDetailPage() {
                   {
                     associated_item_id:
                       questWithLogs.reward_item_id || undefined,
+                    description:
+                      (questWithLogs as any).description || undefined,
                   }
                 );
                 setQuestDetail(detail);

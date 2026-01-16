@@ -1,6 +1,6 @@
 /**
  * Get Kraken v2 - Quest Edit Modal
- * 
+ *
  * Modal for editing existing quests
  */
 
@@ -29,7 +29,9 @@ export function QuestEditModal({
   const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
   const [rewardItemId, setRewardItemId] = useState<string>("");
-  const [rewardRarity, setRewardRarity] = useState<'common' | 'rare' | 'epic' | 'legendary' | ''>('');
+  const [rewardRarity, setRewardRarity] = useState<
+    "common" | "rare" | "epic" | "legendary" | ""
+  >("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +39,14 @@ export function QuestEditModal({
   useEffect(() => {
     if (quest && isOpen) {
       setName(quest.name || "");
+      setDescription((quest as any).description || "");
       setTags(quest.tags || []);
       setReward(quest.reward ? quest.reward.toString() : "10");
-      setDollarAmount(quest.dollar_amount ? quest.dollar_amount.toString() : "");
+      setDollarAmount(
+        quest.dollar_amount ? quest.dollar_amount.toString() : ""
+      );
       setRewardItemId(quest.reward_item_id || "");
-      setRewardRarity(quest.reward_rarity || '');
+      setRewardRarity(quest.reward_rarity || "");
     }
   }, [quest, isOpen]);
 
@@ -63,8 +68,9 @@ export function QuestEditModal({
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
         reward_item_id: rewardItemId || null,
         reward_rarity: rewardRarity || null,
-      });
-      
+        ...(description.trim() && ({ description: description.trim() } as any)),
+      } as any);
+
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to update quest");
@@ -175,11 +181,11 @@ export function QuestEditModal({
                   inputMode="numeric"
                   value={reward}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     setReward(value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === '.' || e.key === ',') {
+                    if (e.key === "." || e.key === ",") {
                       e.preventDefault();
                     }
                   }}
@@ -198,11 +204,11 @@ export function QuestEditModal({
                   inputMode="numeric"
                   value={dollarAmount}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     setDollarAmount(value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === '.' || e.key === ',') {
+                    if (e.key === "." || e.key === ",") {
                       e.preventDefault();
                     }
                   }}
@@ -237,7 +243,16 @@ export function QuestEditModal({
                 </label>
                 <select
                   value={rewardRarity}
-                  onChange={(e) => setRewardRarity(e.target.value as 'common' | 'rare' | 'epic' | 'legendary' | '')}
+                  onChange={(e) =>
+                    setRewardRarity(
+                      e.target.value as
+                        | "common"
+                        | "rare"
+                        | "epic"
+                        | "legendary"
+                        | ""
+                    )
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">None</option>
@@ -250,7 +265,9 @@ export function QuestEditModal({
 
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
                 </div>
               )}
 
