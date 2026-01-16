@@ -13,7 +13,6 @@ import { useWallet } from "../hooks/useWallet";
 import { deriveRewardSummary, deriveRewardDetail, setRewardStarred } from "../utils/rewardDataMapping";
 import { RewardEditModal } from "../components/RewardEditModal";
 import type { RewardDetail } from "../types/rewards";
-import type { ShopItem } from "../types";
 
 export function RewardDetailPage() {
   const { id } = useParams<{ id: string }>();
