@@ -89,9 +89,9 @@ export function RewardEditModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-start justify-center p-0 sm:p-4 md:p-6 lg:p-8">
+      <div className="fixed inset-0 z-[100] flex items-start justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8">
         <div
-          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg sm:rounded-2xl shadow-2xl w-full sm:w-full max-w-3xl max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-16 sm:mt-32 md:mt-36 lg:mt-40 mb-2 sm:mb-0"
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-none sm:rounded-lg md:rounded-2xl shadow-2xl w-full sm:w-full max-w-3xl h-screen sm:h-auto max-h-screen sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-0 sm:mt-32 md:mt-36 lg:mt-40 mb-0 sm:mb-0"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
