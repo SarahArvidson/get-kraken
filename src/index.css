@@ -230,6 +230,21 @@ body::before {
   @media only screen and (max-width: 374px) {
     .quest-reward-modal-content {
       margin: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    
+    .quest-reward-modal-content > div {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    
+    .quest-reward-modal-content input,
+    .quest-reward-modal-content textarea,
+    .quest-reward-modal-content select {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
     }
   }
   
