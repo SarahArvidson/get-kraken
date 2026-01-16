@@ -642,11 +642,11 @@ export function QuestDetailPage() {
         )}
       </div>
 
-      {/* Combined Rewards and Complete Button - Only show when active */}
+      {/* Rewards and Complete Button - Success Zone */}
       {questStatus === "active" && (
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
           <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 text-center">
-            Complete Quest and Claim These Rewards!
+            Your Rewards
           </h2>
           <div className="flex items-center justify-center gap-6 flex-wrap mb-6">
             <div className="flex items-center gap-3">
@@ -706,13 +706,7 @@ export function QuestDetailPage() {
             onClick={() => setShowCompleteConfirm(true)}
             className="w-full px-8 py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-xl hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
           >
-            End Quest and Claim Rewards
-          </button>
-          <button
-            onClick={() => setShowAbandonConfirm(true)}
-            className="w-full px-4 py-2 text-sm text-amber-900 dark:text-amber-100 hover:text-amber-950 dark:hover:text-amber-50 transition-colors mt-3"
-          >
-            Abandon quest
+            Complete Quest
           </button>
         </div>
       )}
@@ -733,6 +727,14 @@ export function QuestDetailPage() {
             className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
           >
             Restart Quest
+          </button>
+        )}
+        {questStatus === "active" && (
+          <button
+            onClick={() => setShowAbandonConfirm(true)}
+            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+          >
+            Abandon quest
           </button>
         )}
         {questStatus !== "active" && (
