@@ -99,7 +99,10 @@ export function QuestDetailPage() {
           );
           const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
             associated_item_id: questWithLogs.reward_item_id || undefined,
-            description: (questWithLogs as any).description || undefined,
+            description:
+              (questWithLogs as any).description ||
+              (quest as any)?.description ||
+              undefined,
           });
           setQuestDetail(detail);
           // Status comes from merged quest list, not from getQuestWithLogs

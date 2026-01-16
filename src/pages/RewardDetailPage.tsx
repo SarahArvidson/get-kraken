@@ -11,12 +11,14 @@ import { useQuests } from "../hooks/useQuests";
 import { usePreferences } from "../hooks/usePreferences";
 import { useWallet } from "../hooks/useWallet";
 import { deriveRewardSummary, deriveRewardDetail, setRewardStarred } from "../utils/rewardDataMapping";
+import { RewardEditModal } from "../components/RewardEditModal";
 import type { RewardDetail } from "../types/rewards";
+import type { ShopItem } from "../types";
 
 export function RewardDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { shopItems, loading, getShopItemWithLogs, purchaseItem } = useShopItems();
+  const { shopItems, loading, getShopItemWithLogs, purchaseItem, updateShopItem, refresh } = useShopItems();
   const { quests } = useQuests();
   const preferences = usePreferences();
   const { wallet } = useWallet();
@@ -24,6 +26,7 @@ export function RewardDetailPage() {
   const [detailLoading, setDetailLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -244,15 +247,48 @@ export function RewardDetailPage() {
       {/* Action Buttons */}
       <div className="flex gap-4">
         <button
-          onClick={() => {
-            // Edit functionality - placeholder for now
-            alert("Edit functionality coming soon");
-          }}
+          onClick={() => setShowEditModal(true)}
           className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors text-sm"
         >
           Edit Item
         </button>
       </div>
+
+      {/* Edit Modal */}
+      {shopItems.find((item) => item.id === id) && (
+        <RewardEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          reward={shopItems.find((item) => item.id === id) || null}
+          onUpdate={async (itemId, updates) => {
+            try {
+              await updateShopItem(itemId, updates);
+              setShowEditModal(false);
+              // Refresh shop items
+              await refresh();
+              // Reload reward detail
+              const itemWithLogs = await getShopItemWithLogs(itemId);
+              if (itemWithLogs) {
+                const item = shopItems.find((i) => i.id === itemId);
+                if (item) {
+                  const userPurchaseCount = itemWithLogs.logs.length;
+                  const summary = deriveRewardSummary(item, userPurchaseCount);
+                  const linkedQuest = summary.linkedQuestId
+                    ? quests.find((q) => q.id === summary.linkedQuestId)
+                    : undefined;
+                  const detail = await deriveRewardDetail(summary, itemWithLogs.logs, {
+                    linkedQuest: linkedQuest ? { id: linkedQuest.id, name: linkedQuest.name } : undefined,
+                  });
+                  setRewardDetail(detail);
+                }
+              }
+            } catch (err) {
+              console.error("Error updating reward:", err);
+            }
+          }}
+          showDollarAmounts={preferences.showDollarAmounts}
+        />
+      )}
 
       {/* Purchase Section - Visually Prominent */}
       <div className="bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 rounded-3xl p-6 shadow-xl">
