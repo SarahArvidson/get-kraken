@@ -104,7 +104,7 @@ export function ProgressLogModal({
 
     setLoading(true);
     try {
-      // Toggle selected tasks
+      // Toggle selected tasks (only uncompleted tasks can be toggled)
       for (const taskId of selectedTaskIds) {
         const task = tasks.find((t) => t.id === taskId);
         if (task && !task.completed) {
@@ -261,27 +261,33 @@ export function ProgressLogModal({
               {tasks.length > 0 && (mode === 'task' || mode === null) && (
                 <div>
                   <div className="space-y-2">
-                    {tasks
-                      .filter((task) => !task.completed)
-                      .map((task) => (
-                        <label
-                          key={task.id}
-                          className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTaskIds.has(task.id)}
-                            onChange={(e) => handleToggleTask(task.id, e.target.checked)}
-                            className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                          />
-                          <span className="flex-1 text-gray-900 dark:text-gray-100">
-                            {task.name}
-                          </span>
-                        </label>
-                      ))}
-                    {tasks.filter((task) => !task.completed).length === 0 && (
+                    {tasks.map((task) => (
+                      <label
+                        key={task.id}
+                        className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer ${
+                          task.completed ? "opacity-60" : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={task.completed || selectedTaskIds.has(task.id)}
+                          onChange={(e) => {
+                            if (!task.completed) {
+                              handleToggleTask(task.id, e.target.checked);
+                            }
+                          }}
+                          disabled={task.completed}
+                          className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500 disabled:opacity-50"
+                        />
+                        <span className="flex-1 text-gray-900 dark:text-gray-100">
+                          {task.completed && "✓ "}
+                          {task.name}
+                        </span>
+                      </label>
+                    ))}
+                    {tasks.length === 0 && (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        All tasks are completed!
+                        No tasks yet.
                       </p>
                     )}
                   </div>
@@ -345,12 +351,11 @@ export function ProgressLogModal({
                 </div>
               )}
 
-              {tasks.filter((task) => !task.completed).length === 0 &&
-                habits.length === 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                    No tasks or habits to log progress on.
-                  </p>
-                )}
+              {tasks.length === 0 && habits.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                  No tasks or habits to log progress on.
+                </p>
+              )}
 
             </form>
           </div>

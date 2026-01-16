@@ -24,7 +24,6 @@ export function QuestEditModal({
 }: QuestEditModalProps) {
   const { shopItems } = useShopItems();
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
   const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
@@ -39,7 +38,6 @@ export function QuestEditModal({
   useEffect(() => {
     if (quest && isOpen) {
       setName(quest.name || "");
-      setDescription((quest as any).description || "");
       setTags(quest.tags || []);
       setReward(quest.reward ? quest.reward.toString() : "10");
       setDollarAmount(
@@ -68,8 +66,7 @@ export function QuestEditModal({
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
         reward_item_id: rewardItemId || null,
         reward_rarity: rewardRarity || null,
-        ...(description.trim() && ({ description: description.trim() } as any)),
-      } as any);
+      });
 
       onClose();
     } catch (err: any) {
@@ -131,20 +128,6 @@ export function QuestEditModal({
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="Enter quest name"
-                />
-              </div>
-
-              {/* Description (Optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description (Optional)
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                  placeholder="Enter quest description"
                 />
               </div>
 

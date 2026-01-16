@@ -123,10 +123,12 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
+        // Strip description field - it's not in database schema
+        const { description, ...questData } = quest as any;
         const { data, error: createError } = await supabase
           .from("quests")
           .insert({
-            ...quest,
+            ...questData,
             created_by: user.id,
             completion_count: 0,
             created_at: new Date().toISOString(),
@@ -180,21 +182,10 @@ export function useQuests() {
           status, // lifecycle - belongs ONLY in overrides
           reward_rarity, // per-user rarity - belongs ONLY in overrides
           reward_item_id, // reward item - store in overrides for consistency (all users can customize)
-          ...questFields // name, tags, reward, dollar_amount, description - can go in quests table for user-created quests
+          description, // UI-only field, not in database schema - remove from updates
+          ...questFields // name, tags, reward, dollar_amount - can go in quests table for user-created quests
         } = updates;
 
-        console.log(
-          "[updateQuest] Filtered quest fields:",
-          JSON.stringify(questFields, null, 2)
-        );
-        console.log(
-          "[updateQuest] Override fields (status, reward_rarity, reward_item_id):",
-          {
-            status,
-            reward_rarity,
-            reward_item_id,
-          }
-        );
 
         // First, check if the quest exists and if the user created it
         const { data: existingQuest, error: fetchError } = await supabase

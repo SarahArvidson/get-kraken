@@ -58,6 +58,10 @@ export function QuestDetailPage() {
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [loggingTaskId, setLoggingTaskId] = useState<string | null>(null);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
+  const [addingTask, setAddingTask] = useState(false);
+  const [addingHabit, setAddingHabit] = useState(false);
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newHabitName, setNewHabitName] = useState("");
   // Quest status is derived from merged quest list - single source of truth
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
@@ -72,7 +76,7 @@ export function QuestDetailPage() {
       setDetailLoading(true);
       try {
         // Find quest in current list
-        let quest = quests.find((q) => q.id === id);
+        const quest = quests.find((q) => q.id === id);
         if (!quest) {
           // Try to load from database
           const questWithLogs = await getQuestWithLogs(id);
@@ -89,7 +93,6 @@ export function QuestDetailPage() {
           );
           const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
             associated_item_id: questWithLogs.reward_item_id || undefined,
-            description: (questWithLogs as any).description || undefined,
           });
           setQuestDetail(detail);
           // Status comes from merged quest list, not from getQuestWithLogs
@@ -104,7 +107,6 @@ export function QuestDetailPage() {
               questWithLogs.logs,
               {
                 associated_item_id: quest.reward_item_id || undefined,
-                description: (questWithLogs as any).description || undefined,
               }
             );
             setQuestDetail(detail);
@@ -240,33 +242,15 @@ export function QuestDetailPage() {
 
   const handleTaskLogComplete = async () => {
     if (!id) return;
+    // Activity logs will update via real-time subscription, just refresh the view
     await loadActivityLogs();
-    // Refresh tasks to show updated state
-    const questWithLogs = await getQuestWithLogs(id);
-    if (questWithLogs && questDetail) {
-      const userCompletionCount = questWithLogs.logs.length;
-      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-        associated_item_id: questWithLogs.reward_item_id || undefined,
-      });
-      setQuestDetail(detail);
-    }
   };
 
   const handleHabitLogComplete = async () => {
     if (!id) return;
+    // Refresh habits and activity logs - quest detail will update via real-time subscription
     await refreshHabits();
     await loadActivityLogs();
-    // Reload quest detail to show updated logs
-    const questWithLogs = await getQuestWithLogs(id);
-    if (questWithLogs && questDetail) {
-      const userCompletionCount = questWithLogs.logs.length;
-      const summary = deriveQuestSummary(questWithLogs, userCompletionCount);
-      const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-        associated_item_id: questWithLogs.reward_item_id || undefined,
-      });
-      setQuestDetail(detail);
-    }
   };
 
   // Helper function to format time ago
@@ -359,86 +343,126 @@ export function QuestDetailPage() {
           </h2>
           {questStatus === "active" && (
             <button
-              onClick={async () => {
-                const name = prompt("Enter task name:");
-                if (name && name.trim() && id) {
-                  try {
-                    await createTask(name.trim());
-                  } catch (err) {
-                    console.error("Error creating task:", err);
-                    alert("Failed to create task");
-                  }
-                }
-              }}
+              onClick={() => setAddingTask(true)}
               className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
             >
               Add Task
             </button>
           )}
         </div>
-        {tasks.length === 0 ? (
+        {addingTask && questStatus === "active" && (
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+            <input
+              type="text"
+              value={newTaskName}
+              onChange={(e) => setNewTaskName(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTaskName.trim() && id) {
+                  try {
+                    await createTask(newTaskName.trim());
+                    setNewTaskName("");
+                    setAddingTask(false);
+                  } catch (err) {
+                    console.error("Error creating task:", err);
+                  }
+                } else if (e.key === "Escape") {
+                  setNewTaskName("");
+                  setAddingTask(false);
+                }
+              }}
+              placeholder="Enter task name..."
+              autoFocus
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={async () => {
+                  if (newTaskName.trim() && id) {
+                    try {
+                      await createTask(newTaskName.trim());
+                      setNewTaskName("");
+                      setAddingTask(false);
+                    } catch (err) {
+                      console.error("Error creating task:", err);
+                    }
+                  }
+                }}
+                className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => {
+                  setNewTaskName("");
+                  setAddingTask(false);
+                }}
+                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {tasks.length === 0 && !addingTask ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             No tasks yet. {questStatus === "active" && "Add your first task!"}
           </p>
         ) : (
           <div className="space-y-2">
-            {tasks
-              .filter((task) => !task.completed)
-              .map((task) => {
-                // Find last task completion log (tasks are logged as habit_log with habit_id: null)
-                const lastTaskLog = questActivityLogs
-                  .filter((log) => {
-                    return (
-                      log.quest_id === id &&
-                      log.action_type === "habit_log" &&
-                      log.habit_id === null
-                    );
-                  })
-                  .sort(
-                    (a, b) =>
-                      new Date(b.logged_at).getTime() -
-                      new Date(a.logged_at).getTime()
-                  )[0];
-                return questStatus === "active" ? (
-                  <button
-                    key={task.id}
-                    onClick={() => setLoggingTaskId(task.id)}
-                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left"
-                  >
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {task.name}
-                      </span>
-                      {lastTaskLog && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ) : (
-                  <div
-                    key={task.id}
-                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75"
-                  >
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {task.name}
-                      </span>
-                      {lastTaskLog && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                        </div>
-                      )}
-                    </div>
+            {tasks.map((task) => {
+              // Find last task completion log (tasks are logged as habit_log with habit_id: null)
+              // Note: activity_logs doesn't have task_id, so we show the most recent task log for this quest
+              // In the future, we may add task_id to activity_logs to track individual tasks
+              const taskLogs = questActivityLogs.filter(
+                (log) =>
+                  log.action_type === "habit_log" && log.habit_id === null
+              );
+              const lastTaskLog = taskLogs.sort(
+                (a, b) =>
+                  new Date(b.logged_at).getTime() -
+                  new Date(a.logged_at).getTime()
+              )[0];
+              return questStatus === "active" ? (
+                <button
+                  key={task.id}
+                  onClick={() => setLoggingTaskId(task.id)}
+                  className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left ${
+                    task.completed ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {task.completed && "✓ "}
+                      {task.name}
+                    </span>
+                    {lastTaskLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            {tasks.filter((task) => !task.completed).length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                All tasks completed! 🎉
-              </p>
-            )}
+                </button>
+              ) : (
+                <div
+                  key={task.id}
+                  className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75 ${
+                    task.completed ? "opacity-50" : ""
+                  }`}
+                >
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {task.completed && "✓ "}
+                      {task.name}
+                    </span>
+                    {lastTaskLog && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -451,24 +475,67 @@ export function QuestDetailPage() {
           </h2>
           {questStatus === "active" && (
             <button
-              onClick={async () => {
-                const name = prompt("Enter habit name:");
-                if (name && name.trim() && id) {
-                  try {
-                    await createHabit(name.trim());
-                  } catch (err) {
-                    console.error("Error creating habit:", err);
-                    alert("Failed to create habit");
-                  }
-                }
-              }}
+              onClick={() => setAddingHabit(true)}
               className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
             >
               Add Habit
             </button>
           )}
         </div>
-        {habits.length === 0 ? (
+        {addingHabit && questStatus === "active" && (
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+            <input
+              type="text"
+              value={newHabitName}
+              onChange={(e) => setNewHabitName(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newHabitName.trim() && id) {
+                  try {
+                    await createHabit(newHabitName.trim());
+                    setNewHabitName("");
+                    setAddingHabit(false);
+                  } catch (err) {
+                    console.error("Error creating habit:", err);
+                  }
+                } else if (e.key === "Escape") {
+                  setNewHabitName("");
+                  setAddingHabit(false);
+                }
+              }}
+              placeholder="Enter habit name..."
+              autoFocus
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={async () => {
+                  if (newHabitName.trim() && id) {
+                    try {
+                      await createHabit(newHabitName.trim());
+                      setNewHabitName("");
+                      setAddingHabit(false);
+                    } catch (err) {
+                      console.error("Error creating habit:", err);
+                    }
+                  }
+                }}
+                className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => {
+                  setNewHabitName("");
+                  setAddingHabit(false);
+                }}
+                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {habits.length === 0 && !addingHabit ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
             No habits yet. {questStatus === "active" && "Add your first habit!"}
           </p>
@@ -764,38 +831,13 @@ export function QuestDetailPage() {
           onClose={() => setShowEditModal(false)}
           quest={baseQuest}
           onUpdate={async (id, updates) => {
-            console.log(
-              "[QuestDetailPage] Updating quest:",
-              id,
-              "with updates:",
-              updates
-            );
             try {
               await updateQuest(id, updates);
               setShowEditModal(false);
-              // Update local quest detail state directly without triggering useEffect reload
-              // Status comes from merged quest list (baseQuest.status), not from getQuestWithLogs
-              const questWithLogs = await getQuestWithLogs(id);
-              if (questWithLogs) {
-                const userCompletionCount = questWithLogs.logs.length;
-                const summary = deriveQuestSummary(
-                  questWithLogs,
-                  userCompletionCount
-                );
-                const detail = await deriveQuestDetail(
-                  summary,
-                  questWithLogs.logs,
-                  {
-                    associated_item_id:
-                      questWithLogs.reward_item_id || undefined,
-                    description:
-                      (questWithLogs as any).description || undefined,
-                  }
-                );
-                setQuestDetail(detail);
-              }
+              // Refresh quest detail after update
+              await refresh();
             } catch (err) {
-              console.error("[QuestDetailPage] Error updating quest:", err);
+              console.error("Error updating quest:", err);
               // Keep modal open on error so user can retry
             }
           }}
