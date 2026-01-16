@@ -664,21 +664,21 @@ export function QuestDetailPage() {
       {/* Rewards and Complete Button - Success Zone */}
       {questStatus === "active" && (
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center justify-center gap-6 flex-wrap mb-6">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6">
+            <div className="flex items-center gap-2">
               <img
                 src="/sea-dollar.svg"
                 alt="Sand dollar"
-                className="w-8 h-8"
+                className="w-6 h-6 sm:w-7 sm:h-7"
               />
-              <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+              <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
                 {questDetail.reward}
               </span>
             </div>
             {questDetail.dollar_amount > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-3xl">💵</span>
-                <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                <span className="text-2xl sm:text-3xl">💵</span>
+                <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
                   ${Math.round(questDetail.dollar_amount)}
                 </span>
               </div>
@@ -700,14 +700,14 @@ export function QuestDetailPage() {
                     "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
                 };
                 return (
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">🎁</span>
-                    <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                    <span className="text-2xl sm:text-3xl">🎁</span>
+                    <span className="text-lg sm:text-xl font-bold text-amber-900 dark:text-amber-100">
                       {linkedItem.name}
                     </span>
                     {rarity && (
                       <span
-                        className={`px-3 py-1 text-sm font-bold rounded ${
+                        className={`px-2 py-1 text-xs sm:text-sm font-bold rounded ${
                           rarityColors[rarity] || rarityColors.common
                         }`}
                       >
@@ -720,7 +720,7 @@ export function QuestDetailPage() {
           </div>
           <button
             onClick={() => setShowCompleteConfirm(true)}
-            className="w-full px-8 py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-xl hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
+            className="w-full px-6 py-4 sm:px-8 sm:py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-base sm:text-lg leading-tight hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
           >
             Complete Quest and Claim These Rewards
           </button>

@@ -127,7 +127,7 @@ export function QuestEditModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-8 lg:p-12">
         <div
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col relative z-[101]"
           onClick={(e) => e.stopPropagation()}
