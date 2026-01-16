@@ -123,8 +123,9 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
-        // Strip description field - it's not in database schema
-        const { description, ...questData } = quest as any;
+        // Description may or may not be in database schema - pass it through
+        // If the database doesn't support it, it will be ignored
+        const questData = quest as any;
         const { data, error: createError } = await supabase
           .from("quests")
           .insert({

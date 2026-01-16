@@ -336,7 +336,7 @@ export function CalendarPage() {
                     )}
                     {activity.dollars_saved && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Saved: ${activity.dollars_saved.toFixed(2)}
+                        Saved: ${Math.round(activity.dollars_saved || 0)}
                       </p>
                     )}
                   </div>

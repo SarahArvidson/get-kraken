@@ -209,6 +209,10 @@ export function HabitLogModal({
             </button>
           </div>
 
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Calculate small rewards...
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Difficulty Slider */}
             <div>

@@ -270,7 +270,7 @@ export function RewardDetailPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">💵</span>
               <span className="text-xl font-semibold text-purple-900 dark:text-purple-100">
-                ${rewardDetail.dollar_amount.toFixed(2)}
+                ${Math.round(rewardDetail.dollar_amount)}
               </span>
             </div>
           )}

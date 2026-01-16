@@ -12,7 +12,6 @@ import { useQuestHabits } from "../hooks/useQuestHabits";
 import { useQuestTasks } from "../hooks/useQuestTasks";
 import { useActivityLogs } from "../hooks/useActivityLogs";
 import { useQuestMetadata } from "../hooks/useQuestMetadata";
-import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
   deriveQuestSummary,
   deriveQuestDetail,
@@ -50,7 +49,6 @@ export function QuestDetailPage() {
   const { logs: allActivityLogs, loadActivityLogs } = useActivityLogs({
     questMetadata: questMetadata.metadata,
   });
-  const { userId: currentUserId } = useCurrentUser();
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -93,6 +91,7 @@ export function QuestDetailPage() {
           );
           const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
             associated_item_id: questWithLogs.reward_item_id || undefined,
+            description: (questWithLogs as any).description || undefined,
           });
           setQuestDetail(detail);
           // Status comes from merged quest list, not from getQuestWithLogs
@@ -107,6 +106,10 @@ export function QuestDetailPage() {
               questWithLogs.logs,
               {
                 associated_item_id: quest.reward_item_id || undefined,
+                description:
+                  (questWithLogs as any).description ||
+                  (quest as any).description ||
+                  undefined,
               }
             );
             setQuestDetail(detail);
@@ -303,33 +306,31 @@ export function QuestDetailPage() {
         </button>
       </div>
 
-      {/* 1. Quest Identity Header */}
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex-1">
+      {/* 1. Quest Identity Header - Centered and Prominent */}
+      <div className="space-y-4 text-center">
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={handleToggleStar}
+            className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
+            aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
+          >
+            {questDetail.isStarred ? "⭐" : "☆"}
+          </button>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
             {questDetail.name}
           </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-              aria-label="Edit quest"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleToggleStar}
-              className="text-3xl transition-transform hover:scale-110 active:scale-95 touch-manipulation"
-              aria-label={questDetail.isStarred ? "Unstar quest" : "Star quest"}
-            >
-              {questDetail.isStarred ? "⭐" : "☆"}
-            </button>
-          </div>
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+            aria-label="Edit quest"
+          >
+            Edit
+          </button>
         </div>
 
         {/* Optional description */}
         {questDetail.description && (
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             {questDetail.description}
           </p>
         )}
@@ -337,7 +338,7 @@ export function QuestDetailPage() {
 
       {/* Tasks Block - Show for all statuses */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             Tasks
           </h2>
@@ -350,6 +351,9 @@ export function QuestDetailPage() {
             </button>
           )}
         </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          things you do once to make success in this quest possible.
+        </p>
         {addingTask && questStatus === "active" && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
             <input
@@ -469,7 +473,7 @@ export function QuestDetailPage() {
 
       {/* Habits Block - Show for all statuses */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             Habits
           </h2>
@@ -482,6 +486,9 @@ export function QuestDetailPage() {
             </button>
           )}
         </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          things you do repeatedly to be successful in this quest.
+        </p>
         {addingHabit && questStatus === "active" && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
             <input
@@ -577,9 +584,13 @@ export function QuestDetailPage() {
 
       {/* Progress Dashboard - Show for all statuses */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Progress
         </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          activity you've completed and rewards you've earned on the way to
+          completing this quest
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <div className="flex items-center gap-1 mb-1">
@@ -600,11 +611,11 @@ export function QuestDetailPage() {
             <div className="flex items-center gap-1 mb-1">
               <span className="text-lg">💵</span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {liveStats.totalRealDollars.toFixed(0)}
+                {Math.round(liveStats.totalRealDollars)}
               </span>
             </div>
             <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {liveStats.totalRealDollars.toFixed(0)}
+              {Math.round(liveStats.totalRealDollars)}
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -631,137 +642,80 @@ export function QuestDetailPage() {
         )}
       </div>
 
-      {/* Rewards Card */}
-      <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
-        <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 text-center">
-          Rewards
-        </h2>
-        <div className="flex items-center justify-center gap-6 flex-wrap">
-          <div className="flex items-center gap-3">
-            <img src="/sea-dollar.svg" alt="Sand dollar" className="w-8 h-8" />
-            <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-              {questDetail.reward}
-            </span>
-          </div>
-          {questDetail.dollar_amount > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">💵</span>
+      {/* Combined Rewards and Complete Button - Only show when active */}
+      {questStatus === "active" && (
+        <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
+          <h2 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-4 text-center">
+            Complete Quest and Claim These Rewards!
+          </h2>
+          <div className="flex items-center justify-center gap-6 flex-wrap mb-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/sea-dollar.svg"
+                alt="Sand dollar"
+                className="w-8 h-8"
+              />
               <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                ${questDetail.dollar_amount.toFixed(2)}
+                {questDetail.reward}
               </span>
             </div>
-          )}
-          {questDetail.associated_item_id &&
-            (() => {
-              const linkedItem = shopItems.find(
-                (item) => item.id === questDetail.associated_item_id
-              );
-              if (!linkedItem) return null;
-              const quest = quests.find((q) => q.id === id);
-              const rarity = quest?.reward_rarity;
-              const rarityColors: Record<string, string> = {
-                common:
-                  "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
-                rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-                legendary:
-                  "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-              };
-              return (
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🎁</span>
-                  <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                    {linkedItem.name}
-                  </span>
-                  {rarity && (
-                    <span
-                      className={`px-3 py-1 text-sm font-bold rounded ${
-                        rarityColors[rarity] || rarityColors.common
-                      }`}
-                    >
-                      {rarity.toUpperCase()}
+            {questDetail.dollar_amount > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">💵</span>
+                <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  ${Math.round(questDetail.dollar_amount)}
+                </span>
+              </div>
+            )}
+            {questDetail.associated_item_id &&
+              (() => {
+                const linkedItem = shopItems.find(
+                  (item) => item.id === questDetail.associated_item_id
+                );
+                if (!linkedItem) return null;
+                const quest = quests.find((q) => q.id === id);
+                const rarity = quest?.reward_rarity;
+                const rarityColors: Record<string, string> = {
+                  common:
+                    "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+                  rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                  epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                  legendary:
+                    "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                };
+                return (
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">🎁</span>
+                    <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                      {linkedItem.name}
                     </span>
-                  )}
-                </div>
-              );
-            })()}
-        </div>
-      </div>
-
-      {/* Primary Action - End Quest and Claim Rewards */}
-      {questStatus === "active" && (
-        <div className="space-y-3">
+                    {rarity && (
+                      <span
+                        className={`px-3 py-1 text-sm font-bold rounded ${
+                          rarityColors[rarity] || rarityColors.common
+                        }`}
+                      >
+                        {rarity.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+          </div>
           <button
             onClick={() => setShowCompleteConfirm(true)}
-            className="w-full px-8 py-5 bg-amber-500 text-white rounded-xl font-bold text-xl hover:bg-amber-600 transition-colors shadow-xl"
+            className="w-full px-8 py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-xl hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
           >
             End Quest and Claim Rewards
           </button>
           <button
             onClick={() => setShowAbandonConfirm(true)}
-            className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+            className="w-full px-4 py-2 text-sm text-amber-900 dark:text-amber-100 hover:text-amber-950 dark:hover:text-amber-50 transition-colors mt-3"
           >
             Abandon quest
           </button>
         </div>
       )}
-
-      {/* Activity Feed - Read-only History */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Activity
-          </h2>
-          {questActivityLogs.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No activity yet. Start logging progress to see history.
-            </p>
-          ) : (
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {questActivityLogs.map((log) => {
-                return (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
-                      {log.action_type === "habit_log" ? "H" : "Q"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {log.action_type === "habit_log"
-                          ? `Logged habit: ${
-                              habits.find((h) => h.id === log.habit_id)?.name ||
-                              "Unknown"
-                            }`
-                          : log.action_type === "quest_complete"
-                          ? "Quest completed"
-                          : "Activity logged"}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {log.user_id === currentUserId ? (
-                          <span className="text-gray-600 dark:text-gray-300">
-                            You
-                          </span>
-                        ) : (
-                          <span>User</span>
-                        )}
-                        {log.difficulty && log.difficulty > 0 && (
-                          <span>• Difficulty: {log.difficulty}/10</span>
-                        )}
-                        {log.dollars_saved && log.dollars_saved > 0 && (
-                          <span>• 💵 {log.dollars_saved}</span>
-                        )}
-                        <span>• {getTimeAgo(new Date(log.logged_at))}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Footer Actions - Lifecycle buttons */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
@@ -857,7 +811,7 @@ export function QuestDetailPage() {
           // Use emoji/icon format - just use text for dialog since React components don't work in strings
           rewardParts.push(`${questDetail.reward} sand dollars`);
           if (questDetail.dollar_amount > 0) {
-            rewardParts.push(`💵 $${questDetail.dollar_amount.toFixed(2)}`);
+            rewardParts.push(`💵 $${Math.round(questDetail.dollar_amount)}`);
           }
           const rewardItem = questDetail.associated_item_id
             ? shopItems.find(

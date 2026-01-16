@@ -165,7 +165,7 @@ export function GoalDetailPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">💵</span>
               <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                ${goal.dollars.toFixed(2)}
+                ${Math.round(goal.dollars)}
               </span>
             </div>
           )}
@@ -195,7 +195,7 @@ export function GoalDetailPage() {
             <div className="flex items-center gap-2">
               <span className="text-lg">💵</span>
               <span className="text-gray-900 dark:text-gray-100">
-                Total real dollars saved: <strong>${historicalProgress.totalRealDollars.toFixed(2)}</strong>
+                Total real dollars saved: <strong>${Math.round(historicalProgress.totalRealDollars)}</strong>
               </span>
             </div>
           </div>

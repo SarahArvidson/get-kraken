@@ -395,7 +395,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
                           </span>
                           {goal.dollars && goal.dollars > 0 && (
                             <span className="flex items-center gap-1">
-                              <span>💵</span>${goal.dollars.toFixed(2)}
+                              <span>💵</span>${Math.round(goal.dollars)}
                             </span>
                           )}
                           {rewardItem && (
