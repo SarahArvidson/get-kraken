@@ -22,16 +22,20 @@ export function QuestEditModal({
   quest,
   onUpdate,
 }: QuestEditModalProps) {
-  const { shopItems } = useShopItems();
+  const { shopItems, createShopItem, loadShopItems } = useShopItems();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<Tag[]>([]);
   const [reward, setReward] = useState("10");
   const [dollarAmount, setDollarAmount] = useState("");
   const [rewardItemId, setRewardItemId] = useState<string>("");
+  const [newRewardItemName, setNewRewardItemName] = useState("");
+  const [showNewRewardItemInput, setShowNewRewardItemInput] = useState(false);
   const [rewardRarity, setRewardRarity] = useState<
     "common" | "rare" | "epic" | "legendary" | ""
   >("");
+  const [includeTasks, setIncludeTasks] = useState(false);
+  const [includeHabits, setIncludeHabits] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +51,9 @@ export function QuestEditModal({
       );
       setRewardItemId(quest.reward_item_id || "");
       setRewardRarity(quest.reward_rarity || "");
+      // Check if quest has tasks or habits enabled
+      setIncludeTasks((quest as any).include_tasks === true);
+      setIncludeHabits((quest as any).include_habits === true);
     }
   }, [quest, isOpen]);
 
@@ -61,14 +68,37 @@ export function QuestEditModal({
     setError(null);
 
     try {
+      let finalRewardItemId = rewardItemId;
+      
+      // If user entered a new reward item name, create it first
+      if (showNewRewardItemInput && newRewardItemName.trim()) {
+        try {
+          const newItem = await createShopItem({
+            name: newRewardItemName.trim(),
+            tags: [],
+            price: 0,
+            dollar_amount: 0,
+          });
+          finalRewardItemId = newItem.id;
+          // Refresh shop items list so the new item appears in dropdowns
+          await loadShopItems();
+        } catch (err: any) {
+          setError(`Failed to create reward item: ${err.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       await onUpdate(quest.id, {
         name: name.trim(),
         description: description.trim() || undefined,
         tags: tags.length > 0 ? tags : [],
         reward: reward ? parseInt(reward) || 0 : 0,
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
-        reward_item_id: rewardItemId || null,
-        reward_rarity: rewardRarity || null,
+        reward_item_id: finalRewardItemId || null,
+        reward_rarity: (finalRewardItemId && rewardRarity) || null,
+        include_tasks: includeTasks,
+        include_habits: includeHabits,
       } as any);
 
       onClose();
@@ -99,12 +129,12 @@ export function QuestEditModal({
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-[640px] w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-[640px] w-full max-h-[85vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+          {/* Header */}
+          <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Edit Quest
               </h2>
@@ -116,9 +146,11 @@ export function QuestEditModal({
                 ✕
               </button>
             </div>
+          </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name (Required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -222,57 +254,116 @@ export function QuestEditModal({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Associated Reward Item (Optional)
                 </label>
-                <select
-                  value={rewardItemId}
-                  onChange={(e) => setRewardItemId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                >
-                  <option value="">None</option>
-                  {shopItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <select
+                    value={showNewRewardItemInput ? "" : rewardItemId}
+                    onChange={(e) => {
+                      if (e.target.value === "__new__") {
+                        setShowNewRewardItemInput(true);
+                        setRewardItemId("");
+                      } else {
+                        setShowNewRewardItemInput(false);
+                        setRewardItemId(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  >
+                    <option value="">None</option>
+                    <option value="__new__">+ Create New Item</option>
+                    {shopItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                  {showNewRewardItemInput && (
+                    <input
+                      type="text"
+                      value={newRewardItemName}
+                      onChange={(e) => setNewRewardItemName(e.target.value)}
+                      placeholder="Enter new reward item name"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    />
+                  )}
+                </div>
               </div>
 
-              {/* Reward Rarity (Optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Reward Rarity (Optional)
-                </label>
-                <select
-                  value={rewardRarity}
-                  onChange={(e) =>
-                    setRewardRarity(
-                      e.target.value as
-                        | "common"
-                        | "rare"
-                        | "epic"
-                        | "legendary"
-                        | ""
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                >
-                  <option value="">None</option>
-                  <option value="common">Common</option>
-                  <option value="rare">Rare</option>
-                  <option value="epic">Epic</option>
-                  <option value="legendary">Legendary</option>
-                </select>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {error}
-                  </p>
+              {/* Reward Rarity (Optional) - Only show if reward item is selected */}
+              {(rewardItemId || (showNewRewardItemInput && newRewardItemName.trim())) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Reward Rarity (Optional)
+                  </label>
+                  <select
+                    value={rewardRarity}
+                    onChange={(e) =>
+                      setRewardRarity(
+                        e.target.value as
+                          | "common"
+                          | "rare"
+                          | "epic"
+                          | "legendary"
+                          | ""
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  >
+                    <option value="">None</option>
+                    <option value="common">Common</option>
+                    <option value="rare">Rare</option>
+                    <option value="epic">Epic</option>
+                    <option value="legendary">Legendary</option>
+                  </select>
                 </div>
               )}
 
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
+              {/* Include Tasks/Habits Checkboxes */}
+              <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeTasks}
+                    onChange={(e) => setIncludeTasks(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Include tasks?
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      These are things you'll do once for this quest.
+                    </p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeHabits}
+                    onChange={(e) => setIncludeHabits(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Include habits?
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      These are things you'll do repeatedly for this quest.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {error}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Buttons - Sticky Footer */}
+              <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <button
                   type="button"
                   onClick={onClose}
@@ -291,7 +382,6 @@ export function QuestEditModal({
             </form>
           </div>
         </div>
-      </div>
     </>
   );
 }

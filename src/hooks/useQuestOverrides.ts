@@ -108,9 +108,9 @@ export function useQuestOverrides() {
     [hiddenQuestIds]
   );
 
-  // Update or create override (supports name, tags, reward, dollar_amount, reward_item_id, reward_rarity)
+  // Update or create override (supports name, tags, reward, dollar_amount, reward_item_id, reward_rarity, include_tasks, include_habits)
   const updateOverride = useCallback(
-    async (questId: string, updates: { name?: string; tags?: Tag[]; reward?: number; dollar_amount?: number; reward_item_id?: string | null; reward_rarity?: 'common' | 'rare' | 'epic' | 'legendary' | null }) => {
+    async (questId: string, updates: { name?: string; tags?: Tag[]; reward?: number; dollar_amount?: number; reward_item_id?: string | null; reward_rarity?: 'common' | 'rare' | 'epic' | 'legendary' | null; include_tasks?: boolean; include_habits?: boolean }) => {
       try {
         const userId = await getUserId();
         if (!userId) throw new Error("User must be authenticated");
@@ -127,6 +127,8 @@ export function useQuestOverrides() {
           if (updates.dollar_amount !== undefined) updateData.dollar_amount = updates.dollar_amount;
           if (updates.reward_item_id !== undefined) updateData.reward_item_id = updates.reward_item_id;
           if (updates.reward_rarity !== undefined) updateData.reward_rarity = updates.reward_rarity;
+          if (updates.include_tasks !== undefined) updateData.include_tasks = updates.include_tasks;
+          if (updates.include_habits !== undefined) updateData.include_habits = updates.include_habits;
 
           const { data, error } = await supabase
             .from("user_quest_overrides")
@@ -152,6 +154,8 @@ export function useQuestOverrides() {
               dollar_amount: updates.dollar_amount ?? null,
               reward_item_id: updates.reward_item_id ?? null,
               reward_rarity: updates.reward_rarity ?? null,
+              include_tasks: updates.include_tasks ?? null,
+              include_habits: updates.include_habits ?? null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
@@ -281,7 +285,10 @@ export function useQuestOverrides() {
         // Reward fields come from override if set, otherwise from base quest
         reward_item_id: override.reward_item_id !== undefined ? override.reward_item_id : baseQuest.reward_item_id,
         reward_rarity: override.reward_rarity !== undefined ? override.reward_rarity : baseQuest.reward_rarity || null,
-      };
+        // Include tasks/habits preferences from override
+        include_tasks: (override as any).include_tasks !== undefined ? (override as any).include_tasks : (baseQuest as any).include_tasks,
+        include_habits: (override as any).include_habits !== undefined ? (override as any).include_habits : (baseQuest as any).include_habits,
+      } as Quest;
     },
     [overrides]
   );

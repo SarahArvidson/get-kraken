@@ -177,13 +177,13 @@ export function useQuests() {
 
         // GUARD: NEVER delete or modify logs - this function only updates quest metadata
         // GUARD: NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
-        // Separate quest fields (name, tags, reward, dollar_amount) from override fields (status, reward_rarity, reward_item_id)
+        // Separate quest fields (name, description, tags, reward, dollar_amount) from override fields (status, reward_rarity, reward_item_id)
         const {
           completion_count, // derived, read-only - remove from updates
           status, // lifecycle - belongs ONLY in overrides
           reward_rarity, // per-user rarity - belongs ONLY in overrides
           reward_item_id, // reward item - store in overrides for consistency (all users can customize)
-          ...questFields // name, tags, reward, dollar_amount - can go in quests table for user-created quests
+          ...questFields // name, description, tags, reward, dollar_amount - can go in quests table for user-created quests
         } = updates;
 
 
@@ -214,6 +214,9 @@ export function useQuests() {
           overrideUpdates.reward = updates.reward;
         if (updates.dollar_amount !== undefined)
           overrideUpdates.dollar_amount = updates.dollar_amount;
+        // Store include_tasks and include_habits preferences in overrides
+        if ((updates as any).include_tasks !== undefined) overrideUpdates.include_tasks = (updates as any).include_tasks;
+        if ((updates as any).include_habits !== undefined) overrideUpdates.include_habits = (updates as any).include_habits;
 
         console.log(
           "[updateQuest] Override updates to apply:",

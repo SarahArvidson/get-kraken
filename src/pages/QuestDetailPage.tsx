@@ -64,6 +64,14 @@ export function QuestDetailPage() {
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
 
+  // Check if tasks/habits should be shown (default to true for existing quests without the flag)
+  const showTasks =
+    (baseQuest as any)?.include_tasks === true ||
+    ((baseQuest as any)?.include_tasks === undefined && tasks.length > 0);
+  const showHabits =
+    (baseQuest as any)?.include_habits === true ||
+    ((baseQuest as any)?.include_habits === undefined && habits.length > 0);
+
   useEffect(() => {
     if (!id) {
       navigate("/quests");
@@ -339,52 +347,33 @@ export function QuestDetailPage() {
         )}
       </div>
 
-      {/* Tasks Block - Show for all statuses */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Tasks
-          </h2>
-          {questStatus === "active" && (
-            <button
-              onClick={() => setAddingTask(true)}
-              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-            >
-              Add Task
-            </button>
-          )}
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          things you do once to make success in this quest possible.
-        </p>
-        {addingTask && questStatus === "active" && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-            <input
-              type="text"
-              value={newTaskName}
-              onChange={(e) => setNewTaskName(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && newTaskName.trim() && id) {
-                  try {
-                    await createTask(newTaskName.trim());
-                    setNewTaskName("");
-                    setAddingTask(false);
-                  } catch (err) {
-                    console.error("Error creating task:", err);
-                  }
-                } else if (e.key === "Escape") {
-                  setNewTaskName("");
-                  setAddingTask(false);
-                }
-              }}
-              placeholder="Enter task name..."
-              autoFocus
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            <div className="flex gap-2 mt-2">
+      {/* Tasks Block - Show if enabled or if quest already has tasks (backwards compatibility) */}
+      {showTasks && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Tasks
+            </h2>
+            {questStatus === "active" && (
               <button
-                onClick={async () => {
-                  if (newTaskName.trim() && id) {
+                onClick={() => setAddingTask(true)}
+                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+              >
+                Add Task
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            things you do once to make success in this quest possible.
+          </p>
+          {addingTask && questStatus === "active" && (
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+              <input
+                type="text"
+                value={newTaskName}
+                onChange={(e) => setNewTaskName(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && newTaskName.trim() && id) {
                     try {
                       await createTask(newTaskName.trim());
                       setNewTaskName("");
@@ -392,134 +381,136 @@ export function QuestDetailPage() {
                     } catch (err) {
                       console.error("Error creating task:", err);
                     }
+                  } else if (e.key === "Escape") {
+                    setNewTaskName("");
+                    setAddingTask(false);
                   }
                 }}
-                className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => {
-                  setNewTaskName("");
-                  setAddingTask(false);
-                }}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-        {tasks.length === 0 && !addingTask ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No tasks yet. {questStatus === "active" && "Add your first task!"}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {tasks.map((task) => {
-              // Find last task completion log (tasks are logged as habit_log with habit_id: null)
-              // Note: activity_logs doesn't have task_id, so we show the most recent task log for this quest
-              // In the future, we may add task_id to activity_logs to track individual tasks
-              const taskLogs = questActivityLogs.filter(
-                (log) =>
-                  log.action_type === "habit_log" && log.habit_id === null
-              );
-              const lastTaskLog = taskLogs.sort(
-                (a, b) =>
-                  new Date(b.logged_at).getTime() -
-                  new Date(a.logged_at).getTime()
-              )[0];
-              return questStatus === "active" ? (
+                placeholder="Enter task name..."
+                autoFocus
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <div className="flex gap-2 mt-2">
                 <button
-                  key={task.id}
-                  onClick={() => setLoggingTaskId(task.id)}
-                  className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left ${
-                    task.completed ? "opacity-60" : ""
-                  }`}
+                  onClick={async () => {
+                    if (newTaskName.trim() && id) {
+                      try {
+                        await createTask(newTaskName.trim());
+                        setNewTaskName("");
+                        setAddingTask(false);
+                      } catch (err) {
+                        console.error("Error creating task:", err);
+                      }
+                    }
+                  }}
+                  className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
                 >
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {task.completed && "✓ "}
-                      {task.name}
-                    </span>
-                    {lastTaskLog && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                      </div>
-                    )}
-                  </div>
+                  Add
                 </button>
-              ) : (
-                <div
-                  key={task.id}
-                  className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75 ${
-                    task.completed ? "opacity-50" : ""
-                  }`}
+                <button
+                  onClick={() => {
+                    setNewTaskName("");
+                    setAddingTask(false);
+                  }}
+                  className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
                 >
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {task.completed && "✓ "}
-                      {task.name}
-                    </span>
-                    {lastTaskLog && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                      </div>
-                    )}
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {tasks.length === 0 && !addingTask ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No tasks yet. {questStatus === "active" && "Add your first task!"}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map((task) => {
+                // Find last task completion log (tasks are logged as habit_log with habit_id: null)
+                // Note: activity_logs doesn't have task_id, so we show the most recent task log for this quest
+                // In the future, we may add task_id to activity_logs to track individual tasks
+                const taskLogs = questActivityLogs.filter(
+                  (log) =>
+                    log.action_type === "habit_log" && log.habit_id === null
+                );
+                const lastTaskLog = taskLogs.sort(
+                  (a, b) =>
+                    new Date(b.logged_at).getTime() -
+                    new Date(a.logged_at).getTime()
+                )[0];
+                return questStatus === "active" ? (
+                  <button
+                    key={task.id}
+                    onClick={() => setLoggingTaskId(task.id)}
+                    className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left ${
+                      task.completed ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {task.completed && "✓ "}
+                        {task.name}
+                      </span>
+                      {lastTaskLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ) : (
+                  <div
+                    key={task.id}
+                    className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75 ${
+                      task.completed ? "opacity-50" : ""
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {task.completed && "✓ "}
+                        {task.name}
+                      </span>
+                      {lastTaskLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Habits Block - Show for all statuses */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Habits
-          </h2>
-          {questStatus === "active" && (
-            <button
-              onClick={() => setAddingHabit(true)}
-              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-            >
-              Add Habit
-            </button>
+                );
+              })}
+            </div>
           )}
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          things you do repeatedly to be successful in this quest.
-        </p>
-        {addingHabit && questStatus === "active" && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-            <input
-              type="text"
-              value={newHabitName}
-              onChange={(e) => setNewHabitName(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && newHabitName.trim() && id) {
-                  try {
-                    await createHabit(newHabitName.trim());
-                    setNewHabitName("");
-                    setAddingHabit(false);
-                  } catch (err) {
-                    console.error("Error creating habit:", err);
-                  }
-                } else if (e.key === "Escape") {
-                  setNewHabitName("");
-                  setAddingHabit(false);
-                }
-              }}
-              placeholder="Enter habit name..."
-              autoFocus
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            <div className="flex gap-2 mt-2">
+      )}
+
+      {/* Habits Block - Show if enabled or if quest already has habits (backwards compatibility) */}
+      {showHabits && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Habits
+            </h2>
+            {questStatus === "active" && (
               <button
-                onClick={async () => {
-                  if (newHabitName.trim() && id) {
+                onClick={() => setAddingHabit(true)}
+                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+              >
+                Add Habit
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            things you do repeatedly to be successful in this quest.
+          </p>
+          {addingHabit && questStatus === "active" && (
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+              <input
+                type="text"
+                value={newHabitName}
+                onChange={(e) => setNewHabitName(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && newHabitName.trim() && id) {
                     try {
                       await createHabit(newHabitName.trim());
                       setNewHabitName("");
@@ -527,63 +518,85 @@ export function QuestDetailPage() {
                     } catch (err) {
                       console.error("Error creating habit:", err);
                     }
+                  } else if (e.key === "Escape") {
+                    setNewHabitName("");
+                    setAddingHabit(false);
                   }
                 }}
-                className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => {
-                  setNewHabitName("");
-                  setAddingHabit(false);
-                }}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-        {habits.length === 0 && !addingHabit ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No habits yet. {questStatus === "active" && "Add your first habit!"}
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {habits.map((habit) => {
-              const lastLog = habitLogs[habit.id]?.[0];
-              return (
-                <div
-                  key={habit.id}
-                  className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${
-                    questStatus !== "active" ? "opacity-75" : ""
-                  }`}
+                placeholder="Enter habit name..."
+                autoFocus
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={async () => {
+                    if (newHabitName.trim() && id) {
+                      try {
+                        await createHabit(newHabitName.trim());
+                        setNewHabitName("");
+                        setAddingHabit(false);
+                      } catch (err) {
+                        console.error("Error creating habit:", err);
+                      }
+                    }
+                  }}
+                  className="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
                 >
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {habit.name}
-                    </span>
-                    {lastLog && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Last: {getTimeAgo(new Date(lastLog.logged_at))}
-                      </div>
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setNewHabitName("");
+                    setAddingHabit(false);
+                  }}
+                  className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {habits.length === 0 && !addingHabit ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No habits yet.{" "}
+              {questStatus === "active" && "Add your first habit!"}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {habits.map((habit) => {
+                const lastLog = habitLogs[habit.id]?.[0];
+                return (
+                  <div
+                    key={habit.id}
+                    className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${
+                      questStatus !== "active" ? "opacity-75" : ""
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {habit.name}
+                      </span>
+                      {lastLog && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Last: {getTimeAgo(new Date(lastLog.logged_at))}
+                        </div>
+                      )}
+                    </div>
+                    {questStatus === "active" && (
+                      <button
+                        onClick={() => setLoggingHabitId(habit.id)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                      >
+                        Log
+                      </button>
                     )}
                   </div>
-                  {questStatus === "active" && (
-                    <button
-                      onClick={() => setLoggingHabitId(habit.id)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                    >
-                      Log
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Progress Dashboard - Show for all statuses */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
@@ -790,8 +803,36 @@ export function QuestDetailPage() {
             try {
               await updateQuest(id, updates);
               setShowEditModal(false);
-              // Refresh quest detail after update
+              // Refresh quests list first to get updated data
               await refresh();
+              // Wait a moment for state to update, then reload quest detail
+              setTimeout(async () => {
+                const questWithLogs = await getQuestWithLogs(id);
+                if (questWithLogs) {
+                  const updatedQuest =
+                    quests.find((q) => q.id === id) || baseQuest;
+                  if (updatedQuest) {
+                    const userCompletionCount = questWithLogs.logs.length;
+                    const summary = deriveQuestSummary(
+                      updatedQuest,
+                      userCompletionCount
+                    );
+                    const detail = await deriveQuestDetail(
+                      summary,
+                      questWithLogs.logs,
+                      {
+                        associated_item_id:
+                          updatedQuest.reward_item_id || undefined,
+                        description:
+                          (questWithLogs as any).description ||
+                          (updatedQuest as any).description ||
+                          undefined,
+                      }
+                    );
+                    setQuestDetail(detail);
+                  }
+                }
+              }, 100);
             } catch (err) {
               console.error("Error updating quest:", err);
               // Keep modal open on error so user can retry
