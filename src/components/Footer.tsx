@@ -12,7 +12,7 @@ interface FooterProps {
 
 export function Footer({ onAboutClick }: FooterProps) {
   return (
-    <footer className="mt-12 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
+    <footer className="mt-auto py-6 text-center text-xs text-gray-500 dark:text-gray-400">
       <p>
         Built by{" "}
         <a

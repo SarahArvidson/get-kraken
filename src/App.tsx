@@ -374,7 +374,7 @@ function App() {
 
   return (
     <div
-      className="min-h-screen bg-blue-50 dark:bg-gray-900 relative"
+      className="min-h-screen bg-blue-50 dark:bg-gray-900 relative flex flex-col"
       style={{ zIndex: 1 }}
     >
       <BubbleBackground />
@@ -395,7 +395,7 @@ function App() {
         onClose={() => setIsWalletDrilldownOpen(false)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 flex-grow">
         <Routes>
           {/* New v2 Home Page */}
           <Route
