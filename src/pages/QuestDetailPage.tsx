@@ -122,12 +122,15 @@ export function QuestDetailPage() {
         }
 
         const userCompletionCount = questWithLogs?.logs.length || 0;
-        const summary = deriveQuestSummary(quest, userCompletionCount);
 
-        // Use baseQuest (merged quest from array) for description and other override fields
+        // Use baseQuest (merged quest from array) for ALL fields including reward, dollar_amount
         // baseQuest has all the merged overrides including description, include_tasks, include_habits
         // If baseQuest doesn't exist yet (newly created), use quest as fallback
         const mergedQuest: Quest = baseQuest || quest;
+
+        // Create summary from merged quest to ensure reward and dollar_amount are correct
+        const summary = deriveQuestSummary(mergedQuest, userCompletionCount);
+
         const detail = await deriveQuestDetail(
           summary,
           questWithLogs?.logs || [],
@@ -682,20 +685,24 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Rewards and Complete Button - Success Zone */}
-      {questStatus === "active" && (
+      {/* Rewards Section - Show for all quests (idle, active, completed) */}
+      {(questDetail.reward > 0 ||
+        questDetail.dollar_amount > 0 ||
+        questDetail.associated_item_id) && (
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6">
-            <div className="flex items-center gap-2">
-              <img
-                src="/sea-dollar.svg"
-                alt="Sand dollar"
-                className="w-6 h-6 sm:w-7 sm:h-7"
-              />
-              <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                {questDetail.reward}
-              </span>
-            </div>
+            {questDetail.reward > 0 && (
+              <div className="flex items-center gap-2">
+                <img
+                  src="/sea-dollar.svg"
+                  alt="Sand dollar"
+                  className="w-6 h-6 sm:w-7 sm:h-7"
+                />
+                <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
+                  {questDetail.reward}
+                </span>
+              </div>
+            )}
             {questDetail.dollar_amount > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-2xl sm:text-3xl">💵</span>
@@ -739,12 +746,15 @@ export function QuestDetailPage() {
                 );
               })()}
           </div>
-          <button
-            onClick={() => setShowCompleteConfirm(true)}
-            className="w-full px-6 py-4 sm:px-8 sm:py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-base sm:text-lg leading-tight hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
-          >
-            Complete Quest and Claim These Rewards
-          </button>
+          {/* Complete Quest Button - Only show for active quests */}
+          {questStatus === "active" && (
+            <button
+              onClick={() => setShowCompleteConfirm(true)}
+              className="w-full px-6 py-4 sm:px-8 sm:py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-base sm:text-lg leading-tight hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
+            >
+              Complete Quest and Claim These Rewards
+            </button>
+          )}
         </div>
       )}
 
