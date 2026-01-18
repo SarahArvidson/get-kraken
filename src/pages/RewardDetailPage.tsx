@@ -12,12 +12,13 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useWallet } from "../hooks/useWallet";
 import { deriveRewardSummary, deriveRewardDetail, setRewardStarred } from "../utils/rewardDataMapping";
 import { RewardEditModal } from "../components/RewardEditModal";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { RewardDetail } from "../types/rewards";
 
 export function RewardDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { shopItems, loading, getShopItemWithLogs, purchaseItem, updateShopItem, refresh } = useShopItems();
+  const { shopItems, loading, getShopItemWithLogs, purchaseItem, updateShopItem, deleteShopItem, refresh } = useShopItems();
   const { quests } = useQuests();
   const preferences = usePreferences();
   const { wallet } = useWallet();
@@ -26,6 +27,7 @@ export function RewardDetailPage() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -251,6 +253,12 @@ export function RewardDetailPage() {
         >
           Edit Item
         </button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
+        >
+          Delete Item
+        </button>
       </div>
 
       {/* Edit Modal */}
@@ -333,6 +341,26 @@ export function RewardDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Delete Reward Confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={async () => {
+          if (!id) return;
+          try {
+            await deleteShopItem(id);
+            navigate('/rewards');
+          } catch (err) {
+            console.error("Error deleting reward:", err);
+            setShowDeleteConfirm(false);
+          }
+        }}
+        title="Delete Reward"
+        message={`Are you sure you want to delete "${rewardDetail.name}"?`}
+        confirmText="Delete"
+        confirmButtonClass="bg-red-500 hover:bg-red-600"
+      />
     </div>
   );
 }

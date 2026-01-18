@@ -13,13 +13,14 @@ import { deriveRewardSummary } from "../utils/rewardDataMapping";
 import { RewardCreateModal } from "../components/RewardCreateModal";
 import { CyclingShopBorder } from "../components/CyclingBorder";
 import { FilterDrawer } from "../components/FilterDrawer";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { SHOP_TAG_BUTTON_CLASSES, SHOP_TAG_LABELS } from "../utils/shopTags";
 import type { RewardSummary } from "../types/rewards";
 import type { ShopLog, ShopTag } from "../types";
 
 export function RewardsPage() {
   const navigate = useNavigate();
-  const { shopItems, loading, loadAllShopLogs, createShopItem } = useShopItems();
+  const { shopItems, loading, loadAllShopLogs, createShopItem, deleteShopItem } = useShopItems();
   const preferences = usePreferences();
   const { shopSearchQuery, selectedShopTag, setShopSearchQuery, setSelectedShopTag } = useFilterState();
   const [allShopLogs, setAllShopLogs] = useState<ShopLog[]>([]);
@@ -30,6 +31,7 @@ export function RewardsPage() {
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [deletingRewardId, setDeletingRewardId] = useState<string | null>(null);
 
   // Load shop logs on mount
   useEffect(() => {
@@ -364,20 +366,10 @@ export function RewardsPage() {
                 {groupedRewards.groups[letter].map((reward) => (
                     <CyclingShopBorder key={reward.id} tags={reward.tags as ShopTag[]}>
                       <div
-                        onClick={() => handleRewardClick(reward.id)}
-                        className="bg-white dark:bg-gray-800 p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleRewardClick(reward.id);
-                        }
-                      }}
-                      aria-label={`Open reward: ${reward.name}`}
-                    >
+                        className="bg-white dark:bg-gray-800 p-4 shadow-sm transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] touch-manipulation"
+                      >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0" onClick={() => handleRewardClick(reward.id)}>
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                             {reward.name}
@@ -423,7 +415,18 @@ export function RewardsPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingRewardId(reward.id);
+                          }}
+                          className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Delete reward"
+                          aria-label="Delete reward"
+                        >
+                          ✕
+                        </button>
                         <span className="text-gray-400 dark:text-gray-500">→</span>
                       </div>
                     </div>
@@ -445,6 +448,30 @@ export function RewardsPage() {
           setShowCreateModal(false);
         }}
         showDollarAmounts={preferences.showDollarAmounts}
+      />
+
+      {/* Delete Reward Confirmation */}
+      <ConfirmDialog
+        isOpen={deletingRewardId !== null}
+        onClose={() => setDeletingRewardId(null)}
+        onConfirm={async () => {
+          if (!deletingRewardId) return;
+          try {
+            await deleteShopItem(deletingRewardId);
+            setDeletingRewardId(null);
+          } catch (err) {
+            console.error("Error deleting reward:", err);
+            // Keep dialog open on error so user can retry
+          }
+        }}
+        title="Delete Reward"
+        message={
+          deletingRewardId
+            ? `Are you sure you want to delete "${rewardSummaries.find((r) => r.id === deletingRewardId)?.name || "this reward"}"?`
+            : ""
+        }
+        confirmText="Delete"
+        confirmButtonClass="bg-red-500 hover:bg-red-600"
       />
     </div>
   );

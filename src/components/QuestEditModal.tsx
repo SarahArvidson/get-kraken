@@ -251,9 +251,24 @@ export function QuestEditModal({
 
               {/* Associated Reward Item (Optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Associated Reward Item (Optional)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Associated Reward Item (Optional)
+                  </label>
+                  {rewardItemId && !showNewRewardItemInput && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRewardItemId("");
+                        setRewardRarity("");
+                      }}
+                      className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
+                      title="Remove reward item"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <select
                     value={showNewRewardItemInput ? "" : rewardItemId}
@@ -264,6 +279,9 @@ export function QuestEditModal({
                       } else {
                         setShowNewRewardItemInput(false);
                         setRewardItemId(e.target.value);
+                        if (!e.target.value) {
+                          setRewardRarity("");
+                        }
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
@@ -277,13 +295,25 @@ export function QuestEditModal({
                     ))}
                   </select>
                   {showNewRewardItemInput && (
-                    <input
-                      type="text"
-                      value={newRewardItemName}
-                      onChange={(e) => setNewRewardItemName(e.target.value)}
-                      placeholder="Enter new reward item name"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={newRewardItemName}
+                        onChange={(e) => setNewRewardItemName(e.target.value)}
+                        placeholder="Enter new reward item name"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewRewardItemInput(false);
+                          setNewRewardItemName("");
+                        }}
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
