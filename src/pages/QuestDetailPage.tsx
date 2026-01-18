@@ -101,15 +101,21 @@ export function QuestDetailPage() {
           }
 
           // Derive summary and detail
+          // Use merged quest from quests array (includes overrides) for reward_item_id
+          const mergedQuest = quests.find((q) => q.id === id);
           const userCompletionCount = questWithLogs.logs.length;
           const summary = deriveQuestSummary(
             questWithLogs,
             userCompletionCount
           );
           const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-            associated_item_id: questWithLogs.reward_item_id || undefined,
+            associated_item_id:
+              mergedQuest?.reward_item_id ||
+              questWithLogs.reward_item_id ||
+              undefined,
             description:
               (questWithLogs as any).description ||
+              (mergedQuest as any)?.description ||
               (quest as any)?.description ||
               undefined,
           });
@@ -119,6 +125,7 @@ export function QuestDetailPage() {
           // Load logs
           const questWithLogs = await getQuestWithLogs(id);
           if (questWithLogs) {
+            // Use merged quest (includes overrides) for reward_item_id and description
             const userCompletionCount = questWithLogs.logs.length;
             const summary = deriveQuestSummary(quest, userCompletionCount);
             const detail = await deriveQuestDetail(
@@ -127,8 +134,8 @@ export function QuestDetailPage() {
               {
                 associated_item_id: quest.reward_item_id || undefined,
                 description:
-                  (questWithLogs as any).description ||
                   (quest as any).description ||
+                  (questWithLogs as any).description ||
                   undefined,
               }
             );
@@ -144,11 +151,11 @@ export function QuestDetailPage() {
       }
     };
 
-    if (!loading) {
+    if (!loading && quests.length > 0) {
       loadQuestDetail();
     }
-    // Only depend on id and loading, NOT quests - prevents flash loops when quests update
-  }, [id, loading, getQuestWithLogs, navigate]);
+    // Include quests in dependencies so quest detail updates when quest data changes (e.g., after edit)
+  }, [id, loading, quests, getQuestWithLogs, navigate]);
 
   // Load activity logs when quest loads
   useEffect(() => {
@@ -821,36 +828,9 @@ export function QuestDetailPage() {
             try {
               await updateQuest(id, updates);
               setShowEditModal(false);
-              // Refresh quests list first to get updated data
+              // Refresh quests list to get updated merged data (includes overrides)
               await refresh();
-              // Wait a moment for state to update, then reload quest detail
-              setTimeout(async () => {
-                const questWithLogs = await getQuestWithLogs(id);
-                if (questWithLogs) {
-                  const updatedQuest =
-                    quests.find((q) => q.id === id) || baseQuest;
-                  if (updatedQuest) {
-                    const userCompletionCount = questWithLogs.logs.length;
-                    const summary = deriveQuestSummary(
-                      updatedQuest,
-                      userCompletionCount
-                    );
-                    const detail = await deriveQuestDetail(
-                      summary,
-                      questWithLogs.logs,
-                      {
-                        associated_item_id:
-                          updatedQuest.reward_item_id || undefined,
-                        description:
-                          (questWithLogs as any).description ||
-                          (updatedQuest as any).description ||
-                          undefined,
-                      }
-                    );
-                    setQuestDetail(detail);
-                  }
-                }
-              }, 100);
+              // The useEffect will automatically reload when quests updates
             } catch (err) {
               console.error("Error updating quest:", err);
               // Keep modal open on error so user can retry
