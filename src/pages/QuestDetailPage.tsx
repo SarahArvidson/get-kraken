@@ -64,13 +64,22 @@ export function QuestDetailPage() {
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
 
-  // Check if tasks/habits should be shown (default to true for existing quests without the flag)
+  // Check if tasks/habits should be shown
+  // - If explicitly true: show
+  // - If explicitly false: hide (but data is preserved)
+  // - If undefined (backwards compatibility): show if there's existing data
+  const includeTasksFlag = (baseQuest as any)?.include_tasks;
   const showTasks =
-    (baseQuest as any)?.include_tasks === true ||
-    ((baseQuest as any)?.include_tasks === undefined && tasks.length > 0);
+    includeTasksFlag === true ||
+    (includeTasksFlag === undefined && tasks.length > 0);
+
+  const includeHabitsFlag = (baseQuest as any)?.include_habits;
   const showHabits =
-    (baseQuest as any)?.include_habits === true ||
-    ((baseQuest as any)?.include_habits === undefined && habits.length > 0);
+    includeHabitsFlag === true ||
+    (includeHabitsFlag === undefined && habits.length > 0);
+
+  // Hide progress area if both tasks and habits are disabled
+  const showProgress = showTasks || showHabits;
 
   useEffect(() => {
     if (!id) {
@@ -601,65 +610,71 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Progress Dashboard - Show for all statuses */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Progress
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          activity you've completed and rewards you've earned on the way to
-          completing this quest
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-1 mb-1">
-              <img
-                src="/sea-dollar.svg"
-                alt="Sand dollar"
-                className="w-4 h-4"
-              />
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+      {/* Progress Dashboard - Show for all statuses, but hide if both tasks and habits are disabled */}
+      {showProgress && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Progress
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            activity you've completed and rewards you've earned on the way to
+            completing this quest
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center gap-1 mb-1">
+                <img
+                  src="/sea-dollar.svg"
+                  alt="Sand dollar"
+                  className="w-4 h-4"
+                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {liveStats.totalSandDollars}
+                </span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {liveStats.totalSandDollars}
-              </span>
+              </div>
             </div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {liveStats.totalSandDollars}
-            </div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-1 mb-1">
-              <span className="text-lg">💵</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-lg">💵</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {Math.round(liveStats.totalRealDollars)}
+                </span>
+              </div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {Math.round(liveStats.totalRealDollars)}
-              </span>
+              </div>
             </div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {Math.round(liveStats.totalRealDollars)}
-            </div>
+            {showTasks && (
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Tasks
+                </div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
+                </div>
+              </div>
+            )}
+            {showHabits && (
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Habits
+                </div>
+                <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {liveStats.habitLogCount}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-              Tasks
+          {liveStats.questStartDate && (
+            <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              Started: {new Date(liveStats.questStartDate).toLocaleDateString()}
             </div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {liveStats.completedTasksCount}/{liveStats.totalTasksCount}
-            </div>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-              Habits
-            </div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {liveStats.habitLogCount}
-            </div>
-          </div>
+          )}
         </div>
-        {liveStats.questStartDate && (
-          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Started: {new Date(liveStats.questStartDate).toLocaleDateString()}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Rewards and Complete Button - Success Zone */}
       {questStatus === "active" && (
