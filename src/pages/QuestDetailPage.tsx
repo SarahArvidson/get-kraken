@@ -685,24 +685,23 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Rewards Section - Show for all quests (idle, active, completed) */}
+      {/* Rewards and Complete Button - Success Zone */}
       {(questDetail.reward > 0 ||
         questDetail.dollar_amount > 0 ||
-        questDetail.associated_item_id) && (
+        questDetail.associated_item_id ||
+        questStatus === "active") && (
         <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6">
-            {questDetail.reward > 0 && (
-              <div className="flex items-center gap-2">
-                <img
-                  src="/sea-dollar.svg"
-                  alt="Sand dollar"
-                  className="w-6 h-6 sm:w-7 sm:h-7"
-                />
-                <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  {questDetail.reward}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <img
+                src="/sea-dollar.svg"
+                alt="Sand dollar"
+                className="w-6 h-6 sm:w-7 sm:h-7"
+              />
+              <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
+                {questDetail.reward}
+              </span>
+            </div>
             {questDetail.dollar_amount > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-2xl sm:text-3xl">💵</span>
@@ -746,7 +745,6 @@ export function QuestDetailPage() {
                 );
               })()}
           </div>
-          {/* Complete Quest Button - Only show for active quests */}
           {questStatus === "active" && (
             <button
               onClick={() => setShowCompleteConfirm(true)}
