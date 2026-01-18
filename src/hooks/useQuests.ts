@@ -165,17 +165,27 @@ export function useQuests() {
             if (Object.keys(overrideFields).length > 0) {
               try {
                 await updateOverride(data.id, overrideFields);
+                // Refresh overrides to ensure they're loaded before merging
+                await refreshOverrides();
               } catch (overrideError: any) {
                 // If override fails (e.g., description column doesn't exist), log but don't fail quest creation
                 console.warn("Failed to create quest override (quest was still created):", overrideError);
               }
             }
 
+          // Merge quest with overrides before adding to state
+          // This ensures description, include_tasks, include_habits are included
+          // After refreshOverrides, the overrides should be available in mergeQuestWithOverrides
+          const mergedQuest = mergeQuestWithOverrides(data);
           setQuests((prev) => {
-            const updated = [data, ...prev];
+            const updated = [mergedQuest, ...prev];
             // Sort alphabetically by name
             return updated.sort((a, b) => a.name.localeCompare(b.name));
           });
+          
+          // Also refresh the full quests list to ensure everything is properly merged
+          // This is important for newly created quests to appear correctly
+          await loadQuests();
         }
         return data;
       } catch (err: any) {
@@ -184,7 +194,7 @@ export function useQuests() {
         throw err;
       }
     },
-    [updateOverride]
+    [updateOverride, mergeQuestWithOverrides, refreshOverrides, loadQuests]
   );
 
   // Update a quest (user-created quests update base, seeded quests update overrides)

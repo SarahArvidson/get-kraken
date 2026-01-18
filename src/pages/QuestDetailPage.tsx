@@ -22,6 +22,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HabitLogModal } from "../components/HabitLogModal";
 import { TaskLogModal } from "../components/TaskLogModal";
 import type { QuestDetail } from "../types/quests";
+import type { Quest } from "../types";
 
 export function QuestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +62,7 @@ export function QuestDetailPage() {
   const [newTaskName, setNewTaskName] = useState("");
   const [newHabitName, setNewHabitName] = useState("");
   // Quest status is derived from merged quest list - single source of truth
+  // baseQuest is the merged quest (includes all overrides from user_quest_overrides)
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
 
@@ -68,12 +70,17 @@ export function QuestDetailPage() {
   // - If explicitly true: show
   // - If explicitly false: hide (even if data exists - data is preserved but not shown)
   // - If undefined (backwards compatibility): show if there's existing data
-  const includeTasksFlag = (baseQuest as any)?.include_tasks;
+  // Use baseQuest which has merged overrides including include_tasks/include_habits
+  const includeTasksFlag = baseQuest
+    ? (baseQuest as any)?.include_tasks
+    : undefined;
   const showTasks =
     includeTasksFlag === true ||
     (includeTasksFlag === undefined && tasks.length > 0);
 
-  const includeHabitsFlag = (baseQuest as any)?.include_habits;
+  const includeHabitsFlag = baseQuest
+    ? (baseQuest as any)?.include_habits
+    : undefined;
   const showHabits =
     includeHabitsFlag === true ||
     (includeHabitsFlag === undefined && habits.length > 0);
@@ -90,59 +97,48 @@ export function QuestDetailPage() {
     const loadQuestDetail = async () => {
       setDetailLoading(true);
       try {
-        // Find quest in current list
-        const quest = quests.find((q) => q.id === id);
+        // Always prefer the merged quest from quests array (includes all overrides)
+        // For newly created quests, wait for it to appear in the array after refresh
+        let quest: Quest | undefined = quests.find((q) => q.id === id);
+
+        // If quest not in list yet (newly created), try to load it directly
+        // But we still need to wait for overrides to be loaded/merged
         if (!quest) {
-          // Try to load from database
           const questWithLogs = await getQuestWithLogs(id);
           if (!questWithLogs) {
             navigate("/quests");
             return;
           }
-
-          // Derive summary and detail
-          // Use merged quest from quests array (includes overrides) for reward_item_id
-          const mergedQuest = quests.find((q) => q.id === id);
-          const userCompletionCount = questWithLogs.logs.length;
-          const summary = deriveQuestSummary(
-            questWithLogs,
-            userCompletionCount
-          );
-          const detail = await deriveQuestDetail(summary, questWithLogs.logs, {
-            associated_item_id:
-              mergedQuest?.reward_item_id ||
-              questWithLogs.reward_item_id ||
-              undefined,
-            description:
-              (questWithLogs as any).description ||
-              (mergedQuest as any)?.description ||
-              (quest as any)?.description ||
-              undefined,
-          });
-          setQuestDetail(detail);
-          // Status comes from merged quest list, not from getQuestWithLogs
-        } else {
-          // Load logs
-          const questWithLogs = await getQuestWithLogs(id);
-          if (questWithLogs) {
-            // Use merged quest (includes overrides) for reward_item_id and description
-            const userCompletionCount = questWithLogs.logs.length;
-            const summary = deriveQuestSummary(quest, userCompletionCount);
-            const detail = await deriveQuestDetail(
-              summary,
-              questWithLogs.logs,
-              {
-                associated_item_id: quest.reward_item_id || undefined,
-                description:
-                  (quest as any).description ||
-                  (questWithLogs as any).description ||
-                  undefined,
-              }
-            );
-            setQuestDetail(detail);
-          }
-          // Status comes from merged quest list (quest.status), not local state
+          // Use questWithLogs as fallback, but it won't have overrides
+          // The quest should appear in quests array after refresh
+          quest = questWithLogs as Quest;
         }
+
+        // Load logs (may be empty for new quests)
+        const questWithLogs = await getQuestWithLogs(id);
+        if (!quest) {
+          navigate("/quests");
+          return;
+        }
+
+        const userCompletionCount = questWithLogs?.logs.length || 0;
+        const summary = deriveQuestSummary(quest, userCompletionCount);
+
+        // Use baseQuest (merged quest from array) for description and other override fields
+        // baseQuest has all the merged overrides including description, include_tasks, include_habits
+        // If baseQuest doesn't exist yet (newly created), use quest as fallback
+        const mergedQuest: Quest = baseQuest || quest;
+        const detail = await deriveQuestDetail(
+          summary,
+          questWithLogs?.logs || [],
+          {
+            associated_item_id: mergedQuest.reward_item_id || undefined,
+            // Description comes from merged quest (includes overrides from user_quest_overrides)
+            description: (mergedQuest as any).description || undefined,
+          }
+        );
+        setQuestDetail(detail);
+        // Status comes from merged quest list (baseQuest.status), not local state
       } catch (error) {
         console.error("Error loading quest detail:", error);
         navigate("/quests");
@@ -151,11 +147,14 @@ export function QuestDetailPage() {
       }
     };
 
-    if (!loading && quests.length > 0) {
+    // Load quest detail - try even if quests array is empty (for newly created quests)
+    // Also reload when baseQuest changes (when overrides are loaded/updated)
+    if (!loading) {
       loadQuestDetail();
     }
-    // Include quests in dependencies so quest detail updates when quest data changes (e.g., after edit)
-  }, [id, loading, quests, getQuestWithLogs, navigate]);
+    // Include quests and baseQuest in dependencies so quest detail updates when quest data changes (e.g., after edit)
+    // baseQuest dependency ensures we reload when overrides are merged
+  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate]);
 
   // Load activity logs when quest loads
   useEffect(() => {
