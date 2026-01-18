@@ -319,34 +319,34 @@ export function QuestEditModal({
 
               {/* Include Tasks/Habits Checkboxes */}
               <div className="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <label className="flex items-center gap-3 cursor-pointer">
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={includeTasks}
                     onChange={(e) => setIncludeTasks(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500 mt-0.5 flex-shrink-0"
                   />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 block">
                       Include tasks?
                     </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       These are things you'll do once for this quest.
                     </p>
                   </div>
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer">
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={includeHabits}
                     onChange={(e) => setIncludeHabits(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
+                    className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500 mt-0.5 flex-shrink-0"
                   />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 block">
                       Include habits?
                     </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       These are things you'll do repeatedly for this quest.
                     </p>
                   </div>
