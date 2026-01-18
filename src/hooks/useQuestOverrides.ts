@@ -108,9 +108,9 @@ export function useQuestOverrides() {
     [hiddenQuestIds]
   );
 
-  // Update or create override (supports name, tags, reward, dollar_amount, reward_item_id, reward_rarity, include_tasks, include_habits)
+  // Update or create override (supports name, description, tags, reward, dollar_amount, reward_item_id, reward_rarity, include_tasks, include_habits)
   const updateOverride = useCallback(
-    async (questId: string, updates: { name?: string; tags?: Tag[]; reward?: number; dollar_amount?: number; reward_item_id?: string | null; reward_rarity?: 'common' | 'rare' | 'epic' | 'legendary' | null; include_tasks?: boolean; include_habits?: boolean }) => {
+    async (questId: string, updates: { name?: string; description?: string | null; tags?: Tag[]; reward?: number; dollar_amount?: number; reward_item_id?: string | null; reward_rarity?: 'common' | 'rare' | 'epic' | 'legendary' | null; include_tasks?: boolean; include_habits?: boolean }) => {
       try {
         const userId = await getUserId();
         if (!userId) throw new Error("User must be authenticated");
@@ -122,6 +122,7 @@ export function useQuestOverrides() {
           // Update existing override
           const updateData: any = { updated_at: new Date().toISOString() };
           if (updates.name !== undefined) updateData.name = updates.name;
+          if (updates.description !== undefined) updateData.description = updates.description;
           if (updates.tags !== undefined) updateData.tags = updates.tags;
           if (updates.reward !== undefined) updateData.reward = updates.reward;
           if (updates.dollar_amount !== undefined) updateData.dollar_amount = updates.dollar_amount;
@@ -149,6 +150,7 @@ export function useQuestOverrides() {
               user_id: userId,
               quest_id: questId,
               name: updates.name ?? null,
+              description: updates.description ?? null,
               tags: updates.tags ?? null,
               reward: updates.reward ?? null,
               dollar_amount: updates.dollar_amount ?? null,
@@ -285,6 +287,8 @@ export function useQuestOverrides() {
         // Reward fields come from override if set, otherwise from base quest
         reward_item_id: override.reward_item_id !== undefined ? override.reward_item_id : baseQuest.reward_item_id,
         reward_rarity: override.reward_rarity !== undefined ? override.reward_rarity : baseQuest.reward_rarity || null,
+        // Description comes from override if set, otherwise from base quest
+        description: (override as any).description !== undefined ? (override as any).description : (baseQuest as any).description,
         // Include tasks/habits preferences from override
         include_tasks: (override as any).include_tasks !== undefined ? (override as any).include_tasks : (baseQuest as any).include_tasks,
         include_habits: (override as any).include_habits !== undefined ? (override as any).include_habits : (baseQuest as any).include_habits,

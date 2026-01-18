@@ -123,13 +123,24 @@ export function useQuests() {
           throw new Error("User must be authenticated");
         }
 
-        // Description may or may not be in database schema - pass it through
-        // If the database doesn't support it, it will be ignored
+        // Extract fields that don't belong in quests table
+        // description, include_tasks, include_habits go to user_quest_overrides
         const questData = quest as any;
+        const {
+          description,
+          include_tasks,
+          include_habits,
+          reward_item_id,
+          reward_rarity,
+          status,
+          ...questFields // name, tags, reward, dollar_amount - these go to quests table
+        } = questData;
+
+        // Insert into quests table (only fields that exist in the table)
         const { data, error: createError } = await supabase
           .from("quests")
           .insert({
-            ...questData,
+            ...questFields,
             created_by: user.id,
             completion_count: 0,
             created_at: new Date().toISOString(),
@@ -139,7 +150,27 @@ export function useQuests() {
           .single();
 
         if (createError) throw createError;
-        if (data) {
+        
+          // If quest was created, store override fields in user_quest_overrides
+          if (data) {
+            const overrideFields: any = {};
+            if (description !== undefined && description !== null && description !== '') overrideFields.description = description;
+            if (include_tasks !== undefined) overrideFields.include_tasks = include_tasks;
+            if (include_habits !== undefined) overrideFields.include_habits = include_habits;
+            if (reward_item_id !== undefined) overrideFields.reward_item_id = reward_item_id;
+            if (reward_rarity !== undefined) overrideFields.reward_rarity = reward_rarity;
+            if (status !== undefined) overrideFields.status = status;
+
+            // Create override if there are any override fields
+            if (Object.keys(overrideFields).length > 0) {
+              try {
+                await updateOverride(data.id, overrideFields);
+              } catch (overrideError: any) {
+                // If override fails (e.g., description column doesn't exist), log but don't fail quest creation
+                console.warn("Failed to create quest override (quest was still created):", overrideError);
+              }
+            }
+
           setQuests((prev) => {
             const updated = [data, ...prev];
             // Sort alphabetically by name
@@ -153,7 +184,7 @@ export function useQuests() {
         throw err;
       }
     },
-    []
+    [updateOverride]
   );
 
   // Update a quest (user-created quests update base, seeded quests update overrides)
@@ -177,14 +208,18 @@ export function useQuests() {
 
         // GUARD: NEVER delete or modify logs - this function only updates quest metadata
         // GUARD: NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
-        // Separate quest fields (name, description, tags, reward, dollar_amount) from override fields (status, reward_rarity, reward_item_id)
+        // Separate quest fields (name, tags, reward, dollar_amount) from override fields (description, status, reward_rarity, reward_item_id, include_tasks, include_habits)
+        const updatesAny = updates as any;
         const {
           completion_count, // derived, read-only - remove from updates
           status, // lifecycle - belongs ONLY in overrides
           reward_rarity, // per-user rarity - belongs ONLY in overrides
           reward_item_id, // reward item - store in overrides for consistency (all users can customize)
-          ...questFields // name, description, tags, reward, dollar_amount - can go in quests table for user-created quests
-        } = updates;
+          description, // description - store in overrides (quests table doesn't have this column)
+          include_tasks, // include_tasks - store in overrides (quests table doesn't have this column)
+          include_habits, // include_habits - store in overrides (quests table doesn't have this column)
+          ...questFields // name, tags, reward, dollar_amount - can go in quests table for user-created quests
+        } = updatesAny;
 
 
         // First, check if the quest exists and if the user created it
@@ -199,13 +234,19 @@ export function useQuests() {
           throw new Error("Quest not found");
         }
 
-        // Build override updates (lifecycle and rarity always go to overrides)
+        // Build override updates (lifecycle, rarity, description, include flags always go to overrides)
         const overrideUpdates: any = {};
         if (status !== undefined) overrideUpdates.status = status;
         if (reward_rarity !== undefined)
           overrideUpdates.reward_rarity = reward_rarity;
         if (reward_item_id !== undefined)
           overrideUpdates.reward_item_id = reward_item_id;
+        if (description !== undefined)
+          overrideUpdates.description = description;
+        if (include_tasks !== undefined)
+          overrideUpdates.include_tasks = include_tasks;
+        if (include_habits !== undefined)
+          overrideUpdates.include_habits = include_habits;
         // For seeded quests, also store name/tags/reward in overrides
         // For user-created quests, store them in quests table but ALSO allow overrides
         if (updates.name !== undefined) overrideUpdates.name = updates.name;
@@ -214,9 +255,6 @@ export function useQuests() {
           overrideUpdates.reward = updates.reward;
         if (updates.dollar_amount !== undefined)
           overrideUpdates.dollar_amount = updates.dollar_amount;
-        // Store include_tasks and include_habits preferences in overrides
-        if ((updates as any).include_tasks !== undefined) overrideUpdates.include_tasks = (updates as any).include_tasks;
-        if ((updates as any).include_habits !== undefined) overrideUpdates.include_habits = (updates as any).include_habits;
 
         console.log(
           "[updateQuest] Override updates to apply:",
@@ -290,7 +328,7 @@ export function useQuests() {
         throw err;
       }
     },
-    [updateOverride, mergeQuestWithOverrides, quests]
+    [updateOverride, mergeQuestWithOverrides, quests, loadQuests]
   );
 
   // Start a quest (set status to 'active' in user_quest_overrides)
