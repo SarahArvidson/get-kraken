@@ -253,6 +253,12 @@ export function RewardDetailPage() {
         >
           Edit Item
         </button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
+        >
+          Delete Item
+        </button>
       </div>
 
       {/* Edit Modal */}
@@ -285,14 +291,6 @@ export function RewardDetailPage() {
               }
             } catch (err) {
               console.error("Error updating reward:", err);
-            }
-          }}
-          onDelete={async (itemId) => {
-            try {
-              await deleteShopItem(itemId);
-              navigate('/rewards');
-            } catch (err) {
-              console.error("Error deleting reward:", err);
             }
           }}
           showDollarAmounts={preferences.showDollarAmounts}
