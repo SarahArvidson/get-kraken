@@ -66,7 +66,7 @@ export function QuestDetailPage() {
 
   // Check if tasks/habits should be shown
   // - If explicitly true: show
-  // - If explicitly false: hide (but data is preserved)
+  // - If explicitly false: hide (even if data exists - data is preserved but not shown)
   // - If undefined (backwards compatibility): show if there's existing data
   const includeTasksFlag = (baseQuest as any)?.include_tasks;
   const showTasks =
@@ -122,7 +122,7 @@ export function QuestDetailPage() {
           setQuestDetail(detail);
           // Status comes from merged quest list, not from getQuestWithLogs
         } else {
-          // Load logs
+          // Load logs (may be empty for new quests)
           const questWithLogs = await getQuestWithLogs(id);
           if (questWithLogs) {
             // Use merged quest (includes overrides) for reward_item_id and description
@@ -140,6 +140,15 @@ export function QuestDetailPage() {
               }
             );
             setQuestDetail(detail);
+          } else {
+            // Quest exists but getQuestWithLogs failed or returned null
+            // Create a basic quest detail from the quest data
+            const summary = deriveQuestSummary(quest, 0);
+            const detail = await deriveQuestDetail(summary, [], {
+              associated_item_id: quest.reward_item_id || undefined,
+              description: (quest as any).description || undefined,
+            });
+            setQuestDetail(detail);
           }
           // Status comes from merged quest list (quest.status), not local state
         }
@@ -151,8 +160,14 @@ export function QuestDetailPage() {
       }
     };
 
-    if (!loading && quests.length > 0) {
-      loadQuestDetail();
+    // Load quest detail when quests are loaded
+    // For new quests, wait for them to appear in the quests array
+    if (!loading) {
+      // If quests array is empty, wait a bit for it to load
+      // Otherwise, if we have an id, try to load it
+      if (quests.length > 0 || id) {
+        loadQuestDetail();
+      }
     }
     // Include quests in dependencies so quest detail updates when quest data changes (e.g., after edit)
   }, [id, loading, quests, getQuestWithLogs, navigate]);
@@ -750,40 +765,43 @@ export function QuestDetailPage() {
       )}
 
       {/* Footer Actions - Lifecycle buttons */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
-        {questStatus === "idle" && (
-          <button
-            onClick={handleStartQuest}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-          >
-            Start Quest
-          </button>
-        )}
-        {questStatus === "completed" && (
-          <button
-            onClick={handleRestartQuest}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-          >
-            Restart Quest
-          </button>
-        )}
-        {questStatus === "active" && (
-          <button
-            onClick={() => setShowAbandonConfirm(true)}
-            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-          >
-            Abandon quest
-          </button>
-        )}
-        {questStatus !== "active" && (
-          <button
-            onClick={() => setShowAbandonConfirm(true)}
-            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-          >
-            Delete Quest
-          </button>
-        )}
-      </div>
+      {/* Only show lifecycle buttons if quest detail is loaded and quest exists */}
+      {questDetail && baseQuest && (
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+          {questStatus === "idle" && (
+            <button
+              onClick={handleStartQuest}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Start Quest
+            </button>
+          )}
+          {questStatus === "completed" && (
+            <button
+              onClick={handleRestartQuest}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Restart Quest
+            </button>
+          )}
+          {questStatus === "active" && (
+            <button
+              onClick={() => setShowAbandonConfirm(true)}
+              className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+            >
+              Abandon quest
+            </button>
+          )}
+          {questStatus !== "active" && questStatus !== "idle" && (
+            <button
+              onClick={() => setShowAbandonConfirm(true)}
+              className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
+            >
+              Delete Quest
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Task Logging Modal */}
       {loggingTaskId && (

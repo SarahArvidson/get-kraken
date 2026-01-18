@@ -253,12 +253,6 @@ export function RewardDetailPage() {
         >
           Edit Item
         </button>
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
-        >
-          Delete Item
-        </button>
       </div>
 
       {/* Edit Modal */}
@@ -291,6 +285,14 @@ export function RewardDetailPage() {
               }
             } catch (err) {
               console.error("Error updating reward:", err);
+            }
+          }}
+          onDelete={async (itemId) => {
+            try {
+              await deleteShopItem(itemId);
+              navigate('/rewards');
+            } catch (err) {
+              console.error("Error deleting reward:", err);
             }
           }}
           showDollarAmounts={preferences.showDollarAmounts}
@@ -340,6 +342,16 @@ export function RewardDetailPage() {
             {isPurchasing ? "Purchasing..." : "Purchase"}
           </button>
         </div>
+      </div>
+      
+      {/* Delete Reward Button - Styled like Abandon quest */}
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="w-full px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors text-center"
+        >
+          Delete reward
+        </button>
       </div>
 
       {/* Delete Reward Confirmation */}
