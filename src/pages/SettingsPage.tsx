@@ -4,7 +4,7 @@
  * Full settings page with collapsible sections
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../hooks/useTheme";
 import { usePreferences } from "../hooks/usePreferences";
 import { useProfile } from "../hooks/useProfile";
@@ -12,6 +12,11 @@ import { exportUserData } from "../utils/exportData";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { supabase } from "../lib/supabase";
 import { useWallet } from "../hooks/useWallet";
+import { useQuests } from "../hooks/useQuests";
+import { useShopItems } from "../hooks/useShopItems";
+import { TAGS, TAG_LABELS } from "../utils/tags";
+import { SHOP_TAGS, SHOP_TAG_LABELS } from "../utils/shopTags";
+import type { Tag, ShopTag, QuestLog, ShopLog } from "../types";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -54,7 +59,194 @@ export function SettingsPage() {
   const [resetWalletConfirm, setResetWalletConfirm] = useState(false);
   const [resetProgressConfirm, setResetProgressConfirm] = useState(false);
   const [resetProgressType, setResetProgressType] = useState("");
-  const { refresh: refreshWallet } = useWallet();
+  const { wallet, refresh: refreshWallet, updateWallet } = useWallet();
+  const { loadAllQuestLogs } = useQuests();
+  const { loadAllShopLogs } = useShopItems();
+  
+  // Tag management state
+  const [customQuestTags, setCustomQuestTags] = useState<string[]>(() => {
+    const stored = localStorage.getItem('customQuestTags');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [customRewardTags, setCustomRewardTags] = useState<string[]>(() => {
+    const stored = localStorage.getItem('customRewardTags');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [newQuestTag, setNewQuestTag] = useState("");
+  const [newRewardTag, setNewRewardTag] = useState("");
+  
+  // Wallet adjustment state
+  const [walletSandDollars, setWalletSandDollars] = useState("");
+  const [walletDollars, setWalletDollars] = useState("");
+  const [adjustingWallet, setAdjustingWallet] = useState(false);
+  
+  // Recent rewards state
+  const [recentQuestLogs, setRecentQuestLogs] = useState<QuestLog[]>([]);
+  const [recentShopLogs, setRecentShopLogs] = useState<ShopLog[]>([]);
+  const [loadingRecentLogs, setLoadingRecentLogs] = useState(false);
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
+  const [deletingLogType, setDeletingLogType] = useState<'quest' | 'shop' | null>(null);
+  
+  // Load wallet values when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      setWalletSandDollars(wallet.total.toString());
+      setWalletDollars(Math.round(wallet.dollar_total || 0).toString());
+    }
+  }, [wallet]);
+  
+  // Load recent logs
+  useEffect(() => {
+    loadRecentLogs();
+  }, []);
+  
+  const loadRecentLogs = async () => {
+    setLoadingRecentLogs(true);
+    try {
+      const [questLogs, shopLogs] = await Promise.all([
+        loadAllQuestLogs(),
+        loadAllShopLogs(),
+      ]);
+      // Get most recent 10 of each
+      setRecentQuestLogs(questLogs.slice(0, 10));
+      setRecentShopLogs(shopLogs.slice(0, 10));
+    } catch (err) {
+      console.error("Error loading recent logs:", err);
+    } finally {
+      setLoadingRecentLogs(false);
+    }
+  };
+  
+  const addQuestTag = () => {
+    if (newQuestTag.trim() && !customQuestTags.includes(newQuestTag.trim().toLowerCase()) && !TAGS.includes(newQuestTag.trim().toLowerCase() as Tag)) {
+      const updated = [...customQuestTags, newQuestTag.trim().toLowerCase()];
+      setCustomQuestTags(updated);
+      localStorage.setItem('customQuestTags', JSON.stringify(updated));
+      setNewQuestTag("");
+    }
+  };
+  
+  const removeQuestTag = (tag: string) => {
+    const updated = customQuestTags.filter(t => t !== tag);
+    setCustomQuestTags(updated);
+    localStorage.setItem('customQuestTags', JSON.stringify(updated));
+  };
+  
+  const addRewardTag = () => {
+    if (newRewardTag.trim() && !customRewardTags.includes(newRewardTag.trim().toLowerCase()) && !SHOP_TAGS.includes(newRewardTag.trim().toLowerCase() as ShopTag)) {
+      const updated = [...customRewardTags, newRewardTag.trim().toLowerCase()];
+      setCustomRewardTags(updated);
+      localStorage.setItem('customRewardTags', JSON.stringify(updated));
+      setNewRewardTag("");
+    }
+  };
+  
+  const removeRewardTag = (tag: string) => {
+    const updated = customRewardTags.filter(t => t !== tag);
+    setCustomRewardTags(updated);
+    localStorage.setItem('customRewardTags', JSON.stringify(updated));
+  };
+  
+  const handleWalletAdjustment = async () => {
+    if (!wallet) return;
+    setAdjustingWallet(true);
+    try {
+      const newSandDollars = parseInt(walletSandDollars) || 0;
+      const newDollars = parseInt(walletDollars) || 0;
+      
+      // Calculate difference
+      const sandDiff = newSandDollars - wallet.total;
+      const dollarDiff = newDollars - Math.round(wallet.dollar_total || 0);
+      
+      // Update wallet using the updateWallet function (which adds to current)
+      await updateWallet(sandDiff, dollarDiff);
+      await refreshWallet();
+      alert("Wallet values updated successfully!");
+    } catch (err: any) {
+      alert(`Failed to update wallet: ${err.message}`);
+    } finally {
+      setAdjustingWallet(false);
+    }
+  };
+  
+  const deleteLogEntry = async (logId: string, type: 'quest' | 'shop') => {
+    try {
+      const { data: { user } } = await supabase.supabase.auth.getUser();
+      if (!user) throw new Error("User must be authenticated");
+      
+      if (type === 'quest') {
+        // Get the log to find quest and amounts
+        const { data: log } = await supabase
+          .from("quest_logs")
+          .select("quest_id")
+          .eq("id", logId)
+          .single();
+        
+        if (log) {
+          // Get quest to find reward amounts
+          const { data: quest } = await supabase
+            .from("quests")
+            .select("reward, dollar_amount")
+            .eq("id", log.quest_id)
+            .single();
+          
+          if (quest) {
+            // Delete the log
+            const { error } = await supabase
+              .from("quest_logs")
+              .delete()
+              .eq("id", logId)
+              .eq("user_id", user.id);
+            
+            if (error) throw error;
+            
+            // Adjust wallet (subtract the reward)
+            await updateWallet(-quest.reward, -Math.round(quest.dollar_amount || 0));
+          }
+        }
+      } else {
+        // Get the log to find shop item and amounts
+        const { data: log } = await supabase
+          .from("shop_logs")
+          .select("shop_item_id")
+          .eq("id", logId)
+          .single();
+        
+        if (log) {
+          // Get shop item to find price amounts
+          const { data: item } = await supabase
+            .from("shop_items")
+            .select("price, dollar_amount")
+            .eq("id", log.shop_item_id)
+            .single();
+          
+          if (item) {
+            // Delete the log
+            const { error } = await supabase
+              .from("shop_logs")
+              .delete()
+              .eq("id", logId)
+              .eq("user_id", user.id);
+            
+            if (error) throw error;
+            
+            // Adjust wallet (add back the price - since purchase subtracts)
+            await updateWallet(item.price, Math.round(item.dollar_amount || 0));
+          }
+        }
+      }
+      
+      await refreshWallet();
+      await loadRecentLogs();
+      setDeletingLogId(null);
+      setDeletingLogType(null);
+      alert("Log entry deleted and wallet adjusted.");
+    } catch (err: any) {
+      alert(`Failed to delete log entry: ${err.message}`);
+      setDeletingLogId(null);
+      setDeletingLogType(null);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -157,6 +349,109 @@ export function SettingsPage() {
                 />
               </button>
             </div>
+            
+            {/* Manual Wallet Adjustment */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Manual Wallet Adjustment
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Adjust your treasure chest values if you made a mistake. Changes will update your wallet immediately.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Sand Dollars
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={walletSandDollars}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      setWalletSandDollars(value);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    placeholder="0"
+                  />
+                </div>
+                {showDollarAmounts && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Dollars
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={walletDollars}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setWalletDollars(value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      placeholder="0"
+                    />
+                  </div>
+                )}
+                <button
+                  onClick={handleWalletAdjustment}
+                  disabled={adjustingWallet || !wallet}
+                  className="w-full px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {adjustingWallet ? 'Updating...' : 'Update Wallet Values'}
+                </button>
+              </div>
+            </div>
+            
+            {/* Recent Rewards Adjustment */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Recently Earned Rewards
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Delete recent quest completions or purchases to correct mistakes. Wallet will be adjusted automatically.
+              </p>
+              {loadingRecentLogs ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+              ) : recentQuestLogs.length === 0 && recentShopLogs.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No recent rewards</div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {recentQuestLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        Quest completed: {new Date(log.completed_at).toLocaleDateString()}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setDeletingLogId(log.id);
+                          setDeletingLogType('quest');
+                        }}
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                  {recentShopLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        Purchase: {new Date(log.purchased_at).toLocaleDateString()}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setDeletingLogId(log.id);
+                          setDeletingLogType('shop');
+                        }}
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </CollapsibleSection>
 
@@ -216,8 +511,116 @@ export function SettingsPage() {
 
         {/* Data Section */}
         <CollapsibleSection title="Data">
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Tag Management */}
             <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Change tags for filtering rewards and quests.
+              </p>
+              
+              {/* Quest Tags */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Quest Tags
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {TAGS.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm"
+                    >
+                      {TAG_LABELS[tag]}
+                    </span>
+                  ))}
+                  {customQuestTags.map((tag) => (
+                    <div key={tag} className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-sm">
+                      <span>{tag}</span>
+                      <button
+                        onClick={() => removeQuestTag(tag)}
+                        className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+                        title="Remove tag"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newQuestTag}
+                    onChange={(e) => setNewQuestTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addQuestTag();
+                      }
+                    }}
+                    placeholder="Add new quest tag"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={addQuestTag}
+                    className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              
+              {/* Reward Tags */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Reward Tags
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {SHOP_TAGS.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-sm"
+                    >
+                      {SHOP_TAG_LABELS[tag]}
+                    </span>
+                  ))}
+                  {customRewardTags.map((tag) => (
+                    <div key={tag} className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded text-sm">
+                      <span>{tag}</span>
+                      <button
+                        onClick={() => removeRewardTag(tag)}
+                        className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+                        title="Remove tag"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newRewardTag}
+                    onChange={(e) => setNewRewardTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addRewardTag();
+                      }
+                    }}
+                    placeholder="Add new reward tag"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={addRewardTag}
+                    className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Export Data */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Export your data to CSV files. Each data type will be downloaded as a separate file.
               </p>
@@ -443,6 +846,24 @@ export function SettingsPage() {
           requireType="RESET"
           typeInput={resetProgressType}
           onTypeInputChange={setResetProgressType}
+        />
+        
+        {/* Delete Log Entry Confirmation */}
+        <ConfirmDialog
+          isOpen={deletingLogId !== null}
+          onClose={() => {
+            setDeletingLogId(null);
+            setDeletingLogType(null);
+          }}
+          onConfirm={() => {
+            if (deletingLogId && deletingLogType) {
+              deleteLogEntry(deletingLogId, deletingLogType);
+            }
+          }}
+          title="Delete Log Entry"
+          message="This will delete this log entry and adjust your wallet accordingly. This action cannot be undone."
+          confirmText="Delete"
+          confirmButtonClass="bg-red-500 hover:bg-red-600"
         />
       </div>
     </div>
