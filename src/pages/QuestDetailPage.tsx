@@ -70,6 +70,9 @@ export function QuestDetailPage() {
   // baseQuest is the merged quest (includes all overrides from user_quest_overrides)
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
+  
+  // Track quest detail reload trigger
+  const [questDetailReloadTrigger, setQuestDetailReloadTrigger] = useState(0);
 
   // Check if tasks/habits should be shown
   // - If explicitly true: show
@@ -162,7 +165,8 @@ export function QuestDetailPage() {
     }
     // Include quests and baseQuest in dependencies so quest detail updates when quest data changes (e.g., after edit)
     // baseQuest dependency ensures we reload when overrides are merged
-  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate]);
+    // questDetailReloadTrigger allows manual refresh after updates
+  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate, questDetailReloadTrigger]);
 
   // Load activity logs when quest loads
   useEffect(() => {
@@ -750,10 +754,11 @@ export function QuestDetailPage() {
           onUpdate={async (id, updates) => {
             try {
               await updateQuest(id, updates);
-              setShowEditModal(false);
               // Refresh quests list to get updated merged data (includes overrides)
               await refresh();
-              // The useEffect will automatically reload when quests updates
+              // Force quest detail reload by triggering useEffect
+              setQuestDetailReloadTrigger(prev => prev + 1);
+              setShowEditModal(false);
             } catch (err) {
               console.error("Error updating quest:", err);
               // Keep modal open on error so user can retry
