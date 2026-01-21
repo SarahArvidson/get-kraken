@@ -395,7 +395,7 @@ function App() {
         onClose={() => setIsWalletDrilldownOpen(false)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 flex-grow">
+      <main className="max-w-7xl md:max-w-[90%] lg:max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-6 relative z-10 flex-grow">
         <Routes>
           {/* New v2 Home Page */}
           <Route
