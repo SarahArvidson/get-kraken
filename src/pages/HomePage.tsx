@@ -247,7 +247,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         }}
         aria-label="Open wallet details"
       >
-        <div className="bg-gradient-to-br from-amber-300 to-amber-500 dark:from-amber-600 dark:to-amber-700 rounded-2xl p-4 shadow-md">
+        <div className="bg-gradient-to-br from-amber-300 to-amber-500 dark:from-amber-600 dark:to-amber-700 rounded-2xl p-4 md:p-6 lg:p-8 shadow-md">
           <WalletDisplay
             wallet={wallet}
             loading={walletLoading}
@@ -261,7 +261,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         {/* Quests Card */}
         <div
           onClick={() => navigate("/quests")}
-          className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] flex flex-col justify-between touch-manipulation"
+          className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-3xl p-8 sm:p-12 md:p-8 lg:p-10 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] md:min-h-[220px] lg:min-h-[200px] xl:min-h-[220px] flex flex-col justify-between touch-manipulation"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -308,7 +308,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
         {/* Rewards Card */}
         <div
           onClick={() => navigate("/rewards")}
-          className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-3xl p-8 sm:p-12 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] flex flex-col justify-between touch-manipulation"
+          className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-3xl p-8 sm:p-12 md:p-8 lg:p-10 shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] min-h-[250px] sm:min-h-[350px] md:min-h-[220px] lg:min-h-[200px] xl:min-h-[220px] flex flex-col justify-between touch-manipulation"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -510,7 +510,7 @@ export function HomePage({ onOpenWalletDrilldown }: HomePageProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 w-full">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 w-full max-[639px]:gap-0">
               {days.map((date, index) => {
                 const activitiesWithTags = getActivitiesForDateWithTags(date);
                 const isToday =
