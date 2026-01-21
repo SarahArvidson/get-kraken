@@ -63,9 +63,11 @@ export function QuestDetailPage() {
   const [addingHabit, setAddingHabit] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
   const [newHabitName, setNewHabitName] = useState("");
-  // Quest status is derived from merged quest list - single source of truth
+  // Authoritative merged quest - set by updateQuest result, not overwritten by loadQuests()
+  const [authoritativeQuest, setAuthoritativeQuest] = useState<Quest | null>(null);
+  // Quest status is derived from authoritative quest or merged quest list
   // baseQuest is the merged quest (includes all overrides from user_quest_overrides)
-  const baseQuest = id ? quests.find((q) => q.id === id) : null;
+  const baseQuest = authoritativeQuest || (id ? quests.find((q) => q.id === id) : null);
   const questStatus = baseQuest?.status || "idle";
 
   // Check if tasks/habits should be shown
@@ -90,6 +92,11 @@ export function QuestDetailPage() {
   // Hide progress area if both tasks and habits are disabled
   const showProgress = showTasks || showHabits;
 
+  // Reset authoritative quest when route id changes
+  useEffect(() => {
+    setAuthoritativeQuest(null);
+  }, [id]);
+
   useEffect(() => {
     if (!id) {
       navigate("/quests");
@@ -99,20 +106,17 @@ export function QuestDetailPage() {
     const loadQuestDetail = async () => {
       setDetailLoading(true);
       try {
-        // Always prefer the merged quest from quests array (includes all overrides)
-        // For newly created quests, wait for it to appear in the array after refresh
-        let quest: Quest | undefined = quests.find((q) => q.id === id);
+        // Use authoritative quest if set (from updateQuest), otherwise use quests array
+        // This ensures updateQuest result is never overwritten by loadQuests()
+        let quest: Quest | undefined = authoritativeQuest || quests.find((q) => q.id === id);
 
         // If quest not in list yet (newly created), try to load it directly
-        // But we still need to wait for overrides to be loaded/merged
         if (!quest) {
           const questWithLogs = await getQuestWithLogs(id);
           if (!questWithLogs) {
             navigate("/quests");
             return;
           }
-          // Use questWithLogs as fallback, but it won't have overrides
-          // The quest should appear in quests array after refresh
           quest = questWithLogs as Quest;
         }
 
@@ -125,10 +129,9 @@ export function QuestDetailPage() {
 
         const userCompletionCount = questWithLogs?.logs.length || 0;
 
-        // Use baseQuest (merged quest from array) for ALL fields including reward, dollar_amount
-        // baseQuest has all the merged overrides including description, include_tasks, include_habits
-        // If baseQuest doesn't exist yet (newly created), use quest as fallback
-        const mergedQuest: Quest = baseQuest || quest;
+        // Use authoritative quest or merged quest from array
+        // Authoritative quest takes precedence (set by updateQuest result)
+        const mergedQuest: Quest = quest;
 
         // Create summary from merged quest to ensure reward and dollar_amount are correct
         const summary = deriveQuestSummary(mergedQuest, userCompletionCount);
@@ -153,13 +156,14 @@ export function QuestDetailPage() {
     };
 
     // Load quest detail - try even if quests array is empty (for newly created quests)
-    // Only reload when id or loading state changes - NOT when quests array changes
-    // This prevents unnecessary reloads when quests are updated elsewhere
-    // We use baseQuest.id to detect when the quest changes, but don't reload on every quests array change
-    if (!loading) {
+    // Only reload when id changes - NOT when quests array changes or loading state changes
+    // This prevents reloads when loadQuests() updates the array after edits
+    // The authoritative quest from updateQuest is the source of truth, not the quests array
+    if (!loading && !authoritativeQuest) {
       loadQuestDetail();
     }
     // Only depend on id and loading - quest detail will be updated explicitly after edits
+    // authoritativeQuest prevents reload when it's set (after updateQuest)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loading, getQuestWithLogs, navigate]);
 
@@ -651,14 +655,14 @@ export function QuestDetailPage() {
               className="w-6 h-6 sm:w-7 sm:h-7"
             />
             <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-              {baseQuest?.reward || questDetail.reward}
+              {baseQuest?.reward ?? questDetail.reward}
             </span>
           </div>
-          {((baseQuest?.dollar_amount || questDetail.dollar_amount) > 0) && (
+          {((baseQuest?.dollar_amount ?? questDetail.dollar_amount) > 0) && (
             <div className="flex items-center gap-2">
               <span className="text-2xl sm:text-3xl">💵</span>
               <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                ${Math.round(baseQuest?.dollar_amount || questDetail.dollar_amount)}
+                ${Math.round(baseQuest?.dollar_amount ?? questDetail.dollar_amount)}
               </span>
             </div>
           )}
@@ -760,9 +764,11 @@ export function QuestDetailPage() {
                 dollar_amount: updatedQuest.dollar_amount
               } : "NULL");
               
-              // Explicitly update questDetail state from the updated quest
-              // Use the result from updateQuest which has the correctly merged data
+              // Set the authoritative merged quest - this is the source of truth
+              // It will not be overwritten by loadQuests() or useEffect
               if (updatedQuest) {
+                setAuthoritativeQuest(updatedQuest);
+                
                 // Reload logs to get fresh data
                 const questWithLogs = await getQuestWithLogs(id);
                 const userCompletionCount = questWithLogs?.logs.length || 0;
