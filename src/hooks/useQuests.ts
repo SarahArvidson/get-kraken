@@ -1101,6 +1101,39 @@ export function useQuests() {
     }
   }, []);
 
+  // Delete quest logs for a specific quest
+  const deleteQuestLogs = useCallback(async (questId: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      // Delete quest logs for this quest
+      const { error: deleteError } = await supabase
+        .from("quest_logs")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("quest_id", questId);
+
+      if (deleteError) throw deleteError;
+
+      // Reset completion_count for this quest
+      const { error: updateError } = await supabase
+        .from("quests")
+        .update({ completion_count: 0 })
+        .eq("id", questId);
+
+      if (updateError) throw updateError;
+    } catch (err: any) {
+      console.error("Error deleting quest logs:", err);
+      setError(err.message || "Failed to delete quest logs");
+      throw err;
+    }
+  }, []);
+
   return {
     quests,
     loading,
@@ -1114,6 +1147,7 @@ export function useQuests() {
     getQuestWithLogs,
     loadAllQuestLogs,
     deleteAllQuestLogs,
+    deleteQuestLogs,
     refresh: loadQuests,
   };
 }

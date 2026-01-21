@@ -195,6 +195,33 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
     }
   }, [hydrateLog]);
 
+  // Delete activity logs for a specific quest
+  const deleteActivityLogsForQuest = useCallback(async (questId: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated");
+      }
+
+      // Delete activity logs for this quest
+      const { error: deleteError } = await supabase
+        .from("activity_logs")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("quest_id", questId);
+
+      if (deleteError) throw deleteError;
+
+      // Update local state
+      setLogs((prev) => prev.filter((log) => log.quest_id !== questId));
+    } catch (err: any) {
+      console.error("Error deleting activity logs for quest:", err);
+      throw err;
+    }
+  }, []);
+
   return {
     logs,
     loading,
@@ -203,5 +230,6 @@ export function useActivityLogs(options?: UseActivityLogsOptions) {
     getActivityCountByDate,
     getActivitiesForDate,
     updateActivityLog,
+    deleteActivityLogsForQuest,
   };
 }

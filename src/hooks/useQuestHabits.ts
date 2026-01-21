@@ -135,6 +135,51 @@ export function useQuestHabits(questId: string | null) {
     [userId, loadHabits]
   );
 
+  // Delete all habits and their logs for this quest
+  const deleteAllHabits = useCallback(
+    async () => {
+      if (!userId || !questId) throw new Error("User and quest ID required");
+
+      try {
+        // First, get all habit IDs for this quest
+        const { data: habitsData, error: fetchError } = await supabase
+          .from("quest_habits")
+          .select("id")
+          .eq("quest_id", questId)
+          .eq("user_id", userId);
+
+        if (fetchError) throw fetchError;
+
+        const habitIds = (habitsData || []).map((h) => h.id);
+
+        // Delete habit logs for these habits
+        if (habitIds.length > 0) {
+          const { error: logsError } = await supabase
+            .from("habit_logs")
+            .delete()
+            .in("habit_id", habitIds)
+            .eq("user_id", userId);
+
+          if (logsError) throw logsError;
+        }
+
+        // Delete the habits themselves
+        const { error: deleteError } = await supabase
+          .from("quest_habits")
+          .delete()
+          .eq("quest_id", questId)
+          .eq("user_id", userId);
+
+        if (deleteError) throw deleteError;
+        await loadHabits();
+      } catch (err: any) {
+        console.error("Error deleting all habits:", err);
+        throw err;
+      }
+    },
+    [userId, questId, loadHabits]
+  );
+
   // Log a habit
   const logHabit = useCallback(
     async (
@@ -225,6 +270,7 @@ export function useQuestHabits(questId: string | null) {
     error,
     createHabit,
     deleteHabit,
+    deleteAllHabits,
     logHabit,
     refresh: loadHabits,
   };

@@ -124,6 +124,28 @@ export function useQuestTasks(questId: string | null) {
     [userId, loadTasks]
   );
 
+  // Delete all tasks for this quest
+  const deleteAllTasks = useCallback(
+    async () => {
+      if (!userId || !questId) throw new Error("User and quest ID required");
+
+      try {
+        const { error: deleteError } = await supabase
+          .from("quest_tasks")
+          .delete()
+          .eq("quest_id", questId)
+          .eq("user_id", userId);
+
+        if (deleteError) throw deleteError;
+        await loadTasks();
+      } catch (err: any) {
+        console.error("Error deleting all tasks:", err);
+        throw err;
+      }
+    },
+    [userId, questId, loadTasks]
+  );
+
   // Load tasks on mount and when questId changes
   useEffect(() => {
     loadTasks();
@@ -136,6 +158,7 @@ export function useQuestTasks(questId: string | null) {
     createTask,
     toggleTask,
     deleteTask,
+    deleteAllTasks,
     refresh: loadTasks,
   };
 }

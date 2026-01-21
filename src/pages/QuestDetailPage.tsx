@@ -28,6 +28,7 @@ import {
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HabitLogModal } from "../components/HabitLogModal";
+import { QuestDeleteDialog } from "../components/QuestDeleteDialog";
 import type { QuestDetail } from "../types/quests";
 import type { Quest } from "../types";
 
@@ -40,6 +41,8 @@ export function QuestDetailPage() {
     getQuestWithLogs,
     updateQuest,
     completeQuest,
+    deleteQuest,
+    deleteQuestLogs,
     refresh,
   } = useQuests();
   const { shopItems } = useShopItems();
@@ -48,16 +51,18 @@ export function QuestDetailPage() {
     refresh: refreshHabits,
     createHabit,
     habitLogs,
+    deleteAllHabits,
   } = useQuestHabits(id || null);
-  const { tasks, toggleTask, createTask } = useQuestTasks(id || null);
+  const { tasks, toggleTask, createTask, deleteAllTasks } = useQuestTasks(id || null);
   const questMetadata = useQuestMetadata();
-  const { logs: allActivityLogs, loadActivityLogs } = useActivityLogs({
+  const { logs: allActivityLogs, loadActivityLogs, deleteActivityLogsForQuest } = useActivityLogs({
     questMetadata: questMetadata.metadata,
   });
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   const [addingTask, setAddingTask] = useState(false);
   const [addingHabit, setAddingHabit] = useState(false);
@@ -714,6 +719,16 @@ export function QuestDetailPage() {
         </button>
       </div>
 
+      {/* Delete Quest Button - Small, discrete, red button below rewards */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg font-medium transition-colors"
+        >
+          Delete Quest
+        </button>
+      </div>
+
 
 
       {/* Habit Logging Modal */}
@@ -850,6 +865,42 @@ export function QuestDetailPage() {
         })()}
         confirmText="Complete Quest"
         confirmButtonClass="bg-amber-500 hover:bg-amber-600"
+      />
+
+      {/* Delete Quest Dialog */}
+      <QuestDeleteDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onDeleteQuest={async () => {
+          if (!id) return;
+          try {
+            await deleteQuest(id);
+            setShowDeleteDialog(false);
+            navigate("/quests");
+          } catch (err) {
+            console.error("Error deleting quest:", err);
+          }
+        }}
+        onDeleteQuestAndProgress={async () => {
+          if (!id) return;
+          try {
+            // Delete quest logs
+            await deleteQuestLogs(id);
+            // Delete activity logs
+            await deleteActivityLogsForQuest(id);
+            // Delete all tasks
+            await deleteAllTasks();
+            // Delete all habits (this also deletes habit logs)
+            await deleteAllHabits();
+            // Finally, delete the quest itself
+            await deleteQuest(id);
+            setShowDeleteDialog(false);
+            navigate("/quests");
+          } catch (err) {
+            console.error("Error deleting quest and progress:", err);
+          }
+        }}
+        questName={questDetail.name}
       />
 
     </div>
