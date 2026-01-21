@@ -729,11 +729,12 @@ export function QuestDetailPage() {
       )}
 
       {/* Edit Quest Modal */}
-      {baseQuest && (
+      {/* Use authoritativeQuest if set, otherwise baseQuest - prevents flicker when authoritativeQuest is set */}
+      {((authoritativeQuest || baseQuest) && (
         <QuestEditModal
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          quest={baseQuest}
+          quest={(authoritativeQuest || baseQuest)!}
           onUpdate={async (id, updates) => {
             try {
               console.log("[QuestDetailPage] onUpdate called - quest id:", id);
@@ -745,6 +746,7 @@ export function QuestDetailPage() {
                 name: result.name,
                 reward: result.reward,
                 dollar_amount: result.dollar_amount,
+                reward_item_id: result.reward_item_id,
                 description: (result as any).description,
                 include_tasks: (result as any).include_tasks,
                 include_habits: (result as any).include_habits
@@ -763,6 +765,9 @@ export function QuestDetailPage() {
                 reward: updatedQuest.reward,
                 dollar_amount: updatedQuest.dollar_amount
               } : "NULL");
+              
+              // Close modal first to prevent flickering from baseQuest changes
+              setShowEditModal(false);
               
               // Set the authoritative merged quest - this is the source of truth
               // It will not be overwritten by loadQuests() or useEffect
@@ -799,12 +804,12 @@ export function QuestDetailPage() {
                   description: updatedDetail.description,
                   reward: updatedDetail.reward,
                   dollar_amount: updatedDetail.dollar_amount,
+                  reward_item_id: updatedQuest.reward_item_id,
+                  associated_item_id: updatedDetail.associated_item_id,
                   include_tasks: (updatedDetail as any).include_tasks,
                   include_habits: (updatedDetail as any).include_habits
                 });
               }
-              
-              setShowEditModal(false);
             } catch (err) {
               console.error("[QuestDetailPage] Error updating quest:", err);
               // Keep modal open on error so user can retry

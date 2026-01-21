@@ -368,11 +368,18 @@ export function useQuests() {
           // Manual merge using the fetched override data
           // reward_item_id handling:
           // - For user-created quests: comes from freshQuest (updated in quests table via questFields)
+          //   If reward_item_id was in updates, it's already in freshQuest from the quests table update
           // - For seeded quests: cannot be persisted (column doesn't exist in overrides)
-          //   Use the value from updates if provided (for user-created), otherwise preserve freshQuest value
-          const finalRewardItemId = (existingQuest.created_by === user.id && reward_item_id !== undefined) 
-            ? reward_item_id 
-            : freshQuest.reward_item_id;
+          //   Use the value from updates if provided (temporary), otherwise preserve freshQuest value
+          //   Note: For seeded quests, this value won't persist after refresh
+          const finalRewardItemId = (existingQuest.created_by === user.id) 
+            ? freshQuest.reward_item_id  // For user-created, use freshQuest (already updated)
+            : (reward_item_id !== undefined ? reward_item_id : freshQuest.reward_item_id); // For seeded, use update if provided
+          
+          // Description handling: comes from override if set, otherwise from base quest
+          const finalDescription = (updatedOverride as any).description !== undefined 
+            ? (updatedOverride as any).description 
+            : (freshQuest as any).description;
           
           merged = {
             ...freshQuest,
@@ -383,7 +390,7 @@ export function useQuests() {
             status: (updatedOverride.status || 'idle') as 'idle' | 'active' | 'completed',
             reward_item_id: finalRewardItemId,
             reward_rarity: updatedOverride.reward_rarity !== undefined ? updatedOverride.reward_rarity : freshQuest.reward_rarity || null,
-            description: (updatedOverride as any).description !== undefined ? (updatedOverride as any).description : (freshQuest as any).description,
+            description: finalDescription,
             include_tasks: (updatedOverride as any).include_tasks !== undefined ? (updatedOverride as any).include_tasks : (freshQuest as any).include_tasks,
             include_habits: (updatedOverride as any).include_habits !== undefined ? (updatedOverride as any).include_habits : (freshQuest as any).include_habits,
           } as Quest;
@@ -393,6 +400,10 @@ export function useQuests() {
           // For user-created quests, ensure reward_item_id from updates is preserved
           if (existingQuest.created_by === user.id && reward_item_id !== undefined) {
             merged.reward_item_id = reward_item_id;
+          }
+          // Ensure description from updates is preserved if no override exists
+          if (description !== undefined) {
+            (merged as any).description = description;
           }
         }
         
@@ -410,6 +421,7 @@ export function useQuests() {
             reward: merged.reward,
             dollar_amount: merged.dollar_amount,
             reward_item_id: merged.reward_item_id,
+            description: (merged as any).description,
             include_tasks: (merged as any).include_tasks,
             include_habits: (merged as any).include_habits
           } : null
