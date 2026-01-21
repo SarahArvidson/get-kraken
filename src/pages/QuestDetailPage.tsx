@@ -70,9 +70,6 @@ export function QuestDetailPage() {
   // baseQuest is the merged quest (includes all overrides from user_quest_overrides)
   const baseQuest = id ? quests.find((q) => q.id === id) : null;
   const questStatus = baseQuest?.status || "idle";
-  
-  // Track quest detail reload trigger
-  const [questDetailReloadTrigger, setQuestDetailReloadTrigger] = useState(0);
 
   // Check if tasks/habits should be shown
   // - If explicitly true: show
@@ -165,8 +162,7 @@ export function QuestDetailPage() {
     }
     // Include quests and baseQuest in dependencies so quest detail updates when quest data changes (e.g., after edit)
     // baseQuest dependency ensures we reload when overrides are merged
-    // questDetailReloadTrigger allows manual refresh after updates
-  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate, questDetailReloadTrigger]);
+  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate]);
 
   // Load activity logs when quest loads
   useEffect(() => {
@@ -753,14 +749,68 @@ export function QuestDetailPage() {
           quest={baseQuest}
           onUpdate={async (id, updates) => {
             try {
-              await updateQuest(id, updates);
+              console.log("[QuestDetailPage] onUpdate called - quest id:", id);
+              console.log("[QuestDetailPage] Updates payload:", JSON.stringify(updates, null, 2));
+              
+              const result = await updateQuest(id, updates);
+              console.log("[QuestDetailPage] updateQuest result:", result ? { 
+                id: result.id, 
+                name: result.name, 
+                description: (result as any).description,
+                include_tasks: (result as any).include_tasks,
+                include_habits: (result as any).include_habits
+              } : null);
+              
               // Refresh quests list to get updated merged data (includes overrides)
               await refresh();
-              // Force quest detail reload by triggering useEffect
-              setQuestDetailReloadTrigger(prev => prev + 1);
+              console.log("[QuestDetailPage] refresh() completed");
+              
+              // Wait a tick for React state to update, then read fresh quests
+              await new Promise(resolve => setTimeout(resolve, 0));
+              
+              // Read fresh quests state - use a function to get current state
+              // Since we can't access current state directly, we'll use the result from updateQuest
+              // which should be the merged quest, or we'll reload from the effect
+              const updatedQuest = result; // updateQuest returns the merged quest
+              
+              console.log("[QuestDetailPage] Using updated quest from updateQuest result:", updatedQuest ? {
+                id: updatedQuest.id,
+                name: updatedQuest.name,
+                description: (updatedQuest as any).description,
+                include_tasks: (updatedQuest as any).include_tasks,
+                include_habits: (updatedQuest as any).include_habits,
+                reward: updatedQuest.reward,
+                dollar_amount: updatedQuest.dollar_amount
+              } : "NULL");
+              
+              // Explicitly update questDetail state from the updated quest
+              if (updatedQuest && questDetail) {
+                // Reload logs to get fresh data
+                const questWithLogs = await getQuestWithLogs(id);
+                const userCompletionCount = questWithLogs?.logs.length || 0;
+                const summary = deriveQuestSummary(updatedQuest, userCompletionCount);
+                const detail = await deriveQuestDetail(
+                  summary,
+                  questWithLogs?.logs || [],
+                  {
+                    associated_item_id: updatedQuest.reward_item_id || undefined,
+                    description: (updatedQuest as any).description || undefined,
+                  }
+                );
+                setQuestDetail(detail);
+                console.log("[QuestDetailPage] questDetail state updated with:", {
+                  name: detail.name,
+                  description: detail.description,
+                  reward: detail.reward,
+                  dollar_amount: detail.dollar_amount,
+                  include_tasks: (detail as any).include_tasks,
+                  include_habits: (detail as any).include_habits
+                });
+              }
+              
               setShowEditModal(false);
             } catch (err) {
-              console.error("Error updating quest:", err);
+              console.error("[QuestDetailPage] Error updating quest:", err);
               // Keep modal open on error so user can retry
             }
           }}

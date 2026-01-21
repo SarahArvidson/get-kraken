@@ -89,7 +89,7 @@ export function QuestEditModal({
         }
       }
 
-      await onUpdate(quest.id, {
+      const updatePayload = {
         name: name.trim(),
         description: description.trim() || undefined,
         tags: tags.length > 0 ? tags : [],
@@ -99,7 +99,12 @@ export function QuestEditModal({
         reward_rarity: (finalRewardItemId && rewardRarity) || null,
         include_tasks: includeTasks,
         include_habits: includeHabits,
-      } as any);
+      } as any;
+      
+      console.log("[QuestEditModal] Save clicked - quest id:", quest.id);
+      console.log("[QuestEditModal] Update payload:", JSON.stringify(updatePayload, null, 2));
+      
+      await onUpdate(quest.id, updatePayload);
 
       onClose();
     } catch (err: any) {
