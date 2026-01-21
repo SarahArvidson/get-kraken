@@ -18,7 +18,6 @@ interface AuthGateProps {
 export function AuthGate({ children }: AuthGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,42 +56,7 @@ export function AuthGate({ children }: AuthGateProps) {
     };
   }, []);
 
-  const handleSignIn = async () => {
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      // Convert username to fake email for Supabase
-      const email = usernameToEmail(username);
-      const result = await supabase.signIn({
-        email,
-        password,
-      });
-
-      if (result.error) {
-        // Check if user already exists (trying to sign in but account doesn't exist or wrong password)
-        if (result.error.message?.includes("Invalid login credentials") || 
-            result.error.message?.includes("Email not confirmed")) {
-          setError(result.error.message);
-        } else {
-          setError(result.error.message || "Failed to sign in. Please check your credentials.");
-        }
-      } else if (result.data?.session) {
-        setIsAuthenticated(true);
-      }
-    } catch (err: any) {
-      setError(err.message || "An error occurred during sign in");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSignUp = async () => {
+  const handleAuth = async () => {
     if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password");
       return;
@@ -109,53 +73,63 @@ export function AuthGate({ children }: AuthGateProps) {
     try {
       // Convert username to fake email for Supabase
       const email = usernameToEmail(username);
-      const result = await supabase.signUp({
+      
+      // First, try to sign in (user might already exist)
+      const signInResult = await supabase.signIn({
         email,
         password,
       });
 
-      if (result.error) {
-        // Check if user already exists
-        if (result.error.message?.includes("already registered") || 
-            result.error.message?.includes("already exists") ||
-            result.error.message?.includes("User already registered")) {
-          setError("That username is already taken. Please sign in instead.");
-          // Switch to sign in mode with username prefilled
-          setAuthMode("signin");
-          return;
-        }
-        setError(result.error.message || "Failed to create account");
-      } else if (result.data?.user) {
-        // User was created successfully
-        if (result.data?.session) {
-          // Email confirmation disabled, user is logged in
-          setIsAuthenticated(true);
-        } else {
-          // No session returned - try to sign in automatically (email confirmation might be disabled but session not returned)
-          // This handles the case where email confirmation is disabled but Supabase doesn't return a session
-          try {
-            const signInResult = await supabase.signIn({
+      if (signInResult.data?.session) {
+        // Successfully signed in
+        setIsAuthenticated(true);
+        return;
+      }
+
+      // If sign in failed with "Invalid login credentials", try to create account
+      if (signInResult.error?.message?.includes("Invalid login credentials")) {
+        // Try to sign up (create new account)
+        const signUpResult = await supabase.signUp({
+          email,
+          password,
+        });
+
+        if (signUpResult.error) {
+          // Check if user already exists (race condition or different error)
+          if (signUpResult.error.message?.includes("already registered") || 
+              signUpResult.error.message?.includes("already exists") ||
+              signUpResult.error.message?.includes("User already registered")) {
+            setError("Invalid login credentials. Please check your password.");
+          } else {
+            setError(signUpResult.error.message || "Failed to create account");
+          }
+        } else if (signUpResult.data?.user) {
+          // User was created successfully
+          if (signUpResult.data?.session) {
+            // Email confirmation disabled, user is logged in
+            setIsAuthenticated(true);
+          } else {
+            // No session returned - try to sign in automatically
+            const autoSignInResult = await supabase.signIn({
               email,
               password,
             });
             
-            if (signInResult.error) {
-              // If sign in fails, email confirmation might be required
-              setError("Account created! Please check your email to confirm your account, then sign in.");
-              setAuthMode("signin");
-            } else if (signInResult.data?.session) {
+            if (autoSignInResult.data?.session) {
               // Successfully signed in
               setIsAuthenticated(true);
+            } else if (autoSignInResult.error) {
+              // If auto sign-in fails, email confirmation might be required
+              setError("Account created! Please check your email to confirm your account, then sign in.");
             }
-          } catch (signInErr: any) {
-            // If auto sign-in fails, assume email confirmation is required
-            setError("Account created! Please check your email to confirm your account, then sign in.");
-            setAuthMode("signin");
           }
         }
+      } else if (signInResult.error) {
+        // Other sign in errors (email not confirmed, etc.)
+        setError(signInResult.error.message || "Failed to sign in. Please check your credentials.");
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred during sign up");
+      setError(err.message || "An error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +173,7 @@ export function AuthGate({ children }: AuthGateProps) {
               placeholder="Enter your username"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  authMode === "signin" ? handleSignIn() : handleSignUp();
+                  handleAuth();
                 }
               }}
             />
@@ -212,7 +186,7 @@ export function AuthGate({ children }: AuthGateProps) {
               placeholder="Enter your password"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  authMode === "signin" ? handleSignIn() : handleSignUp();
+                  handleAuth();
                 }
               }}
             />
@@ -226,21 +200,15 @@ export function AuthGate({ children }: AuthGateProps) {
             <Button
               variant="primary"
               size="lg"
-              onClick={authMode === "signin" ? handleSignIn : handleSignUp}
+              onClick={handleAuth}
               loading={isSubmitting}
               className="w-full"
             >
-              {isSubmitting 
-                ? (authMode === "signin" ? "Signing in..." : "Creating account...")
-                : (authMode === "signin" ? "Log In" : "Create Account")
-              }
+              {isSubmitting ? "Signing in..." : "Log In"}
             </Button>
 
             <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-              {authMode === "signin" 
-                ? "First time? Create a username and password."
-                : "Already have an account? Enter your username and password above."
-              }
+              First time? Create a username and password.
             </p>
           </div>
         </div>
