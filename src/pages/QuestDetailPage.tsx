@@ -334,9 +334,9 @@ export function QuestDetailPage() {
 
       {/* 1. Quest Identity Header - Centered Title, Right-Justified Actions */}
       <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0 w-24"></div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex-shrink-0 w-8 sm:w-16 md:w-24"></div>
+          <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1 min-w-0">
             {questDetail.name}
           </h1>
           <div className="flex items-center gap-2 flex-shrink-0">
