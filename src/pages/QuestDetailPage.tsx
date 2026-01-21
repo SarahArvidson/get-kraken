@@ -361,9 +361,13 @@ export function QuestDetailPage() {
         {(() => {
           const desc = (baseQuest as any)?.description ?? questDetail.description;
           return desc ? (
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-center">
-              {desc}
-            </p>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex-shrink-0 w-8 sm:w-16 md:w-24"></div>
+              <p className="text-lg text-gray-600 dark:text-gray-400 flex-1 min-w-0 text-center">
+                {desc}
+              </p>
+              <div className="flex items-center gap-2 flex-shrink-0 w-8 sm:w-16 md:w-24"></div>
+            </div>
           ) : null;
         })()}
       </div>
