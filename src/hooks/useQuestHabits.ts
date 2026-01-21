@@ -150,7 +150,7 @@ export function useQuestHabits(questId: string | null) {
 
         if (fetchError) throw fetchError;
 
-        const habitIds = (habitsData || []).map((h) => h.id);
+        const habitIds = (habitsData || []).map((h: QuestHabit) => h.id);
 
         // Delete habit logs for these habits
         if (habitIds.length > 0) {

@@ -373,7 +373,7 @@ export function QuestDetailPage() {
             </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            things you do once to make success in this quest possible.
+            Things you'll do once.
           </p>
           {addingTask && (
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -495,7 +495,7 @@ export function QuestDetailPage() {
             </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            things you do repeatedly to be successful in this quest.
+            Things you'll do repeatedly.
           </p>
           {addingHabit && (
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
