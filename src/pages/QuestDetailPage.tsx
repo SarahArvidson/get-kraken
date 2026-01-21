@@ -2,6 +2,15 @@
  * Get Kraken v2 - Quest Detail Page
  *
  * Shows full quest details with all v2 features (baseline for Phase 2)
+ * 
+ * CURRENT QUEST PAGE INVENTORY:
+ * - Buttons: Edit, Star, Add Task (conditional), Add Habit (conditional), 
+ *   Complete Quest and Claim These Rewards (conditional on active), 
+ *   Start Quest (idle), Restart Quest (completed), Abandon quest (active), Delete Quest (non-active)
+ * - Sections: Title (always), Description (if present), Tasks (if include_tasks enabled),
+ *   Habits (if include_habits enabled), Progress (if tasks OR habits enabled), 
+ *   Rewards (conditional on rewards or active status)
+ * - Toggle fields: include_tasks, include_habits from baseQuest (user_quest_overrides)
  */
 
 import { useState, useEffect, useMemo } from "react";
@@ -32,10 +41,7 @@ export function QuestDetailPage() {
     loading,
     getQuestWithLogs,
     updateQuest,
-    startQuest,
-    restartQuest,
     completeQuest,
-    deleteQuest,
     refresh,
   } = useQuests();
   const { shopItems } = useShopItems();
@@ -53,7 +59,6 @@ export function QuestDetailPage() {
   const [questDetail, setQuestDetail] = useState<QuestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const [loggingTaskId, setLoggingTaskId] = useState<string | null>(null);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
@@ -234,26 +239,6 @@ export function QuestDetailPage() {
     setQuestDetail({ ...questDetail, isStarred: newStarred });
   };
 
-  const handleStartQuest = async () => {
-    if (!id) return;
-    try {
-      await startQuest(id);
-      await refresh();
-    } catch (error) {
-      console.error("Error starting quest:", error);
-    }
-  };
-
-  const handleRestartQuest = async () => {
-    if (!id) return;
-    try {
-      await restartQuest(id);
-      await refresh();
-    } catch (error) {
-      console.error("Error restarting quest:", error);
-    }
-  };
-
   const handleCompleteQuest = async () => {
     if (!id || !questDetail) return;
     try {
@@ -375,19 +360,17 @@ export function QuestDetailPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Tasks
             </h2>
-            {questStatus === "active" && (
-              <button
-                onClick={() => setAddingTask(true)}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Add Task
-              </button>
-            )}
+            <button
+              onClick={() => setAddingTask(true)}
+              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Add Task
+            </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             things you do once to make success in this quest possible.
           </p>
-          {addingTask && questStatus === "active" && (
+          {addingTask && (
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
               <input
                 type="text"
@@ -442,7 +425,7 @@ export function QuestDetailPage() {
           )}
           {tasks.length === 0 && !addingTask ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              No tasks yet. {questStatus === "active" && "Add your first task!"}
+              No tasks yet. Add your first task!
             </p>
           ) : (
             <div className="space-y-2">
@@ -459,7 +442,7 @@ export function QuestDetailPage() {
                     new Date(b.logged_at).getTime() -
                     new Date(a.logged_at).getTime()
                 )[0];
-                return questStatus === "active" ? (
+                return (
                   <button
                     key={task.id}
                     onClick={() => setLoggingTaskId(task.id)}
@@ -479,25 +462,6 @@ export function QuestDetailPage() {
                       )}
                     </div>
                   </button>
-                ) : (
-                  <div
-                    key={task.id}
-                    className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-left opacity-75 ${
-                      task.completed ? "opacity-50" : ""
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {task.completed && "✓ "}
-                        {task.name}
-                      </span>
-                      {lastTaskLog && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 );
               })}
             </div>
@@ -512,14 +476,12 @@ export function QuestDetailPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Habits
             </h2>
-            {questStatus === "active" && (
-              <button
-                onClick={() => setAddingHabit(true)}
-                className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-              >
-                Add Habit
-              </button>
-            )}
+            <button
+              onClick={() => setAddingHabit(true)}
+              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              Add Habit
+            </button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             things you do repeatedly to be successful in this quest.
@@ -579,8 +541,7 @@ export function QuestDetailPage() {
           )}
           {habits.length === 0 && !addingHabit ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              No habits yet.{" "}
-              {questStatus === "active" && "Add your first habit!"}
+              No habits yet. Add your first habit!
             </p>
           ) : (
             <div className="space-y-2">
@@ -589,9 +550,7 @@ export function QuestDetailPage() {
                 return (
                   <div
                     key={habit.id}
-                    className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg ${
-                      questStatus !== "active" ? "opacity-75" : ""
-                    }`}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                   >
                     <div className="flex-1">
                       <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -603,14 +562,12 @@ export function QuestDetailPage() {
                         </div>
                       )}
                     </div>
-                    {questStatus === "active" && (
-                      <button
-                        onClick={() => setLoggingHabitId(habit.id)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
-                      >
-                        Log
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setLoggingHabitId(habit.id)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      Log
+                    </button>
                   </div>
                 );
               })}
@@ -685,112 +642,71 @@ export function QuestDetailPage() {
         </div>
       )}
 
-      {/* Rewards and Complete Button - Success Zone */}
-      {(questDetail.reward > 0 ||
-        questDetail.dollar_amount > 0 ||
-        questDetail.associated_item_id ||
-        questStatus === "active") && (
-        <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6">
+      {/* Rewards Section - Always shown */}
+      <div className="bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 rounded-2xl p-6 shadow-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6">
+          <div className="flex items-center gap-2">
+            <img
+              src="/sea-dollar.svg"
+              alt="Sand dollar"
+              className="w-6 h-6 sm:w-7 sm:h-7"
+            />
+            <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
+              {questDetail.reward}
+            </span>
+          </div>
+          {questDetail.dollar_amount > 0 && (
             <div className="flex items-center gap-2">
-              <img
-                src="/sea-dollar.svg"
-                alt="Sand dollar"
-                className="w-6 h-6 sm:w-7 sm:h-7"
-              />
+              <span className="text-2xl sm:text-3xl">💵</span>
               <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                {questDetail.reward}
+                ${Math.round(questDetail.dollar_amount)}
               </span>
             </div>
-            {questDetail.dollar_amount > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-2xl sm:text-3xl">💵</span>
-                <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                  ${Math.round(questDetail.dollar_amount)}
-                </span>
-              </div>
-            )}
-            {questDetail.associated_item_id &&
-              (() => {
-                const linkedItem = shopItems.find(
-                  (item) => item.id === questDetail.associated_item_id
-                );
-                if (!linkedItem) return null;
-                const quest = quests.find((q) => q.id === id);
-                const rarity = quest?.reward_rarity;
-                const rarityColors: Record<string, string> = {
-                  common:
-                    "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
-                  rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-                  legendary:
-                    "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                };
-                return (
-                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
-                    <span className="text-2xl sm:text-3xl">🎁</span>
-                    <span className="text-lg sm:text-xl font-bold text-amber-900 dark:text-amber-100">
-                      {linkedItem.name}
-                    </span>
-                    {rarity && (
-                      <span
-                        className={`px-2 py-1 text-xs sm:text-sm font-bold rounded ${
-                          rarityColors[rarity] || rarityColors.common
-                        }`}
-                      >
-                        {rarity.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-          </div>
-          {questStatus === "active" && (
-            <button
-              onClick={() => setShowCompleteConfirm(true)}
-              className="w-full px-6 py-4 sm:px-8 sm:py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-base sm:text-lg leading-tight hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
-            >
-              Complete Quest and Claim These Rewards
-            </button>
           )}
+          {questDetail.associated_item_id &&
+            (() => {
+              const linkedItem = shopItems.find(
+                (item) => item.id === questDetail.associated_item_id
+              );
+              if (!linkedItem) return null;
+              const quest = quests.find((q) => q.id === id);
+              const rarity = quest?.reward_rarity;
+              const rarityColors: Record<string, string> = {
+                common:
+                  "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+                rare: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                epic: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                legendary:
+                  "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+              };
+              return (
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                  <span className="text-2xl sm:text-3xl">🎁</span>
+                  <span className="text-lg sm:text-xl font-bold text-amber-900 dark:text-amber-100">
+                    {linkedItem.name}
+                  </span>
+                  {rarity && (
+                    <span
+                      className={`px-2 py-1 text-xs sm:text-sm font-bold rounded ${
+                        rarityColors[rarity] || rarityColors.common
+                      }`}
+                    >
+                      {rarity.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
         </div>
-      )}
-
-      {/* Footer Actions - Lifecycle buttons */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3">
-        {questStatus === "idle" && (
-          <button
-            onClick={handleStartQuest}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-          >
-            Start Quest
-          </button>
-        )}
-        {questStatus === "completed" && (
-          <button
-            onClick={handleRestartQuest}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-          >
-            Restart Quest
-          </button>
-        )}
-        {questStatus === "active" && (
-          <button
-            onClick={() => setShowAbandonConfirm(true)}
-            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-          >
-            Abandon quest
-          </button>
-        )}
-        {questStatus !== "active" && (
-          <button
-            onClick={() => setShowAbandonConfirm(true)}
-            className="px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors"
-          >
-            Delete Quest
-          </button>
-        )}
+        {/* End Quest and Claim Rewards - Always visible */}
+        <button
+          onClick={() => setShowCompleteConfirm(true)}
+          className="w-full px-6 py-4 sm:px-8 sm:py-5 bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-base sm:text-lg leading-tight hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors shadow-xl"
+        >
+          End Quest and Claim Rewards
+        </button>
       </div>
+
 
       {/* Task Logging Modal */}
       {loggingTaskId && (
@@ -877,42 +793,6 @@ export function QuestDetailPage() {
         confirmButtonClass="bg-amber-500 hover:bg-amber-600"
       />
 
-      {/* Delete Quest Confirmation */}
-      <ConfirmDialog
-        isOpen={showAbandonConfirm}
-        onClose={() => setShowAbandonConfirm(false)}
-        onConfirm={async () => {
-          if (!id) return;
-          try {
-            // Scrap all progress - delete logs and remove wallet entries
-            await deleteQuest(id);
-            setShowAbandonConfirm(false);
-            navigate("/quests");
-          } catch (error) {
-            console.error("Error deleting quest:", error);
-          }
-        }}
-        title="Delete Quest"
-        message={`Are you sure you want to delete "${questDetail?.name}"?`}
-        confirmText="Scrap all progress"
-        confirmButtonClass="bg-red-500 hover:bg-red-600"
-        secondaryAction={{
-          label: "Keep my progress",
-          onClick: async () => {
-            if (!id) return;
-            try {
-              // Keep progress - just delete the quest, keep logs
-              // Note: deleteQuest may delete logs too, so we may need to adjust this
-              await deleteQuest(id);
-              setShowAbandonConfirm(false);
-              navigate("/quests");
-            } catch (error) {
-              console.error("Error deleting quest:", error);
-            }
-          },
-          className: "bg-gray-500 hover:bg-gray-600",
-        }}
-      />
     </div>
   );
 }
