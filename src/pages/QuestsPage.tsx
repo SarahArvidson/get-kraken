@@ -383,8 +383,12 @@ export function QuestsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreate={async (questData) => {
-          await createQuest(questData);
+          const createdQuest = await createQuest(questData);
           setShowCreateModal(false);
+          // Navigate to the newly created quest's detail page
+          if (createdQuest?.id) {
+            navigate(`/quests/${createdQuest.id}`);
+          }
         }}
       />
     </div>
