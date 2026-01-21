@@ -125,14 +125,33 @@ export function AuthGate({ children }: AuthGateProps) {
           return;
         }
         setError(result.error.message || "Failed to create account");
-      } else {
-        // Check if user needs email confirmation
-        if (result.data?.user && !result.data?.session) {
-          setError("Account created! Please check your email to confirm your account, then sign in.");
-          setAuthMode("signin");
-        } else if (result.data?.session) {
+      } else if (result.data?.user) {
+        // User was created successfully
+        if (result.data?.session) {
           // Email confirmation disabled, user is logged in
           setIsAuthenticated(true);
+        } else {
+          // No session returned - try to sign in automatically (email confirmation might be disabled but session not returned)
+          // This handles the case where email confirmation is disabled but Supabase doesn't return a session
+          try {
+            const signInResult = await supabase.signIn({
+              email,
+              password,
+            });
+            
+            if (signInResult.error) {
+              // If sign in fails, email confirmation might be required
+              setError("Account created! Please check your email to confirm your account, then sign in.");
+              setAuthMode("signin");
+            } else if (signInResult.data?.session) {
+              // Successfully signed in
+              setIsAuthenticated(true);
+            }
+          } catch (signInErr: any) {
+            // If auto sign-in fails, assume email confirmation is required
+            setError("Account created! Please check your email to confirm your account, then sign in.");
+            setAuthMode("signin");
+          }
         }
       }
     } catch (err: any) {
