@@ -342,12 +342,15 @@ export function QuestDetailPage() {
           </div>
         </div>
 
-        {/* Optional description */}
-        {((baseQuest as any)?.description || questDetail.description) && (
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-center">
-            {(baseQuest as any)?.description || questDetail.description}
-          </p>
-        )}
+        {/* Optional description - only show if not null/empty */}
+        {(() => {
+          const desc = (baseQuest as any)?.description ?? questDetail.description;
+          return desc ? (
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-center">
+              {desc}
+            </p>
+          ) : null;
+        })()}
       </div>
 
       {/* Tasks Block - Show if enabled or if quest already has tasks (backwards compatibility) */}

@@ -259,8 +259,9 @@ export function useQuests() {
           overrideUpdates.reward_rarity = reward_rarity;
         // Skip reward_item_id - column doesn't exist in user_quest_overrides
         // if (reward_item_id !== undefined) overrideUpdates.reward_item_id = reward_item_id;
+        // Handle description: null means clear it, undefined means don't change it
         if (description !== undefined)
-          overrideUpdates.description = description;
+          overrideUpdates.description = description; // Can be null to clear
         if (include_tasks !== undefined)
           overrideUpdates.include_tasks = include_tasks;
         if (include_habits !== undefined)
@@ -376,9 +377,10 @@ export function useQuests() {
             ? freshQuest.reward_item_id  // For user-created, use freshQuest (already updated)
             : (reward_item_id !== undefined ? reward_item_id : freshQuest.reward_item_id); // For seeded, use update if provided
           
-          // Description handling: comes from override if set, otherwise from base quest
+          // Description handling: comes from override if explicitly set (including null to clear)
+          // null means user cleared it, undefined means not set in override
           const finalDescription = (updatedOverride as any).description !== undefined 
-            ? (updatedOverride as any).description 
+            ? (updatedOverride as any).description  // Can be null to clear, or a string
             : (freshQuest as any).description;
           
           merged = {
@@ -402,8 +404,9 @@ export function useQuests() {
             merged.reward_item_id = reward_item_id;
           }
           // Ensure description from updates is preserved if no override exists
+          // null means clear it, undefined means don't change it
           if (description !== undefined) {
-            (merged as any).description = description;
+            (merged as any).description = description; // Can be null to clear
           }
         }
         

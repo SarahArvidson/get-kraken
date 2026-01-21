@@ -96,7 +96,7 @@ export function QuestEditModal({
 
       const updatePayload = {
         name: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null, // Use null to explicitly clear description
         tags: tags.length > 0 ? tags : [],
         reward: reward ? parseInt(reward) || 0 : 0,
         dollar_amount: dollarAmount ? parseInt(dollarAmount) || 0 : 0,
