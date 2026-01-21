@@ -5,6 +5,14 @@
   text-align: center;
 }
 
+/* Allow wider layout on tablet and desktop */
+@media (min-width: 768px) {
+  #root {
+    max-width: 100%;
+    padding: 0;
+  }
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
