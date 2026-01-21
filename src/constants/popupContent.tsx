@@ -14,25 +14,17 @@ export const getFeatureUpdatesContent = () => (
     <p className="font-semibold text-lg">What's New:</p>
     <ul className="list-disc list-inside space-y-2 ml-2">
       <li>
-        Improved card fronts: you can enter dollar amounts on the front now,
-        too.
+        Quests include tasks and habits if you want them.
       </li>
-      <li>Use sand dollars and/or regular dollars when creating new items.</li>
-      <li>Improved mobile experience: Better layout on very small screens</li>
-      <li>
-        {" "}
-        *** The search bar is currently undergoing code review and improvement**{" "}
-      </li>
+      <li>You can tie specific reward items to specific quests.</li>
+      <li>The UI should be more balanced on very small screens.</li>
     </ul>
     <p className="font-semibold text-lg">Next in Development:</p>
     <ul className="list-disc list-inside space-y-2 ml-2">
-      <li>+ A settings tab to adjust your preferences.</li>
-      <li>+ A drop-down menu</li>
-      <li>+ The ability to save your goals and export them as a CSV file.</li>
-      <li>+ You'll be able to "Star" items.</li>
-      <li>
-        + TBD: should you be able to add friends and share goals with them?
-      </li>
+      <li>Refining the rewards area.</li>
+      <li>Implementing social features.</li>
+      <li>Making the light/dark mode toggle work.</li>
+      <li>Improving the search bar, which is terrible.</li>
     </ul>
   </div>
 );

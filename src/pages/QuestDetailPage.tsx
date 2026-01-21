@@ -319,12 +319,12 @@ export function QuestDetailPage() {
 
       {/* 1. Quest Identity Header - Centered Title, Right-Justified Actions */}
       <div className="space-y-4">
-        <div className="flex items-center">
-          <div className="flex-1"></div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 w-24"></div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1 min-w-0">
             {questDetail.name}
           </h1>
-          <div className="flex items-center gap-2 flex-1 justify-end">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setShowEditModal(true)}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
@@ -492,7 +492,7 @@ export function QuestDetailPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             things you do repeatedly to be successful in this quest.
           </p>
-          {addingHabit && questStatus === "active" && (
+          {addingHabit && (
             <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
               <input
                 type="text"
