@@ -53,8 +53,10 @@ export function QuestEditModal({
       setRewardRarity(quest.reward_rarity || "");
       // Check if quest has tasks or habits enabled
       // Handle undefined (not set), true, and false explicitly
+      // For boolean values, check for explicit true/false, not just truthiness
       const questIncludeTasks = (quest as any).include_tasks;
       const questIncludeHabits = (quest as any).include_habits;
+      // Explicitly check for true/false - undefined means not set (default to false for display)
       setIncludeTasks(questIncludeTasks === true);
       setIncludeHabits(questIncludeHabits === true);
     }

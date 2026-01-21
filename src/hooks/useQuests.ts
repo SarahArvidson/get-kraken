@@ -329,15 +329,6 @@ export function useQuests() {
           );
         }
 
-        // Refresh overrides FIRST to ensure they're loaded before merging
-        await refreshOverrides();
-        
-        // Refresh quests state to get merged view
-        await loadQuests();
-
-        // Wait a tick for React state to update
-        await new Promise(resolve => setTimeout(resolve, 50));
-
         // Get fresh quest from database to ensure we have latest base data
         const { data: freshQuest, error: fetchError2 } = await supabase
           .from("quests")
@@ -348,8 +339,22 @@ export function useQuests() {
         if (fetchError2) throw fetchError2;
         if (!freshQuest) throw new Error("Quest not found after update");
 
+        // updateOverride already updates the overrides state optimistically
+        // However, we need to ensure the state is fully updated before merging
+        // Wait a moment for React state to update after updateOverride's setOverrides call
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         // Merge with overrides to get the complete merged quest
+        // mergeQuestWithOverrides uses the overrides state which was updated by updateOverride
         const merged = mergeQuestWithOverrides(freshQuest as Quest);
+        
+        // Refresh overrides from database to ensure we have the latest data for future operations
+        // This happens AFTER merging so we use the optimistic update for the current merge
+        await refreshOverrides();
+        
+        // Refresh quests state to update the list with merged data
+        await loadQuests();
+        
         console.log(
           "[updateQuest] Returning merged quest:",
           merged ? {

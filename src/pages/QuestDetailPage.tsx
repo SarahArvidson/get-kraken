@@ -154,13 +154,15 @@ export function QuestDetailPage() {
     };
 
     // Load quest detail - try even if quests array is empty (for newly created quests)
-    // Also reload when baseQuest changes (when overrides are loaded/updated)
+    // Only reload when id or loading state changes - NOT when quests array changes
+    // This prevents unnecessary reloads when quests are updated elsewhere
+    // We use baseQuest.id to detect when the quest changes, but don't reload on every quests array change
     if (!loading) {
       loadQuestDetail();
     }
-    // Include quests and baseQuest in dependencies so quest detail updates when quest data changes (e.g., after edit)
-    // baseQuest dependency ensures we reload when overrides are merged
-  }, [id, loading, quests, baseQuest, getQuestWithLogs, navigate]);
+    // Only depend on id and loading - quest detail will be updated explicitly after edits
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loading, getQuestWithLogs, navigate]);
 
   // Load activity logs when quest loads
   useEffect(() => {
@@ -736,22 +738,16 @@ export function QuestDetailPage() {
               const result = await updateQuest(id, updates);
               console.log("[QuestDetailPage] updateQuest result:", result ? { 
                 id: result.id, 
-                name: result.name, 
+                name: result.name,
+                reward: result.reward,
+                dollar_amount: result.dollar_amount,
                 description: (result as any).description,
                 include_tasks: (result as any).include_tasks,
                 include_habits: (result as any).include_habits
               } : null);
               
-              // Refresh quests list to get updated merged data (includes overrides)
-              await refresh();
-              console.log("[QuestDetailPage] refresh() completed");
-              
-              // Wait a tick for React state to update, then read fresh quests
-              await new Promise(resolve => setTimeout(resolve, 0));
-              
-              // Read fresh quests state - use a function to get current state
-              // Since we can't access current state directly, we'll use the result from updateQuest
-              // which should be the merged quest, or we'll reload from the effect
+              // updateQuest already calls loadQuests() internally, so we don't need to refresh again
+              // The result from updateQuest is the correctly merged quest with all overrides applied
               const updatedQuest = result; // updateQuest returns the merged quest
               
               console.log("[QuestDetailPage] Using updated quest from updateQuest result:", updatedQuest ? {
@@ -765,7 +761,8 @@ export function QuestDetailPage() {
               } : "NULL");
               
               // Explicitly update questDetail state from the updated quest
-              if (updatedQuest && questDetail) {
+              // Use the result from updateQuest which has the correctly merged data
+              if (updatedQuest) {
                 // Reload logs to get fresh data
                 const questWithLogs = await getQuestWithLogs(id);
                 const userCompletionCount = questWithLogs?.logs.length || 0;
@@ -778,7 +775,7 @@ export function QuestDetailPage() {
                     description: (updatedQuest as any).description || undefined,
                   }
                 );
-                // Ensure all updated fields are preserved in questDetail
+                // Ensure all updated fields are preserved in questDetail from the merged quest
                 const updatedDetail: QuestDetail = {
                   ...detail,
                   name: updatedQuest.name,
