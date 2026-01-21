@@ -29,7 +29,6 @@ import {
 import { QuestEditModal } from "../components/QuestEditModal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { HabitLogModal } from "../components/HabitLogModal";
-import { TaskLogModal } from "../components/TaskLogModal";
 import type { QuestDetail } from "../types/quests";
 import type { Quest } from "../types";
 
@@ -60,7 +59,6 @@ export function QuestDetailPage() {
   const [detailLoading, setDetailLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [loggingTaskId, setLoggingTaskId] = useState<string | null>(null);
   const [loggingHabitId, setLoggingHabitId] = useState<string | null>(null);
   const [addingTask, setAddingTask] = useState(false);
   const [addingHabit, setAddingHabit] = useState(false);
@@ -257,12 +255,6 @@ export function QuestDetailPage() {
     }
   };
 
-  const handleTaskLogComplete = async () => {
-    if (!id) return;
-    // Activity logs will update via real-time subscription, just refresh the view
-    await loadActivityLogs();
-  };
-
   const handleHabitLogComplete = async () => {
     if (!id) return;
     // Refresh habits and activity logs - quest detail will update via real-time subscription
@@ -346,9 +338,9 @@ export function QuestDetailPage() {
         </div>
 
         {/* Optional description */}
-        {questDetail.description && (
+        {((baseQuest as any)?.description || questDetail.description) && (
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-center">
-            {questDetail.description}
+            {(baseQuest as any)?.description || questDetail.description}
           </p>
         )}
       </div>
@@ -443,16 +435,22 @@ export function QuestDetailPage() {
                     new Date(a.logged_at).getTime()
                 )[0];
                 return (
-                  <button
+                  <div
                     key={task.id}
-                    onClick={() => setLoggingTaskId(task.id)}
-                    className={`w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer border border-gray-200 dark:border-gray-600 text-left ${
+                    className={`w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 ${
                       task.completed ? "opacity-60" : ""
                     }`}
                   >
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={async () => {
+                        await toggleTask(task.id, !task.completed);
+                      }}
+                      className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500 cursor-pointer flex-shrink-0"
+                    />
                     <div className="flex-1">
                       <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {task.completed && "✓ "}
                         {task.name}
                       </span>
                       {lastTaskLog && (
@@ -461,7 +459,7 @@ export function QuestDetailPage() {
                         </div>
                       )}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -708,23 +706,6 @@ export function QuestDetailPage() {
       </div>
 
 
-      {/* Task Logging Modal */}
-      {loggingTaskId && (
-        <TaskLogModal
-          isOpen={!!loggingTaskId}
-          onClose={() => setLoggingTaskId(null)}
-          taskId={loggingTaskId}
-          taskName={tasks.find((t) => t.id === loggingTaskId)?.name || ""}
-          questId={id || ""}
-          onToggleTask={async (taskId: string, completed: boolean) => {
-            await toggleTask(taskId, completed);
-          }}
-          onLogComplete={async () => {
-            setLoggingTaskId(null);
-            await handleTaskLogComplete();
-          }}
-        />
-      )}
 
       {/* Habit Logging Modal */}
       {loggingHabitId && (
@@ -797,14 +778,26 @@ export function QuestDetailPage() {
                     description: (updatedQuest as any).description || undefined,
                   }
                 );
-                setQuestDetail(detail);
+                // Ensure all updated fields are preserved in questDetail
+                const updatedDetail: QuestDetail = {
+                  ...detail,
+                  name: updatedQuest.name,
+                  reward: updatedQuest.reward,
+                  dollar_amount: updatedQuest.dollar_amount || 0,
+                  description: (updatedQuest as any).description || detail.description,
+                  associated_item_id: updatedQuest.reward_item_id || detail.associated_item_id,
+                };
+                // Preserve include flags from the updated quest
+                (updatedDetail as any).include_tasks = (updatedQuest as any).include_tasks;
+                (updatedDetail as any).include_habits = (updatedQuest as any).include_habits;
+                setQuestDetail(updatedDetail);
                 console.log("[QuestDetailPage] questDetail state updated with:", {
-                  name: detail.name,
-                  description: detail.description,
-                  reward: detail.reward,
-                  dollar_amount: detail.dollar_amount,
-                  include_tasks: (detail as any).include_tasks,
-                  include_habits: (detail as any).include_habits
+                  name: updatedDetail.name,
+                  description: updatedDetail.description,
+                  reward: updatedDetail.reward,
+                  dollar_amount: updatedDetail.dollar_amount,
+                  include_tasks: (updatedDetail as any).include_tasks,
+                  include_habits: (updatedDetail as any).include_habits
                 });
               }
               

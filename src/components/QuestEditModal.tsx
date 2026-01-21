@@ -52,8 +52,11 @@ export function QuestEditModal({
       setRewardItemId(quest.reward_item_id || "");
       setRewardRarity(quest.reward_rarity || "");
       // Check if quest has tasks or habits enabled
-      setIncludeTasks((quest as any).include_tasks === true);
-      setIncludeHabits((quest as any).include_habits === true);
+      // Handle undefined (not set), true, and false explicitly
+      const questIncludeTasks = (quest as any).include_tasks;
+      const questIncludeHabits = (quest as any).include_habits;
+      setIncludeTasks(questIncludeTasks === true);
+      setIncludeHabits(questIncludeHabits === true);
     }
   }, [quest, isOpen]);
 
