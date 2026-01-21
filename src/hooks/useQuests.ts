@@ -236,11 +236,6 @@ export function useQuests() {
         if (reward_item_id !== undefined) {
           questFields.reward_item_id = reward_item_id;
         }
-        
-        // Add reward_item_id back to questFields so it gets saved to quests table for user-created quests
-        if (reward_item_id !== undefined) {
-          questFields.reward_item_id = reward_item_id;
-        }
 
 
         // First, check if the quest exists and if the user created it
@@ -334,15 +329,38 @@ export function useQuests() {
           );
         }
 
+        // Refresh overrides FIRST to ensure they're loaded before merging
+        await refreshOverrides();
+        
         // Refresh quests state to get merged view
         await loadQuests();
 
-        // Return the merged quest from state
-        const updated = quests.find((q) => q.id === id);
-        const merged = updated ? mergeQuestWithOverrides(updated) : null;
+        // Wait a tick for React state to update
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Get fresh quest from database to ensure we have latest base data
+        const { data: freshQuest, error: fetchError2 } = await supabase
+          .from("quests")
+          .select("*")
+          .eq("id", id)
+          .single();
+        
+        if (fetchError2) throw fetchError2;
+        if (!freshQuest) throw new Error("Quest not found after update");
+
+        // Merge with overrides to get the complete merged quest
+        const merged = mergeQuestWithOverrides(freshQuest as Quest);
         console.log(
           "[updateQuest] Returning merged quest:",
-          merged ? merged.id : null
+          merged ? {
+            id: merged.id,
+            name: merged.name,
+            reward: merged.reward,
+            dollar_amount: merged.dollar_amount,
+            reward_item_id: merged.reward_item_id,
+            include_tasks: (merged as any).include_tasks,
+            include_habits: (merged as any).include_habits
+          } : null
         );
         return merged;
       } catch (err: any) {

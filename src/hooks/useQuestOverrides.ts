@@ -291,8 +291,8 @@ export function useQuestOverrides() {
         dollar_amount: override.dollar_amount !== null && override.dollar_amount !== undefined ? override.dollar_amount : baseQuest.dollar_amount,
         // Lifecycle state comes from override (should always be set, but default 'idle' for safety)
         status: (override.status || 'idle') as 'idle' | 'active' | 'completed',
-        // Reward fields come from override if set, otherwise from base quest
-        reward_item_id: override.reward_item_id !== undefined ? override.reward_item_id : baseQuest.reward_item_id,
+        // Reward fields: reward_item_id is NOT stored in overrides (column doesn't exist), so always use baseQuest
+        reward_item_id: baseQuest.reward_item_id,
         reward_rarity: override.reward_rarity !== undefined ? override.reward_rarity : baseQuest.reward_rarity || null,
         // Description comes from override if set, otherwise from base quest
         description: (override as any).description !== undefined ? (override as any).description : (baseQuest as any).description,
