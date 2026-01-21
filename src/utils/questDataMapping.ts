@@ -102,9 +102,6 @@ export async function deriveQuestDetail(
     logs,
     habits,
     tasks,
-    // Placeholder for future quest runs
-    currentRun: undefined,
-    pastRuns: [],
   };
 }
 

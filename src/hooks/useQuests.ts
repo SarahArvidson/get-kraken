@@ -318,17 +318,6 @@ export function useQuests() {
           });
         }
 
-        // ALWAYS update override (for both user-created and seeded quests) if override fields exist
-        if (Object.keys(overrideUpdates).length > 0) {
-          console.log(
-            "[updateQuest] Updating user_quest_overrides with override fields"
-          );
-          await updateOverride(id, overrideUpdates);
-          console.log(
-            "[updateQuest] Successfully updated user_quest_overrides"
-          );
-        }
-
         // Get fresh quest from database to ensure we have latest base data
         const { data: freshQuest, error: fetchError2 } = await supabase
           .from("quests")
@@ -339,17 +328,57 @@ export function useQuests() {
         if (fetchError2) throw fetchError2;
         if (!freshQuest) throw new Error("Quest not found after update");
 
-        // updateOverride already updates the overrides state optimistically
-        // However, we need to ensure the state is fully updated before merging
-        // Wait a moment for React state to update after updateOverride's setOverrides call
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // ALWAYS update override (for both user-created and seeded quests) if override fields exist
+        let updatedOverride = null;
+        if (Object.keys(overrideUpdates).length > 0) {
+          console.log(
+            "[updateQuest] Updating user_quest_overrides with override fields"
+          );
+          await updateOverride(id, overrideUpdates);
+          console.log(
+            "[updateQuest] Successfully updated user_quest_overrides"
+          );
+          
+          // Fetch the updated override directly from database to use for merging
+          // This ensures we have the latest data without relying on React state updates
+          const {
+            data: { user },
+          } = await supabase.supabase.auth.getUser();
+          if (user) {
+            const { data: overrideData } = await supabase
+              .from("user_quest_overrides")
+              .select("*")
+              .eq("user_id", user.id)
+              .eq("quest_id", id)
+              .maybeSingle();
+            updatedOverride = overrideData;
+          }
+        }
 
-        // Merge with overrides to get the complete merged quest
-        // mergeQuestWithOverrides uses the overrides state which was updated by updateOverride
-        const merged = mergeQuestWithOverrides(freshQuest as Quest);
+        // Merge with overrides - use the fetched override if available, otherwise use mergeQuestWithOverrides
+        // which will use the state (which should be updated by updateOverride)
+        let merged: Quest;
+        if (updatedOverride) {
+          // Manual merge using the fetched override data
+          merged = {
+            ...freshQuest,
+            name: updatedOverride.name || freshQuest.name,
+            tags: updatedOverride.tags || freshQuest.tags,
+            reward: updatedOverride.reward !== null && updatedOverride.reward !== undefined ? updatedOverride.reward : freshQuest.reward,
+            dollar_amount: updatedOverride.dollar_amount !== null && updatedOverride.dollar_amount !== undefined ? updatedOverride.dollar_amount : freshQuest.dollar_amount,
+            status: (updatedOverride.status || 'idle') as 'idle' | 'active' | 'completed',
+            reward_item_id: freshQuest.reward_item_id, // Not stored in overrides
+            reward_rarity: updatedOverride.reward_rarity !== undefined ? updatedOverride.reward_rarity : freshQuest.reward_rarity || null,
+            description: (updatedOverride as any).description !== undefined ? (updatedOverride as any).description : (freshQuest as any).description,
+            include_tasks: (updatedOverride as any).include_tasks !== undefined ? (updatedOverride as any).include_tasks : (freshQuest as any).include_tasks,
+            include_habits: (updatedOverride as any).include_habits !== undefined ? (updatedOverride as any).include_habits : (freshQuest as any).include_habits,
+          } as Quest;
+        } else {
+          // Fallback to mergeQuestWithOverrides if no override was updated
+          merged = mergeQuestWithOverrides(freshQuest as Quest);
+        }
         
-        // Refresh overrides from database to ensure we have the latest data for future operations
-        // This happens AFTER merging so we use the optimistic update for the current merge
+        // Refresh overrides state for future operations
         await refreshOverrides();
         
         // Refresh quests state to update the list with merged data

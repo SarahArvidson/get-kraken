@@ -52,17 +52,6 @@ export interface TaskSummary {
 }
 
 /**
- * QuestRunSummary - Placeholder for future quest_runs table
- */
-export interface QuestRunSummary {
-  id: string; // placeholder
-  started_at: string;
-  completed_at?: string;
-  abandoned_at?: string;
-  status: 'in_progress' | 'completed' | 'abandoned';
-}
-
-/**
  * QuestDetail - Full quest data for detail view
  */
 export interface QuestDetail extends QuestSummary {
@@ -75,6 +64,4 @@ export interface QuestDetail extends QuestSummary {
   // Placeholder fields (UI-only for Phase 2)
   habits?: HabitSummary[]; // temporary, local storage or UI-only
   tasks?: TaskSummary[]; // temporary, local storage or UI-only
-  currentRun?: QuestRunSummary; // placeholder for future quest_runs
-  pastRuns?: QuestRunSummary[]; // placeholder for future quest_runs
 }

@@ -5,11 +5,10 @@
  * 
  * CURRENT QUEST PAGE INVENTORY:
  * - Buttons: Edit, Star, Add Task (conditional), Add Habit (conditional), 
- *   Complete Quest and Claim These Rewards (conditional on active), 
- *   Start Quest (idle), Restart Quest (completed), Abandon quest (active), Delete Quest (non-active)
+ *   End Quest and Claim Rewards (always visible)
  * - Sections: Title (always), Description (if present), Tasks (if include_tasks enabled),
  *   Habits (if include_habits enabled), Progress (if tasks OR habits enabled), 
- *   Rewards (conditional on rewards or active status)
+ *   Rewards (always shown)
  * - Toggle fields: include_tasks, include_habits from baseQuest (user_quest_overrides)
  */
 
@@ -652,25 +651,26 @@ export function QuestDetailPage() {
               className="w-6 h-6 sm:w-7 sm:h-7"
             />
             <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-              {questDetail.reward}
+              {baseQuest?.reward || questDetail.reward}
             </span>
           </div>
-          {questDetail.dollar_amount > 0 && (
+          {((baseQuest?.dollar_amount || questDetail.dollar_amount) > 0) && (
             <div className="flex items-center gap-2">
               <span className="text-2xl sm:text-3xl">💵</span>
               <span className="text-xl sm:text-2xl font-bold text-amber-900 dark:text-amber-100">
-                ${Math.round(questDetail.dollar_amount)}
+                ${Math.round(baseQuest?.dollar_amount || questDetail.dollar_amount)}
               </span>
             </div>
           )}
-          {questDetail.associated_item_id &&
-            (() => {
+          {(() => {
+              // Get reward_item_id from baseQuest (merged quest) which has the latest data
+              const rewardItemId = baseQuest?.reward_item_id || questDetail.associated_item_id;
+              if (!rewardItemId) return null;
               const linkedItem = shopItems.find(
-                (item) => item.id === questDetail.associated_item_id
+                (item) => item.id === rewardItemId
               );
               if (!linkedItem) return null;
-              const quest = quests.find((q) => q.id === id);
-              const rarity = quest?.reward_rarity;
+              const rarity = baseQuest?.reward_rarity;
               const rarityColors: Record<string, string> = {
                 common:
                   "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
