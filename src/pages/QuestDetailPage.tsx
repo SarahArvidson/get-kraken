@@ -730,11 +730,11 @@ export function QuestDetailPage() {
 
       {/* Edit Quest Modal */}
       {/* Use authoritativeQuest if set, otherwise baseQuest - prevents flicker when authoritativeQuest is set */}
-      {((authoritativeQuest || baseQuest) && (
+      {baseQuest && (
         <QuestEditModal
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          quest={(authoritativeQuest || baseQuest)!}
+          quest={authoritativeQuest || baseQuest}
           onUpdate={async (id, updates) => {
             try {
               console.log("[QuestDetailPage] onUpdate called - quest id:", id);
