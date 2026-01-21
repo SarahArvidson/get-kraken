@@ -126,7 +126,10 @@ export function useQuestOverrides() {
           if (updates.tags !== undefined) updateData.tags = updates.tags;
           if (updates.reward !== undefined) updateData.reward = updates.reward;
           if (updates.dollar_amount !== undefined) updateData.dollar_amount = updates.dollar_amount;
-          if (updates.reward_item_id !== undefined) updateData.reward_item_id = updates.reward_item_id;
+          // Note: reward_item_id column may not exist in user_quest_overrides - skip if not available
+          // Only include reward_item_id if it's being set (not null) to avoid schema errors
+          // TODO: Add migration to add reward_item_id to user_quest_overrides if needed
+          // if (updates.reward_item_id !== undefined) updateData.reward_item_id = updates.reward_item_id;
           if (updates.reward_rarity !== undefined) updateData.reward_rarity = updates.reward_rarity;
           if (updates.include_tasks !== undefined) updateData.include_tasks = updates.include_tasks;
           if (updates.include_habits !== undefined) updateData.include_habits = updates.include_habits;
@@ -144,23 +147,27 @@ export function useQuestOverrides() {
           }
         } else {
           // Create new override
+          // Note: reward_item_id column may not exist in user_quest_overrides - exclude it
+          // TODO: Add migration to add reward_item_id to user_quest_overrides if needed
+          const insertData: any = {
+            user_id: userId,
+            quest_id: questId,
+            name: updates.name ?? null,
+            description: updates.description ?? null,
+            tags: updates.tags ?? null,
+            reward: updates.reward ?? null,
+            dollar_amount: updates.dollar_amount ?? null,
+            // reward_item_id: updates.reward_item_id ?? null, // Column doesn't exist in schema
+            reward_rarity: updates.reward_rarity ?? null,
+            include_tasks: updates.include_tasks ?? null,
+            include_habits: updates.include_habits ?? null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          
           const { data, error } = await supabase
             .from("user_quest_overrides")
-            .insert({
-              user_id: userId,
-              quest_id: questId,
-              name: updates.name ?? null,
-              description: updates.description ?? null,
-              tags: updates.tags ?? null,
-              reward: updates.reward ?? null,
-              dollar_amount: updates.dollar_amount ?? null,
-              reward_item_id: updates.reward_item_id ?? null,
-              reward_rarity: updates.reward_rarity ?? null,
-              include_tasks: updates.include_tasks ?? null,
-              include_habits: updates.include_habits ?? null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
+            .insert(insertData)
             .select()
             .single();
 

@@ -218,18 +218,29 @@ export function useQuests() {
 
         // GUARD: NEVER delete or modify logs - this function only updates quest metadata
         // GUARD: NEVER write lifecycle or rarity to quests table - they belong ONLY in user_quest_overrides
-        // Separate quest fields (name, tags, reward, dollar_amount) from override fields (description, status, reward_rarity, reward_item_id, include_tasks, include_habits)
+        // Separate quest fields (name, tags, reward, dollar_amount, reward_item_id) from override fields (description, status, reward_rarity, include_tasks, include_habits)
+        // Note: reward_item_id goes to quests table for user-created quests, NOT to overrides (column doesn't exist there)
         const updatesAny = updates as any;
         const {
           completion_count, // derived, read-only - remove from updates
           status, // lifecycle - belongs ONLY in overrides
           reward_rarity, // per-user rarity - belongs ONLY in overrides
-          reward_item_id, // reward item - store in overrides for consistency (all users can customize)
+          reward_item_id, // reward item - goes to quests table for user-created quests (NOT in overrides - column doesn't exist)
           description, // description - store in overrides (quests table doesn't have this column)
           include_tasks, // include_tasks - store in overrides (quests table doesn't have this column)
           include_habits, // include_habits - store in overrides (quests table doesn't have this column)
           ...questFields // name, tags, reward, dollar_amount - can go in quests table for user-created quests
         } = updatesAny;
+        
+        // Add reward_item_id back to questFields so it gets saved to quests table for user-created quests
+        if (reward_item_id !== undefined) {
+          questFields.reward_item_id = reward_item_id;
+        }
+        
+        // Add reward_item_id back to questFields so it gets saved to quests table for user-created quests
+        if (reward_item_id !== undefined) {
+          questFields.reward_item_id = reward_item_id;
+        }
 
 
         // First, check if the quest exists and if the user created it
@@ -245,12 +256,14 @@ export function useQuests() {
         }
 
         // Build override updates (lifecycle, rarity, description, include flags always go to overrides)
+        // Note: reward_item_id column doesn't exist in user_quest_overrides, so we skip it
+        // reward_item_id should be stored in the quests table for user-created quests
         const overrideUpdates: any = {};
         if (status !== undefined) overrideUpdates.status = status;
         if (reward_rarity !== undefined)
           overrideUpdates.reward_rarity = reward_rarity;
-        if (reward_item_id !== undefined)
-          overrideUpdates.reward_item_id = reward_item_id;
+        // Skip reward_item_id - column doesn't exist in user_quest_overrides
+        // if (reward_item_id !== undefined) overrideUpdates.reward_item_id = reward_item_id;
         if (description !== undefined)
           overrideUpdates.description = description;
         if (include_tasks !== undefined)
