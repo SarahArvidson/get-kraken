@@ -125,6 +125,7 @@ export function useQuests() {
 
         // Extract fields that don't belong in quests table
         // description, include_tasks, include_habits go to user_quest_overrides
+        // reward_item_id goes to quests table for user-created quests (NOT to overrides - column doesn't exist)
         const questData = quest as any;
         const {
           description,
@@ -135,6 +136,11 @@ export function useQuests() {
           status,
           ...questFields // name, tags, reward, dollar_amount - these go to quests table
         } = questData;
+
+        // Add reward_item_id back to questFields so it gets saved to quests table for user-created quests
+        if (reward_item_id !== undefined) {
+          questFields.reward_item_id = reward_item_id;
+        }
 
         // Insert into quests table (only fields that exist in the table)
         const { data, error: createError } = await supabase
@@ -157,7 +163,8 @@ export function useQuests() {
             if (description !== undefined && description !== null && description !== '') overrideFields.description = description;
             if (include_tasks !== undefined) overrideFields.include_tasks = include_tasks;
             if (include_habits !== undefined) overrideFields.include_habits = include_habits;
-            if (reward_item_id !== undefined) overrideFields.reward_item_id = reward_item_id;
+            // Skip reward_item_id - column doesn't exist in user_quest_overrides
+            // reward_item_id is already saved to quests table above
             if (reward_rarity !== undefined) overrideFields.reward_rarity = reward_rarity;
             if (status !== undefined) overrideFields.status = status;
 
