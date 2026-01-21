@@ -41,6 +41,7 @@ export function QuestDetailPage() {
     getQuestWithLogs,
     updateQuest,
     completeQuest,
+    startQuest,
     deleteQuest,
     deleteQuestLogs,
     refresh,
@@ -267,6 +268,15 @@ export function QuestDetailPage() {
 
   const handleHabitLogComplete = async () => {
     if (!id) return;
+    // If quest is idle, set it to active when progress is logged
+    if (questStatus === "idle") {
+      try {
+        await startQuest(id);
+        await refresh();
+      } catch (err) {
+        console.error("Error starting quest:", err);
+      }
+    }
     // Refresh habits and activity logs - quest detail will update via real-time subscription
     await refreshHabits();
     await loadActivityLogs();
@@ -459,6 +469,15 @@ export function QuestDetailPage() {
                       checked={task.completed}
                       onChange={async () => {
                         await toggleTask(task.id, !task.completed);
+                        // If task is being completed and quest is idle, set it to active
+                        if (!task.completed && questStatus === "idle" && id) {
+                          try {
+                            await startQuest(id);
+                            await refresh();
+                          } catch (err) {
+                            console.error("Error starting quest:", err);
+                          }
+                        }
                       }}
                       className="w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500 cursor-pointer flex-shrink-0"
                     />
