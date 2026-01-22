@@ -54,7 +54,7 @@ export function QuestDetailPage() {
     habitLogs,
     deleteAllHabits,
   } = useQuestHabits(id || null);
-  const { tasks, toggleTask, createTask, deleteAllTasks } = useQuestTasks(id || null);
+  const { tasks, toggleTask, createTask, deleteTask, deleteAllTasks } = useQuestTasks(id || null);
   const questMetadata = useQuestMetadata();
   const { logs: allActivityLogs, loadActivityLogs, deleteActivityLogsForQuest } = useActivityLogs({
     questMetadata: questMetadata.metadata,
@@ -494,6 +494,19 @@ export function QuestDetailPage() {
                           Last: {getTimeAgo(new Date(lastTaskLog.logged_at))}
                         </div>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(task.id);
+                        }}
+                        className="px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        title="Delete task"
+                        aria-label="Delete task"
+                      >
+                        ✕
+                      </button>
                     </div>
                   </div>
                 );
