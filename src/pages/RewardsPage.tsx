@@ -152,6 +152,129 @@ export function RewardsPage() {
     navigate(`/rewards/${rewardId}`);
   }, [navigate]);
 
+  const pageRootRef = useRef<HTMLDivElement>(null);
+
+  // Diagnostic: Identify exact element causing horizontal overflow
+  useEffect(() => {
+    if (!pageRootRef.current) return;
+    if (loading || logsLoading) return; // Wait for data to load
+
+    const checkOverflow = () => {
+      const innerWidth = window.innerWidth;
+      const scrollWidth = document.documentElement.scrollWidth;
+      const difference = scrollWidth - innerWidth;
+
+      console.log(`[RewardsPage Diagnostic] innerWidth=${innerWidth}, scrollWidth=${scrollWidth}, difference=${difference}px`);
+
+      if (scrollWidth > innerWidth) {
+        console.log(`[RewardsPage Diagnostic] Overflow detected: ${difference}px`);
+
+        let worstOffender: {
+          element: Element;
+          overflowRight: number;
+          overflowLeft: number;
+          overflow: number;
+          rect: DOMRect;
+          scrollWidth: number;
+          clientWidth: number;
+          tagName: string;
+          className: string;
+        } | null = null;
+
+        // Traverse ALL descendants under the Rewards page root
+        const traverse = (el: Element) => {
+          const rect = el.getBoundingClientRect();
+          const overflowRight = rect.right - innerWidth;
+          const overflowLeft = 0 - rect.left;
+          const overflow = Math.max(overflowRight, overflowLeft);
+
+          if (overflow > 0) {
+            const htmlEl = el as HTMLElement;
+            const elScrollWidth = htmlEl.scrollWidth || 0;
+            const elClientWidth = htmlEl.clientWidth || 0;
+
+            if (!worstOffender || overflow > worstOffender.overflow) {
+              worstOffender = {
+                element: el,
+                overflowRight,
+                overflowLeft,
+                overflow,
+                rect,
+                scrollWidth: elScrollWidth,
+                clientWidth: elClientWidth,
+                tagName: el.tagName,
+                className: el.className || '(no class)',
+              };
+            }
+          }
+
+          Array.from(el.children).forEach(traverse);
+        };
+
+        if (pageRootRef.current) {
+          traverse(pageRootRef.current);
+        }
+
+        if (worstOffender) {
+          console.log(`[RewardsPage Diagnostic] Worst offender identified:`, {
+            tagName: worstOffender.tagName,
+            className: worstOffender.className,
+            rect: {
+              left: worstOffender.rect.left.toFixed(1),
+              right: worstOffender.rect.right.toFixed(1),
+              width: worstOffender.rect.width.toFixed(1),
+            },
+            overflowRight: `${worstOffender.overflowRight.toFixed(1)}px`,
+            overflowLeft: `${worstOffender.overflowLeft.toFixed(1)}px`,
+            overflow: `${worstOffender.overflow.toFixed(1)}px`,
+            scrollWidth: worstOffender.scrollWidth,
+            clientWidth: worstOffender.clientWidth,
+            internalOverflow: worstOffender.scrollWidth > worstOffender.clientWidth 
+              ? `${(worstOffender.scrollWidth - worstOffender.clientWidth).toFixed(1)}px` 
+              : 'none',
+          });
+
+          // Clear all previous outlines and backgrounds
+          if (pageRootRef.current) {
+            const allElements = pageRootRef.current.querySelectorAll('*');
+            allElements.forEach((el) => {
+              const htmlEl = el as HTMLElement;
+              htmlEl.style.outline = '';
+              htmlEl.style.backgroundColor = '';
+            });
+          }
+
+          // Visually outline ONLY that element
+          const worst = worstOffender.element as HTMLElement;
+          worst.style.outline = '3px solid red';
+          worst.style.backgroundColor = 'rgba(255,0,0,0.06)';
+        } else {
+          console.log(`[RewardsPage Diagnostic] No elements found with positive overflow`);
+        }
+      } else {
+        console.log(`[RewardsPage Diagnostic] No overflow detected - scrollWidth === innerWidth`);
+      }
+    };
+
+    // Check after initial render and data load, and on resize
+    const timeoutId = setTimeout(checkOverflow, 200);
+    window.addEventListener('resize', checkOverflow);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', checkOverflow);
+      // Remove all outlines and backgrounds on cleanup
+      if (pageRootRef.current) {
+        const allElements = pageRootRef.current.querySelectorAll('*');
+        allElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.outline = '';
+          htmlEl.style.backgroundColor = '';
+        });
+      }
+    };
+  }, [loading, logsLoading]);
+
   if (loading || logsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -176,7 +299,7 @@ export function RewardsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={pageRootRef} className="space-y-6">
       {/* Search, Filter, and Create Item Buttons */}
       <div className="flex gap-2">
         {/* Search Input */}
