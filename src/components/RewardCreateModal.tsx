@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { ShopItem, ShopTag } from "../types";
 import { SHOP_TAGS, SHOP_TAG_LABELS } from "../utils/shopTags";
 
@@ -67,7 +68,7 @@ export function RewardCreateModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -79,7 +80,7 @@ export function RewardCreateModal({
       {/* Modal */}
       <div className="fixed inset-0 z-[30] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div
-          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90dvh] flex flex-col relative"
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -214,6 +215,7 @@ export function RewardCreateModal({
           </form>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
