@@ -146,7 +146,7 @@ export function QuestCreateModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               {/* Name (Required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
