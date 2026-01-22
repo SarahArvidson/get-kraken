@@ -155,6 +155,18 @@ export function RewardsPage() {
   const pageRootRef = useRef<HTMLDivElement>(null);
 
   // Diagnostic: Identify exact element causing horizontal overflow
+  type OffenderType = {
+    element: Element;
+    overflowRight: number;
+    overflowLeft: number;
+    overflow: number;
+    rect: DOMRect;
+    scrollWidth: number;
+    clientWidth: number;
+    tagName: string;
+    className: string;
+  };
+
   useEffect(() => {
     if (!pageRootRef.current) return;
     if (loading || logsLoading) return; // Wait for data to load
@@ -169,17 +181,7 @@ export function RewardsPage() {
       if (scrollWidth > innerWidth) {
         console.log(`[RewardsPage Diagnostic] Overflow detected: ${difference}px`);
 
-        let worstOffender: {
-          element: Element;
-          overflowRight: number;
-          overflowLeft: number;
-          overflow: number;
-          rect: DOMRect;
-          scrollWidth: number;
-          clientWidth: number;
-          tagName: string;
-          className: string;
-        } | null = null;
+        let worstOffender: OffenderType | null = null;
 
         // Traverse ALL descendants under the Rewards page root
         const traverse = (el: Element) => {
@@ -215,22 +217,23 @@ export function RewardsPage() {
           traverse(pageRootRef.current);
         }
 
-        if (worstOffender) {
+        if (worstOffender !== null) {
+          const offender: OffenderType = worstOffender;
           console.log(`[RewardsPage Diagnostic] Worst offender identified:`, {
-            tagName: worstOffender.tagName,
-            className: worstOffender.className,
+            tagName: offender.tagName,
+            className: offender.className,
             rect: {
-              left: worstOffender.rect.left.toFixed(1),
-              right: worstOffender.rect.right.toFixed(1),
-              width: worstOffender.rect.width.toFixed(1),
+              left: offender.rect.left.toFixed(1),
+              right: offender.rect.right.toFixed(1),
+              width: offender.rect.width.toFixed(1),
             },
-            overflowRight: `${worstOffender.overflowRight.toFixed(1)}px`,
-            overflowLeft: `${worstOffender.overflowLeft.toFixed(1)}px`,
-            overflow: `${worstOffender.overflow.toFixed(1)}px`,
-            scrollWidth: worstOffender.scrollWidth,
-            clientWidth: worstOffender.clientWidth,
-            internalOverflow: worstOffender.scrollWidth > worstOffender.clientWidth 
-              ? `${(worstOffender.scrollWidth - worstOffender.clientWidth).toFixed(1)}px` 
+            overflowRight: `${offender.overflowRight.toFixed(1)}px`,
+            overflowLeft: `${offender.overflowLeft.toFixed(1)}px`,
+            overflow: `${offender.overflow.toFixed(1)}px`,
+            scrollWidth: offender.scrollWidth,
+            clientWidth: offender.clientWidth,
+            internalOverflow: offender.scrollWidth > offender.clientWidth 
+              ? `${(offender.scrollWidth - offender.clientWidth).toFixed(1)}px` 
               : 'none',
           });
 
@@ -245,7 +248,7 @@ export function RewardsPage() {
           }
 
           // Visually outline ONLY that element
-          const worst = worstOffender.element as HTMLElement;
+          const worst = offender.element as HTMLElement;
           worst.style.outline = '3px solid red';
           worst.style.backgroundColor = 'rgba(255,0,0,0.06)';
         } else {
