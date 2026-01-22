@@ -152,6 +152,101 @@ export function RewardsPage() {
     navigate(`/rewards/${rewardId}`);
   }, [navigate]);
 
+  // Diagnostic: Walk from documentElement down to find first overflow element
+  useEffect(() => {
+    if (loading || logsLoading) return;
+
+    const checkOverflow = () => {
+      const innerWidth = window.innerWidth;
+      const scrollWidth = document.documentElement.scrollWidth;
+
+      console.log(`[RewardsPage Diagnostic] innerWidth=${innerWidth}, scrollWidth=${scrollWidth}, difference=${scrollWidth - innerWidth}px`);
+
+      if (scrollWidth > innerWidth) {
+        console.log(`[RewardsPage Diagnostic] Overflow detected: ${scrollWidth - innerWidth}px`);
+        console.log(`[RewardsPage Diagnostic] Starting walk from documentElement...`);
+
+        // Walk from documentElement down, checking each element
+        const walk = (el: Element, depth: number = 0): Element | null => {
+          const rect = el.getBoundingClientRect();
+          const computed = window.getComputedStyle(el);
+          
+          // Check if this element exceeds viewport width
+          if (rect.right > innerWidth || rect.left < 0) {
+            const htmlEl = el as HTMLElement;
+            console.log(`[RewardsPage Diagnostic] FOUND OFFENDER at depth ${depth}:`, {
+              tagName: el.tagName,
+              id: el.id || '(no id)',
+              className: el.className || '(no class)',
+              rect: {
+                left: rect.left.toFixed(1),
+                right: rect.right.toFixed(1),
+                width: rect.width.toFixed(1),
+              },
+              computed: {
+                width: computed.width,
+                minWidth: computed.minWidth,
+                maxWidth: computed.maxWidth,
+                position: computed.position,
+                transform: computed.transform,
+                overflow: `${computed.overflowX}/${computed.overflowY}`,
+                left: computed.left,
+                right: computed.right,
+                marginLeft: computed.marginLeft,
+                marginRight: computed.marginRight,
+                paddingLeft: computed.paddingLeft,
+                paddingRight: computed.paddingRight,
+              },
+              scrollWidth: htmlEl.scrollWidth || 'N/A',
+              clientWidth: htmlEl.clientWidth || 'N/A',
+            });
+
+            // Outline this element
+            htmlEl.style.outline = '3px solid red';
+            htmlEl.style.backgroundColor = 'rgba(255,0,0,0.1)';
+
+            return el;
+          }
+
+          // Check children in order
+          for (const child of Array.from(el.children)) {
+            const result = walk(child, depth + 1);
+            if (result) return result; // Return first offender found
+          }
+
+          return null;
+        };
+
+        // Clear previous outlines
+        document.querySelectorAll('*').forEach((el) => {
+          (el as HTMLElement).style.outline = '';
+          (el as HTMLElement).style.backgroundColor = '';
+        });
+
+        // Start walk from documentElement
+        const offender = walk(document.documentElement);
+        if (!offender) {
+          console.log(`[RewardsPage Diagnostic] No element found exceeding viewport`);
+        }
+      } else {
+        console.log(`[RewardsPage Diagnostic] No overflow - scrollWidth === innerWidth`);
+      }
+    };
+
+    const timeoutId = setTimeout(checkOverflow, 200);
+    window.addEventListener('resize', checkOverflow);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', checkOverflow);
+      // Clear outlines
+      document.querySelectorAll('*').forEach((el) => {
+        (el as HTMLElement).style.outline = '';
+        (el as HTMLElement).style.backgroundColor = '';
+      });
+    };
+  }, [loading, logsLoading]);
+
   if (loading || logsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
