@@ -80,7 +80,7 @@ export function RewardCreateModal({
       {/* Modal */}
       <div className="fixed inset-0 z-[30] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div
-          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden min-h-0"
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden min-h-0 min-w-0"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -100,8 +100,8 @@ export function RewardCreateModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+            <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               {/* Name (Required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
