@@ -152,132 +152,6 @@ export function RewardsPage() {
     navigate(`/rewards/${rewardId}`);
   }, [navigate]);
 
-  const pageRootRef = useRef<HTMLDivElement>(null);
-
-  // Diagnostic: Identify exact element causing horizontal overflow
-  type OffenderType = {
-    element: Element;
-    overflowRight: number;
-    overflowLeft: number;
-    overflow: number;
-    rect: DOMRect;
-    scrollWidth: number;
-    clientWidth: number;
-    tagName: string;
-    className: string;
-  };
-
-  useEffect(() => {
-    if (!pageRootRef.current) return;
-    if (loading || logsLoading) return; // Wait for data to load
-
-    const checkOverflow = () => {
-      const innerWidth = window.innerWidth;
-      const scrollWidth = document.documentElement.scrollWidth;
-      const difference = scrollWidth - innerWidth;
-
-      console.log(`[RewardsPage Diagnostic] innerWidth=${innerWidth}, scrollWidth=${scrollWidth}, difference=${difference}px`);
-
-      if (scrollWidth > innerWidth) {
-        console.log(`[RewardsPage Diagnostic] Overflow detected: ${difference}px`);
-
-        let worstOffender: OffenderType | null = null;
-
-        // Traverse ALL descendants under the Rewards page root
-        const traverse = (el: Element) => {
-          const rect = el.getBoundingClientRect();
-          const overflowRight = rect.right - innerWidth;
-          const overflowLeft = 0 - rect.left;
-          const overflow = Math.max(overflowRight, overflowLeft);
-
-          if (overflow > 0) {
-            const htmlEl = el as HTMLElement;
-            const elScrollWidth = htmlEl.scrollWidth || 0;
-            const elClientWidth = htmlEl.clientWidth || 0;
-
-            if (!worstOffender || overflow > worstOffender.overflow) {
-              worstOffender = {
-                element: el,
-                overflowRight,
-                overflowLeft,
-                overflow,
-                rect,
-                scrollWidth: elScrollWidth,
-                clientWidth: elClientWidth,
-                tagName: el.tagName,
-                className: el.className || '(no class)',
-              };
-            }
-          }
-
-          Array.from(el.children).forEach(traverse);
-        };
-
-        if (pageRootRef.current) {
-          traverse(pageRootRef.current);
-        }
-
-        if (worstOffender !== null) {
-          const offender: OffenderType = worstOffender;
-          console.log(`[RewardsPage Diagnostic] Worst offender identified:`, {
-            tagName: offender.tagName,
-            className: offender.className,
-            rect: {
-              left: offender.rect.left.toFixed(1),
-              right: offender.rect.right.toFixed(1),
-              width: offender.rect.width.toFixed(1),
-            },
-            overflowRight: `${offender.overflowRight.toFixed(1)}px`,
-            overflowLeft: `${offender.overflowLeft.toFixed(1)}px`,
-            overflow: `${offender.overflow.toFixed(1)}px`,
-            scrollWidth: offender.scrollWidth,
-            clientWidth: offender.clientWidth,
-            internalOverflow: offender.scrollWidth > offender.clientWidth 
-              ? `${(offender.scrollWidth - offender.clientWidth).toFixed(1)}px` 
-              : 'none',
-          });
-
-          // Clear all previous outlines and backgrounds
-          if (pageRootRef.current) {
-            const allElements = pageRootRef.current.querySelectorAll('*');
-            allElements.forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.outline = '';
-              htmlEl.style.backgroundColor = '';
-            });
-          }
-
-          // Visually outline ONLY that element
-          const worst = offender.element as HTMLElement;
-          worst.style.outline = '3px solid red';
-          worst.style.backgroundColor = 'rgba(255,0,0,0.06)';
-        } else {
-          console.log(`[RewardsPage Diagnostic] No elements found with positive overflow`);
-        }
-      } else {
-        console.log(`[RewardsPage Diagnostic] No overflow detected - scrollWidth === innerWidth`);
-      }
-    };
-
-    // Check after initial render and data load, and on resize
-    const timeoutId = setTimeout(checkOverflow, 200);
-    window.addEventListener('resize', checkOverflow);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', checkOverflow);
-      // Remove all outlines and backgrounds on cleanup
-      if (pageRootRef.current) {
-        const allElements = pageRootRef.current.querySelectorAll('*');
-        allElements.forEach((el) => {
-          const htmlEl = el as HTMLElement;
-          htmlEl.style.outline = '';
-          htmlEl.style.backgroundColor = '';
-        });
-      }
-    };
-  }, [loading, logsLoading]);
-
   if (loading || logsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -302,7 +176,7 @@ export function RewardsPage() {
   }
 
   return (
-    <div ref={pageRootRef} className="space-y-6">
+    <div className="space-y-6">
       {/* Search, Filter, and Create Item Buttons */}
       <div className="flex gap-2">
         {/* Search Input */}
@@ -332,6 +206,28 @@ export function RewardsPage() {
           Create Item
         </button>
       </div>
+
+      {/* Recent Purchases Highlight */}
+      {recentPurchases.length > 0 && (
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-2xl p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Recent Purchases
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {recentPurchases.map(({ reward, log }) => (
+              <div
+                key={log.id}
+                className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300"
+              >
+                {reward.name}
+                <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
+                  {new Date(log.purchased_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter Drawer */}
       <FilterDrawer
@@ -446,28 +342,6 @@ export function RewardsPage() {
           </div>
         </div>
       </FilterDrawer>
-
-      {/* Recent Purchases Highlight (Optional, Calm) */}
-      {recentPurchases.length > 0 && (
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Recent Purchases
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {recentPurchases.map(({ reward, log }) => (
-              <div
-                key={log.id}
-                className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg text-sm text-gray-700 dark:text-gray-300"
-              >
-                {reward.name}
-                <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
-                  {new Date(log.purchased_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Reward List with Alphabetical Grouping */}
       {filteredRewards.length === 0 ? (
