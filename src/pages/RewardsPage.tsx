@@ -178,9 +178,9 @@ export function RewardsPage() {
   return (
     <div className="space-y-6">
       {/* Search, Filter, and Create Item Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 min-w-0">
         {/* Search Input */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <input
             type="search"
             placeholder="Search rewards..."
@@ -192,7 +192,7 @@ export function RewardsPage() {
         {/* Filter Button */}
         <button
           onClick={() => setShowFilterDrawer(true)}
-          className="px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors touch-manipulation font-medium"
+          className="px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors touch-manipulation font-medium flex-shrink-0"
           aria-label="Open filters"
         >
           Filter
@@ -200,7 +200,7 @@ export function RewardsPage() {
         {/* Create Item Button */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-3 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition-colors touch-manipulation"
+          className="px-4 py-3 rounded-lg bg-amber-500 text-white font-medium hover:bg-amber-600 transition-colors touch-manipulation flex-shrink-0"
           aria-label="Create new reward item"
         >
           Create Item
