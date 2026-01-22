@@ -19,7 +19,7 @@ export function Header({ showDollarAmounts, onToggleDollarAmounts, onOpenMenu }:
     : "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300";
 
   return (
-    <header className="bg-blue-100/50 dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative backdrop-blur-sm">
+    <header className="bg-blue-100/50 dark:bg-gray-800 shadow-sm sticky top-0 z-20 relative backdrop-blur-0 sm:backdrop-blur-sm max-w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Desktop Layout */}
         <div className="hidden sm:block">
