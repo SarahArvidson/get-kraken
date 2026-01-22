@@ -125,7 +125,7 @@ export function QuestCreateModal({
       {/* Modal */}
       <div className="fixed inset-0 z-[30] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div
-          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative"
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden min-h-0"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
