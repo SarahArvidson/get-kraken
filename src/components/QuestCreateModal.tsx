@@ -116,15 +116,15 @@ export function QuestCreateModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-[100]"
+        className="fixed inset-0 bg-black/50 z-[30]"
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-[100] flex items-start justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8">
+      <div className="fixed inset-0 z-[30] flex items-center justify-center p-4 sm:p-4 md:p-6 lg:p-8">
         <div
-          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-none sm:rounded-lg md:rounded-2xl shadow-2xl w-full sm:w-full max-w-3xl h-screen sm:h-auto max-h-screen sm:max-h-[calc(100vh-9rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-[calc(100vh-11rem)] flex flex-col relative z-[101] mt-0 sm:mt-32 md:mt-36 lg:mt-40 mb-0 sm:mb-0"
+          className="quest-reward-modal-content bg-white dark:bg-gray-800 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-3xl max-h-[calc(100dvh-2rem)] flex flex-col relative overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -144,7 +144,7 @@ export function QuestCreateModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               {/* Name (Required) */}
               <div>
@@ -339,35 +339,35 @@ export function QuestCreateModal({
                 </label>
               </div>
 
-                {error && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {error}
-                    </p>
-                  </div>
-                )}
-              </div>
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
+                </div>
+              )}
+            </div>
 
-              {/* Buttons - Sticky Footer */}
-              <div className="flex-shrink-0 flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !name.trim()}
-                  className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSubmitting ? "Creating..." : "Create Quest"}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Buttons - Sticky Footer */}
+            <div className="flex-shrink-0 flex gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !name.trim()}
+                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSubmitting ? "Creating..." : "Create Quest"}
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </>
   );
 }
