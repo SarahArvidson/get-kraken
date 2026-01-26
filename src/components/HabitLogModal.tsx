@@ -9,6 +9,7 @@ import { supabase } from "../lib/supabase";
 import { saveLastHabitLog } from "../utils/questDataMapping";
 import { logDualWriteError } from "../utils/dualWriteLogger";
 import { playCoinSound } from "../utils/sound";
+import { registerPendingWalletMutation } from "../utils/mutationGuard";
 
 interface HabitLogModalProps {
   isOpen: boolean;
@@ -82,6 +83,30 @@ export function HabitLogModal({
     try {
       const dollarValue = savedMoney && dollarAmount ? parseFloat(dollarAmount) : 0;
 
+      // Load current wallet to get current total
+      const { data: walletData, error: walletFetchError } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (walletFetchError && walletFetchError.code !== "PGRST116") {
+        throw walletFetchError;
+      }
+
+      // Calculate new wallet totals
+      // Difficulty (1-10) is added as sand dollars
+      // Dollars saved is added as dollars
+      const currentTotal = walletData?.total ?? 0;
+      const currentDollarTotal = walletData?.dollar_total ?? 0;
+      const newTotal = currentTotal + difficulty;
+      const newDollarTotal = Math.round(
+        currentDollarTotal + Math.round(dollarValue)
+      );
+
+      // Mutation guard: register pending wallet mutation to prevent double-application
+      registerPendingWalletMutation(newTotal, newDollarTotal);
+
       // Save autofill values to localStorage (new format)
       const storageKey = `getkraken:habit-autofill:${userId}:${habitId}`;
       localStorage.setItem(
@@ -100,7 +125,8 @@ export function HabitLogModal({
         dollars_saved: dollarValue || undefined,
       });
 
-      // Insert into habit_logs (primary table)
+      // Atomically: insert log entry AND update wallet in sequence
+      // First, insert into habit_logs (primary table)
       const { error: logError } = await supabase
         .from("habit_logs")
         .insert({
@@ -116,8 +142,32 @@ export function HabitLogModal({
         throw logError;
       }
 
+      // Then, update wallet atomically
+      if (!walletData) {
+        // Create wallet if it doesn't exist
+        const { error: createError } = await supabase.from("wallets").insert({
+          user_id: userId,
+          id: null,
+          total: newTotal,
+          dollar_total: newDollarTotal,
+          updated_at: new Date().toISOString(),
+        });
+        if (createError) throw createError;
+      } else {
+        // Update existing wallet
+        const { error: updateError } = await supabase
+          .from("wallets")
+          .update({
+            total: newTotal,
+            dollar_total: newDollarTotal,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId);
+        if (updateError) throw updateError;
+      }
+
       // Dual-write: Also insert into activity_logs for calendar/timeline
-      // This is best-effort - if it fails, the primary action (habit_logs) still succeeds
+      // This is best-effort - if it fails, the primary action (habit_logs + wallet update) still succeeds
       try {
         const now = new Date().toISOString();
         const { error: activityLogError } = await supabase

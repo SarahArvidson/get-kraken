@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { logDualWriteError } from "../utils/dualWriteLogger";
 import { saveLastHabitLog } from "../utils/questDataMapping";
+import { registerPendingWalletMutation } from "../utils/mutationGuard";
 import type { QuestTask } from "../hooks/useQuestTasks";
 import type { QuestHabit } from "../hooks/useQuestHabits";
 
@@ -112,6 +113,40 @@ export function ProgressLogModal({
         }
       }
 
+      // Load current wallet to get current total (before processing habits)
+      const { data: walletData, error: walletFetchError } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (walletFetchError && walletFetchError.code !== "PGRST116") {
+        throw walletFetchError;
+      }
+
+      // Calculate total sand dollars and dollars from all habits being logged
+      let totalSandDollarsToAdd = 0;
+      let totalDollarsToAdd = 0;
+
+      for (const [habitId, log] of Object.entries(habitLogs)) {
+        if (log.difficulty > 0) {
+          // Difficulty (1-10) is added as sand dollars
+          totalSandDollarsToAdd += log.difficulty;
+          totalDollarsToAdd += log.dollarsSaved || 0;
+        }
+      }
+
+      // Calculate new wallet totals
+      const currentTotal = walletData?.total ?? 0;
+      const currentDollarTotal = walletData?.dollar_total ?? 0;
+      const newTotal = currentTotal + totalSandDollarsToAdd;
+      const newDollarTotal = Math.round(
+        currentDollarTotal + Math.round(totalDollarsToAdd)
+      );
+
+      // Mutation guard: register pending wallet mutation to prevent double-application
+      registerPendingWalletMutation(newTotal, newDollarTotal);
+
       // Log habits - write to habit_logs and activity_logs
       for (const [habitId, log] of Object.entries(habitLogs)) {
         if (log.difficulty > 0) {
@@ -198,6 +233,32 @@ export function ProgressLogModal({
               { questId, habitId, difficulty: log.difficulty, dollarValue }
             );
           }
+        }
+      }
+
+      // Update wallet atomically after all habits are logged
+      if (totalSandDollarsToAdd > 0 || totalDollarsToAdd > 0) {
+        if (!walletData) {
+          // Create wallet if it doesn't exist
+          const { error: createError } = await supabase.from("wallets").insert({
+            user_id: userId,
+            id: null,
+            total: newTotal,
+            dollar_total: newDollarTotal,
+            updated_at: new Date().toISOString(),
+          });
+          if (createError) throw createError;
+        } else {
+          // Update existing wallet
+          const { error: updateError } = await supabase
+            .from("wallets")
+            .update({
+              total: newTotal,
+              dollar_total: newDollarTotal,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId);
+          if (updateError) throw updateError;
         }
       }
 

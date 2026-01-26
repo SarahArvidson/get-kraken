@@ -223,8 +223,9 @@ export function QuestDetailPage() {
         totalSandDollars += questDetail?.reward || 0;
         totalRealDollars += log.dollars_saved || 0;
       } else if (log.action_type === "habit_log") {
-        // Habit logs add to dollars only
+        // Habit logs add difficulty as sand dollars and dollars_saved as dollars
         habitLogCount++;
+        totalSandDollars += log.difficulty || 0;
         totalRealDollars += log.dollars_saved || 0;
       }
     });
